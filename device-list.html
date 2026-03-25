@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>อุปกรณ์ — DeviceHub</title>
+<link rel="stylesheet" href="style.css?v=20260325b">
+<script src="vendor/xlsx.full.min.js?v=20260324"></script>
+<script src="config.js"></script><script src="shared.js"></script>
+<style>
+/* Table scrollable */
+.tbl-scroll{overflow-x:auto;}.tbl-scroll table{min-width:1200px;}
+th,td{white-space:nowrap;}
+/* Tabs in modal */
+.ftabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:8px;flex-wrap:wrap;}
+.ftab{padding:6px 14px;border-radius:7px 7px 0 0;border:1px solid transparent;font-size:12.5px;cursor:pointer;color:var(--text2);background:transparent;font-family:var(--font);}
+.ftab:hover{color:var(--text);background:var(--s2);}
+.ftab.active{background:rgba(0,212,255,.1);color:var(--cyan);border-color:rgba(0,212,255,.2);}
+.fsec{display:none;}.fsec.active{display:block;}
+.fsec-title{font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+/* Checkbox row */
+.chk-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);}
+.chk-row:last-child{border-bottom:none;}
+.chk-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--cyan);cursor:pointer;}
+.chk-row label{font-size:13px;cursor:pointer;}
+.chk-group{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+/* Detail view */
+.dv-section{margin-bottom:18px;}
+.dv-sec-title{font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.dv-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.dv-row{display:flex;flex-direction:column;gap:3px;}
+.dv-lbl{font-size:10.5px;color:var(--text3);font-family:var(--mono);}
+.dv-val{font-size:13px;color:var(--text);}
+.dv-val.mono{font-family:var(--mono);color:var(--cyan);}
+.tag-yes{background:rgba(0,232,150,.1);color:var(--green);border:1px solid rgba(0,232,150,.2);padding:2px 8px;border-radius:4px;font-size:11px;font-family:var(--mono);}
+.tag-no{background:rgba(122,136,153,.08);color:var(--text3);border:1px solid var(--border);padding:2px 8px;border-radius:4px;font-size:11px;font-family:var(--mono);}
+/* Column groups header */
+.col-group{background:var(--s3);font-size:9px;letter-spacing:1.5px;color:var(--text3);text-align:center;padding:4px 8px;border-bottom:1px solid var(--border);}
+</style>
+</head>
+<body>
+<div class="layout">
+<div id="sidebar-slot"></div>
+<div class="main">
+  <div class="topbar">
+    <div style="flex:1"><h1>🖥 อุปกรณ์ IT</h1><p>IT Asset Management — MySQL</p></div>
+    <div class="db-pill"><div class="db-dot wait" id="dbDot"></div><span id="dbTxt">โหลด...</span></div>
+    <button class="btn btn-ghost" onclick="loadData()">🔄</button>
+    <button class="btn btn-ghost" onclick="document.getElementById('importFile').click()">⬆ Import Excel</button>
+    <input type="file" id="importFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleImportFile(this)">
+    <button class="btn btn-ghost" onclick="exportCSV()">⬇ CSV</button>
+    <button class="btn btn-excel" onclick="exportXL()">📥 Excel</button>
+    <button class="btn btn-primary" onclick="openModal(null)">+ เพิ่มอุปกรณ์</button>
+    <button class="btn btn-logout" onclick="logout()">⏻</button>
+  </div>
+  <div class="content">
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card" style="cursor:pointer" onclick="setF('','')"><div class="stat-icon si-c">🖥</div><div><div class="stat-num sn-c" id="s0">—</div><div class="stat-label">ทั้งหมด</div></div></div>
+      <div class="stat-card" style="cursor:pointer" onclick="refreshLivePower(true)"><div class="stat-icon si-g">🟢</div><div><div class="stat-num sn-g" id="s1">—</div><div class="stat-label">เปิดอยู่ (RT)</div></div></div>
+      <div class="stat-card" style="cursor:pointer" onclick="setF('status','maintenance')"><div class="stat-icon si-y">🔧</div><div><div class="stat-num sn-y" id="s2">—</div><div class="stat-label">กำลังซ่อม</div></div></div>
+      <div class="stat-card" style="cursor:pointer" onclick="refreshLivePower(true)"><div class="stat-icon si-r">🔴</div><div><div class="stat-num sn-r" id="s3">—</div><div class="stat-label">ปิด / ไม่ตอบ (RT)</div></div></div>
+    </div>
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-box"><span class="search-ico">🔍</span><input class="search-input" id="qS" placeholder="ค้นหาชื่อเครื่อง, ผู้ใช้, IP, Brand..."></div>
+      <select class="filter-sel" id="fT"><option value="">ทุกประเภท</option><option>Desktop PC</option><option>Laptop</option><option>Server</option><option>Tablet</option><option>Printer</option><option>Other</option></select>
+      <select class="filter-sel" id="fS"><option value="">ทุกสถานะ</option><option value="maintenance">กำลังซ่อม</option><option value="power_on">เปิดอยู่ (RT)</option><option value="power_off">ปิด / ไม่ตอบ (RT)</option><option value="power_unknown">ไม่ทราบ (RT)</option></select>
+      <select class="filter-sel" id="fD"><option value="">ทุกแผนก</option><option>AD - AC</option><option>AD - GA</option><option>AD - HRD</option><option>AD - HRM</option><option>AD-IT</option><option>AUTOMOTIVE - PD</option><option>BC CENTER</option><option>BC CENTER - PC</option><option>BC CENTER - PURCHASE</option><option>BC CENTER - SALE</option><option>BC CENTER - STANDARD SETTING</option><option>BC CENTER - WAREHOUSE</option><option>EC - FM</option><option>EC - ME</option><option>EC - PE</option><option>EC DIVISION</option><option>MARKETING</option><option>MEDICAL - PD</option><option>MEDICAL - PE</option><option>PD1 - PE</option><option>PD1 - PE (ME/AUTO)</option><option>PD1 - PE (ME/INJ)</option><option>PD1 - PE (MN/ASSY)</option><option>PD1 - PE (PE/AUTO)</option><option>PD1 - PE (PE/INJ)</option><option>PRECISION - PD ASSY</option><option>PRECISION - PD ASSY(ASSY)</option><option>PRECISION - PD ASSY(PAINT)</option><option>PRECISION - PD INJ1</option><option>PRECISION - PD INJ2</option><option>PRODUCTION DIVISION 1</option><option>PRODUCTION DIVISION 2</option><option>QA CENTER</option><option>QA CENTER - QA</option><option>QA CENTER - QC</option><option>QA CENTER - QM</option><option>QA CENTER - QS</option><option>SLIT - PD</option><option>SLIT - PE</option></select>
+      <button class="btn btn-ghost" onclick="clearF()">✕ ล้าง</button>
+    </div>
+    <!-- Table -->
+    <div class="table-wrap tbl-scroll">
+      <table id="mainTable">
+        <thead>
+          <tr>
+            <th colspan="5" class="col-group">NETWORK</th>
+            <th colspan="5" class="col-group">PHYSICAL</th>
+            <th colspan="5" class="col-group">HARDWARE</th>
+            <th colspan="3" class="col-group">SOFTWARE</th>
+            <th colspan="2" class="col-group">ACCESS</th>
+            <th colspan="2" class="col-group"></th>
+          </tr>
+          <tr>
+            <th style="padding-left:14px;position:sticky;left:0;background:var(--s2);z-index:5">รหัส / Asset</th>
+            <th>IP Address</th><th>Computer Name</th><th>User Name</th><th>MAC</th>
+            <th>ประเภท</th><th>PIC</th><th>แผนก</th><th>Location</th><th>ปีที่ซื้อ</th>
+            <th>Brand / Model</th><th>CPU</th><th>RAM</th><th>HDD/SSD</th><th>Windows</th>
+            <th>Office</th><th>Antivirus</th><th>Software</th>
+            <th>Internet</th><th>Email</th>
+            <th>สถานะ Real-time</th><th>จัดการ</th>
+          </tr>
+        </thead>
+        <tbody id="tb"></tbody>
+      </table>
+      <div class="pager"><div class="pager-info" id="pi">—</div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ FORM MODAL ═══ -->
+<div class="overlay" id="ov">
+<div class="modal" style="width:700px">
+  <div class="modal-hdr">
+    <div class="modal-title" id="mT">➕ เพิ่มอุปกรณ์</div>
+    <button class="modal-x" onclick="closeModal()">✕</button>
+  </div>
+  <div class="modal-body" style="padding-top:0">
+    <!-- TABS -->
+    <div class="ftabs">
+      <button class="ftab active" onclick="switchTab(0,this)">🌐 Network</button>
+      <button class="ftab" onclick="switchTab(1,this)">📦 Physical</button>
+      <button class="ftab" onclick="switchTab(2,this)">🔩 Hardware</button>
+      <button class="ftab" onclick="switchTab(3,this)">🖥 Monitor</button>
+      <button class="ftab" onclick="switchTab(4,this)">💿 Windows</button>
+      <button class="ftab" onclick="switchTab(5,this)">📋 Office/AV</button>
+      <button class="ftab" onclick="switchTab(6,this)">📦 Software</button>
+      <button class="ftab" onclick="switchTab(7,this)">🔐 Access</button>
+    </div>
+
+    <!-- TAB 0: NETWORK -->
+    <div class="fsec active" id="tab0">
+      <div class="fsec-title">Network Information</div>
+      <div class="form-grid">
+        <div class="form-grp"><label class="form-lbl">IP Address</label><input class="form-inp" id="f_ip" placeholder="192.168.x.x"></div>
+        <div class="form-grp"><label class="form-lbl">Computer Name *</label><input class="form-inp" id="f_computer_name" placeholder="PC-IT-001"></div>
+        <div class="form-grp"><label class="form-lbl">User Name</label><input class="form-inp" id="f_username" placeholder="username"></div>
+        <div class="form-grp"><label class="form-lbl">Workgroup / Domain</label><input class="form-inp" id="f_workgroup" placeholder="COMPANY"></div>
+        <div class="form-grp"><label class="form-lbl">MAC Address</label><input class="form-inp" id="f_mac" placeholder="XX:XX:XX:XX:XX:XX"></div>
+        <div class="form-grp"><label class="form-lbl">Use DHCP</label>
+          <select class="form-sel" id="f_use_dhcp"><option value="0">Static IP</option><option value="1">DHCP</option></select>
+        </div>
+        <div class="form-grp"><label class="form-lbl">Email Address</label><input class="form-inp" id="f_email" type="email" placeholder="user@company.com"></div>
+        <div class="form-grp"><label class="form-lbl">Logon</label><input class="form-inp" id="f_logon" placeholder="logon account"></div>
+      </div>
+    </div>
+
+    <!-- TAB 1: PHYSICAL -->
+    <div class="fsec" id="tab1">
+      <div class="fsec-title">Physical Information</div>
+      <div class="form-grid">
+        <div class="form-grp"><label class="form-lbl">ประเภท (Type) *</label>
+          <select class="form-sel" id="f_type">
+            <option>Desktop PC</option><option>Laptop</option><option>Server</option>
+            <option>Tablet</option><option>Printer</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-grp">
+          <label class="form-lbl">กำลังซ่อม</label>
+          <div class="chk-row" style="border-bottom:none;padding:10px 0 0">
+            <input type="checkbox" id="f_status_maintenance">
+            <label for="f_status_maintenance">ติ๊กเฉพาะเครื่องที่กำลังซ่อม</label>
+          </div>
+        </div>
+        <div class="form-grp"><label class="form-lbl">PIC (ผู้รับผิดชอบ)</label><input class="form-inp" id="f_pic" placeholder="ชื่อผู้รับผิดชอบ"></div>
+        <div class="form-grp"><label class="form-lbl">แผนก (Department)</label>
+          <select class="form-sel" id="f_dept">
+            <option value="">— เลือกแผนก —</option>
+          <option>AD - AC</option><option>AD - GA</option><option>AD - HRD</option>
+          <option>AD - HRM</option><option>AD-IT</option>
+          <option>AUTOMOTIVE - PD</option>
+          <option>BC CENTER</option><option>BC CENTER - PC</option>
+          <option>BC CENTER - PURCHASE</option><option>BC CENTER - SALE</option>
+          <option>BC CENTER - STANDARD SETTING</option><option>BC CENTER - WAREHOUSE</option>
+          <option>EC - FM</option><option>EC - ME</option><option>EC - PE</option>
+          <option>EC DIVISION</option><option>MARKETING</option>
+          <option>MEDICAL - PD</option><option>MEDICAL - PE</option>
+          <option>PD1 - PE</option><option>PD1 - PE (ME/AUTO)</option>
+          <option>PD1 - PE (ME/INJ)</option><option>PD1 - PE (MN/ASSY)</option>
+          <option>PD1 - PE (PE/AUTO)</option><option>PD1 - PE (PE/INJ)</option>
+          <option>PRECISION - PD ASSY</option><option>PRECISION - PD ASSY(ASSY)</option>
+          <option>PRECISION - PD ASSY(PAINT)</option>
+          <option>PRECISION - PD INJ1</option><option>PRECISION - PD INJ2</option>
+          <option>PRODUCTION DIVISION 1</option><option>PRODUCTION DIVISION 2</option>
+          <option>QA CENTER</option><option>QA CENTER - QA</option>
+          <option>QA CENTER - QC</option><option>QA CENTER - QM</option><option>QA CENTER - QS</option>
+          <option>SLIT - PD</option><option>SLIT - PE</option>
+          </select>
+        </div>
+        <div class="form-grp"><label class="form-lbl">Location (สถานที่)</label><input class="form-inp" id="f_location" placeholder="ชั้น 3 ห้อง IT"></div>
+        <div class="form-grp"><label class="form-lbl">Year of Purchased</label><input class="form-inp" id="f_year_purchased" type="number" placeholder="2024" min="2000" max="2099"></div>
+        <div class="form-grp"><label class="form-lbl">Fixed Asset Number</label><input class="form-inp" id="f_fixed_asset_no" placeholder="FA-2024-001"></div>
+        <div class="form-grp"><label class="form-lbl">Remark</label><input class="form-inp" id="f_remark" placeholder="หมายเหตุ"></div>
+      </div>
+    </div>
+
+    <!-- TAB 2: HARDWARE -->
+    <div class="fsec" id="tab2">
+      <div class="fsec-title">Hardware Information</div>
+      <div class="form-grid">
+        <div class="form-grp"><label class="form-lbl">Brand</label><input class="form-inp" id="f_brand" placeholder="Dell / HP / Lenovo"></div>
+        <div class="form-grp"><label class="form-lbl">Model</label><input class="form-inp" id="f_model" placeholder="OptiPlex 7090"></div>
+        <div class="form-grp"><label class="form-lbl">CPU</label><input class="form-inp" id="f_cpu" placeholder="Intel Core i7-11700"></div>
+        <div class="form-grp"><label class="form-lbl">CPU Speed (GHz)</label><input class="form-inp" id="f_cpu_speed" type="number" step="0.01" placeholder="3.60"></div>
+        <div class="form-grp"><label class="form-lbl">RAM (MB)</label><input class="form-inp" id="f_ram_mb" type="number" placeholder="16384"></div>
+        <div class="form-grp"><label class="form-lbl">Serial Number</label><input class="form-inp" id="f_serial_no" placeholder="ABC123456"></div>
+        <div class="form-grp"><label class="form-lbl">Service Tag</label><input class="form-inp" id="f_service_tag" placeholder="Service Tag"></div>
+        <div class="form-grp form-full" style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px"><div class="fsec-title" style="margin-bottom:10px">Storage</div></div>
+        <div class="form-grp"><label class="form-lbl">HDD (GB)</label><input class="form-inp" id="f_hdd_gb" type="number" placeholder="1000"></div>
+        <div class="form-grp"><label class="form-lbl">HDD Hardware Name</label><input class="form-inp" id="f_hdd_name" placeholder="Seagate Barracuda"></div>
+        <div class="form-grp"><label class="form-lbl">SSD (GB)</label><input class="form-inp" id="f_ssd_gb" type="number" placeholder="512"></div>
+        <div class="form-grp"><label class="form-lbl">SSD Hardware Name</label><input class="form-inp" id="f_ssd_name" placeholder="Samsung 980 Pro"></div>
+        <div class="form-grp form-full" style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px"><div class="fsec-title" style="margin-bottom:10px">Hardware ID</div></div>
+        <div class="form-grp"><label class="form-lbl">HW ID — CPU</label><input class="form-inp" id="f_hw_id_cpu" placeholder="Hardware ID CPU"></div>
+        <div class="form-grp"><label class="form-lbl">HW ID — Monitor</label><input class="form-inp" id="f_hw_id_monitor" placeholder="Hardware ID Monitor"></div>
+        <div class="form-grp"><label class="form-lbl">HW ID — LAN</label><input class="form-inp" id="f_hw_id_lan" placeholder="Hardware ID LAN"></div>
+        <div class="form-grp"><label class="form-lbl">HW ID — Wireless</label><input class="form-inp" id="f_hw_id_wireless" placeholder="Hardware ID Wireless"></div>
+      </div>
+    </div>
+
+    <!-- TAB 3: MONITOR -->
+    <div class="fsec" id="tab3">
+      <div class="fsec-title">Monitor Information</div>
+      <div class="form-grid">
+        <div class="form-grp"><label class="form-lbl">Monitor Brand</label><input class="form-inp" id="f_monitor_brand" placeholder="Dell / HP / LG"></div>
+        <div class="form-grp"><label class="form-lbl">Monitor Model</label><input class="form-inp" id="f_monitor_model" placeholder="P2422H"></div>
+        <div class="form-grp form-full"><label class="form-lbl">Specification</label><input class="form-inp" id="f_monitor_spec" placeholder="24 inch FHD IPS 60Hz"></div>
+        <div class="form-grp form-full"><label class="form-lbl">Serial Number</label><input class="form-inp" id="f_monitor_serial" placeholder="Monitor Serial Number"></div>
+      </div>
+    </div>
+
+    <!-- TAB 4: WINDOWS -->
+    <div class="fsec" id="tab4">
+      <div class="fsec-title">Windows Information</div>
+      <div class="form-grid">
+        <div class="form-grp"><label class="form-lbl">Windows Version</label>
+          <select class="form-sel" id="f_win_version">
+            <option value="">—เลือก—</option>
+            <option>Windows 11 Pro</option><option>Windows 11 Home</option>
+            <option>Windows 10 Pro</option><option>Windows 10 Home</option>
+            <option>Windows Server 2022</option><option>Windows Server 2019</option>
+            <option>Windows Server 2016</option>
+          </select>
+        </div>
+        <div class="form-grp"><label class="form-lbl">Bit</label>
+          <select class="form-sel" id="f_win_bit"><option value="">—</option><option value="64">64-bit</option><option value="32">32-bit</option></select>
+        </div>
+        <div class="form-grp"><label class="form-lbl">License Type</label>
+          <select class="form-sel" id="f_win_license">
+            <option value="">—เลือก—</option>
+            <option value="OEM">OEM</option><option value="Retail">Retail</option>
+            <option value="Volume">Volume</option><option value="MAK">MAK</option><option value="KMS">KMS</option>
+          </select>
+        </div>
+        <div class="form-grp"><label class="form-lbl">License Key</label><input class="form-inp" id="f_win_key" placeholder="XXXXX-XXXXX-XXXXX-XXXXX"></div>
+      </div>
+    </div>
+
+    <!-- TAB 5: OFFICE / AV -->
+    <div class="fsec" id="tab5">
+      <div class="fsec-title">Office Information</div>
+      <div class="form-grid">
+        <div class="form-grp"><label class="form-lbl">Office Version</label>
+          <select class="form-sel" id="f_office_version">
+            <option value="">—เลือก—</option>
+            <option>Office 365</option><option>Office 2021</option><option>Office 2019</option>
+            <option>Office 2016</option><option>Office 2013</option><option>ไม่มี</option>
+          </select>
+        </div>
+        <div class="form-grp"><label class="form-lbl">License Type</label>
+          <select class="form-sel" id="f_office_license">
+            <option value="">—เลือก—</option>
+            <option value="OEM">OEM</option><option value="Retail">Retail</option>
+            <option value="Volume">Volume</option><option value="O365">O365</option>
+            <option value="MAK">MAK</option><option value="KMS">KMS</option>
+          </select>
+        </div>
+        <div class="form-grp form-full"><label class="form-lbl">License Key</label><input class="form-inp" id="f_office_key" placeholder="XXXXX-XXXXX-XXXXX-XXXXX"></div>
+      </div>
+      <div class="fsec-title" style="margin-top:14px">Antivirus</div>
+      <div class="form-grid">
+        <div class="form-grp"><label class="form-lbl">Antivirus Name</label>
+          <select class="form-sel" id="f_av_name">
+            <option value="">—เลือก—</option>
+            <option>Symantec</option><option>Kaspersky</option><option>Trend Micro</option>
+            <option>McAfee</option><option>Bitdefender</option><option>Windows Defender</option><option>ไม่มี</option>
+          </select>
+        </div>
+        <div class="form-grp"><label class="form-lbl">Antivirus Version</label><input class="form-inp" id="f_av_version" placeholder="14.3"></div>
+      </div>
+    </div>
+
+    <!-- TAB 6: SOFTWARE SPECIFIC -->
+    <div class="fsec" id="tab6">
+      <div class="fsec-title">Software (Specific) — ติ๊กถูกที่ติดตั้ง</div>
+      <div class="chk-group">
+        <div class="chk-row"><input type="checkbox" id="f_sw_hrm"><label for="f_sw_hrm">HRM</label></div>
+        <div class="chk-row"><input type="checkbox" id="f_sw_sap"><label for="f_sw_sap">SAP</label></div>
+        <div class="chk-row"><input type="checkbox" id="f_sw_stock"><label for="f_sw_stock">Stock</label></div>
+        <div class="chk-row"><input type="checkbox" id="f_sw_garoon"><label for="f_sw_garoon">Garoon</label></div>
+        <div class="chk-row"><input type="checkbox" id="f_sw_team"><label for="f_sw_team">Team</label></div>
+      </div>
+      <div class="form-grp" style="margin-top:12px"><label class="form-lbl">Other Software</label><textarea class="form-ta" id="f_sw_other" placeholder="ระบุ software อื่นๆ ที่ติดตั้ง..." style="height:70px"></textarea></div>
+    </div>
+
+    <!-- TAB 7: ACCESS -->
+    <div class="fsec" id="tab7">
+      <div class="fsec-title">Access Permission</div>
+      <div class="chk-row" style="padding:14px 0"><input type="checkbox" id="f_access_internet"><label for="f_access_internet" style="font-size:14px">🌐 Internet Access</label></div>
+      <div class="chk-row" style="padding:14px 0;border-bottom:none"><input type="checkbox" id="f_access_email"><label for="f_access_email" style="font-size:14px">✉️ Email Access</label></div>
+    </div>
+
+  </div><!-- end modal-body -->
+  <div class="modal-foot">
+    <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
+    <button class="btn btn-primary" id="sv" onclick="saveDevice()">💾 บันทึกลง MySQL</button>
+  </div>
+</div>
+</div>
+
+<!-- ═══ IMPORT PREVIEW MODAL ═══ -->
+<div class="overlay" id="ovImport">
+<div class="modal" style="width:900px;max-height:90vh">
+  <div class="modal-hdr">
+    <div class="modal-title">📥 นำเข้า Excel — ตรวจสอบข้อมูล</div>
+    <button class="modal-x" onclick="closeImport()">✕</button>
+  </div>
+  <div class="modal-body" style="overflow-y:auto;max-height:calc(90vh - 140px)">
+    <div id="importPreview"></div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-ghost" onclick="closeImport()">ยกเลิก</button>
+    <button class="btn btn-primary" id="btnSaveImport" onclick="saveImportedData()">💾 บันทึก <span id="importCount"></span> ลง MySQL</button>
+  </div>
+</div>
+</div>
+
+<!-- ═══ DETAIL VIEW MODAL ═══ -->
+<div class="overlay" id="ov2">
+<div class="modal" style="width:720px;max-height:90vh">
+  <div class="modal-hdr">
+    <div class="modal-title" id="dT">รายละเอียดอุปกรณ์</div>
+    <button class="modal-x" onclick="closeDetail()">✕</button>
+  </div>
+  <div class="modal-body" id="dB" style="overflow-y:auto;max-height:calc(90vh - 120px)"></div>
+  <div class="modal-foot" id="dF"></div>
+</div>
+</div>
+
+<script>
+buildSidebar('device-list');
+var data=[], editId=null;
+var TIPO={'Desktop PC':{i:'🖥',c:'ico-pc'},'Laptop':{i:'💻',c:'ico-lp'},'Server':{i:'🗄️',c:'ico-sv'},'Tablet':{i:'📱',c:'ico-lp'},'Printer':{i:'🖨️',c:'ico-sv'},'Other':{i:'📦',c:'ico-pc'}};
+var STH={maintenance:'กำลังซ่อม'};
+function normalizeStoredStatus(value){return value==='maintenance'?'maintenance':'';}
+function isMaintenanceDevice(device){return !!(device&&normalizeStoredStatus(device.status)==='maintenance');}
+function maintenanceBadgeHtml(device){return isMaintenanceDevice(device)?'<div style="margin-top:6px"><span class="badge badge-maintenance">กำลังซ่อม</span></div>':'';}
+
+// URL params
+var _up=new URLSearchParams(location.search);
+if(_up.get('status'))document.getElementById('fS').value=_up.get('status');
+
+// ── LOAD ──────────────────────────────────────────────────────
+async function loadData(){
+  setDB('wait','โหลด...');
+  try{
+    var p={};
+    var q=document.getElementById('qS').value.trim();
+    var tp=document.getElementById('fT').value;
+    var st=document.getElementById('fS').value;
+    var dp=document.getElementById('fD').value;
+    if(q)p.q=q; if(tp)p.type=tp; if(st==='maintenance')p.status=st; if(dp)p.dept=dp;
+    data=await apiGet(API.devices,p);
+    data=data.map(function(d){d.status=normalizeStoredStatus(d.status);return d;});
+    render();
+    setDB('ok','MySQL · '+data.length+' เครื่อง');
+  }catch(e){
+    setDB('err','error');
+    document.getElementById('tb').innerHTML='<tr><td colspan="22" style="text-align:center;padding:36px;color:var(--red)">❌ '+e.message+'</td></tr>';
+    showToast('❌ '+e.message,'error');
+  }
+}
+
+// ── RENDER TABLE ──────────────────────────────────────────────
+function render(){
+  var mt=0;
+  for(var i=0;i<data.length;i++){
+    if(isMaintenanceDevice(data[i]))mt++;
+  }
+  var powerPlaceholder=data.length?'...':'—';
+  document.getElementById('s0').textContent=data.length;
+  document.getElementById('s1').textContent=powerPlaceholder;
+  document.getElementById('s2').textContent=mt;
+  document.getElementById('s3').textContent=powerPlaceholder;
+  document.getElementById('pi').textContent='แสดง '+data.length+' รายการ';
+  if(!data.length){document.getElementById('tb').innerHTML='<tr><td colspan="22" style="text-align:center;padding:36px;color:var(--text3)">📭 ไม่พบข้อมูล</td></tr>';return;}
+  document.getElementById('tb').innerHTML=data.map(function(d,i){
+    var t=TIPO[d.type]||{i:'💻',c:'ico-pc'};
+    var dj=JSON.stringify(d).replace(/"/g,'&quot;');
+    var sw=[];
+    if(+d.sw_hrm)sw.push('HRM');if(+d.sw_sap)sw.push('SAP');if(+d.sw_stock)sw.push('Stock');
+    if(+d.sw_garoon)sw.push('Garoon');if(+d.sw_team)sw.push('Team');
+    var ramG=d.ram_mb?Math.round(d.ram_mb/1024)+'GB':'—';
+    var stor=(d.hdd_gb?'HDD '+d.hdd_gb+'GB':'')+(d.hdd_gb&&d.ssd_gb?' / ':'')+(d.ssd_gb?'SSD '+d.ssd_gb+'GB':'');
+    return '<tr style="animation:rowIn .2s ease '+(i*.015)+'s both">'
+      +'<td style="padding-left:14px;position:sticky;left:0;background:var(--surface);z-index:2;min-width:160px">'
+        +'<div style="display:flex;align-items:center;gap:8px">'
+        +'<div class="dev-ico '+t.c+'">'+t.i+'</div>'
+        +'<div><div style="font-weight:500;font-size:13px">'+(d.computer_name||d.id)+'</div>'
+        +'<div style="font-size:10px;color:var(--text3);font-family:var(--mono)">'+d.id+(d.fixed_asset_no?' · '+d.fixed_asset_no:'')+'</div>'
+        +'</div></div></td>'
+      +'<td style="font-family:var(--mono);font-size:12px;color:var(--cyan)">'+(d.ip||'—')+'</td>'
+      +'<td style="font-size:12.5px">'+(d.computer_name||'—')+'</td>'
+      +'<td style="font-size:12.5px;color:var(--text2)">'+(d.username||'—')+'</td>'
+      +'<td style="font-family:var(--mono);font-size:11px;color:var(--text3)">'+(d.mac||'—')+'</td>'
+      +'<td><span style="font-size:11.5px;border:1px solid var(--border);padding:2px 7px;border-radius:4px;color:var(--text2)">'+d.type+'</span></td>'
+      +'<td style="font-size:12.5px">'+(d.pic||'—')+'</td>'
+      +'<td style="font-size:12.5px;color:var(--text2)">'+(d.dept||'—')+'</td>'
+      +'<td style="font-size:12px;color:var(--text2);max-width:120px;overflow:hidden;text-overflow:ellipsis">'+(d.location||'—')+'</td>'
+      +'<td style="font-family:var(--mono);font-size:12px;color:var(--text2)">'+(d.year_purchased||'—')+'</td>'
+      +'<td style="font-size:12.5px"><div style="font-weight:500">'+(d.brand||'—')+'</div><div style="font-size:11px;color:var(--text3)">'+(d.model||'')+'</div></td>'
+      +'<td style="font-size:12px;color:var(--text2);max-width:130px;overflow:hidden;text-overflow:ellipsis">'+(d.cpu||'—')+'<br><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">'+(d.cpu_speed?d.cpu_speed+'GHz':'')+(d.ram_mb?' · '+ramG:'')+'</span></td>'
+      +'<td style="font-family:var(--mono);font-size:12px">'+ramG+'</td>'
+      +'<td style="font-size:12px;color:var(--text2)">'+(stor||'—')+'</td>'
+      +'<td style="font-size:12px"><div>'+(d.win_version||'—')+'</div><div style="font-size:10.5px;color:var(--text3)">'+(d.win_bit?d.win_bit+'bit':'')+(d.win_license?' · '+d.win_license:'')+'</div></td>'
+      +'<td style="font-size:12px">'+(d.office_version||'—')+'<div style="font-size:10.5px;color:var(--text3)">'+(d.office_license||'')+'</div></td>'
+      +'<td style="font-size:12px;color:var(--text2)">'+(d.av_name||'—')+'<div style="font-size:10.5px;color:var(--text3)">'+(d.av_version||'')+'</div></td>'
+      +'<td style="font-size:11px">'+(sw.length?sw.map(function(s){return'<span style="background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.15);padding:1px 5px;border-radius:3px;color:var(--cyan);margin:1px;display:inline-block">'+s+'</span>';}).join(''):'<span style="color:var(--text3)">—</span>')+'</td>'
+      +'<td style="text-align:center">'+(+d.access_internet?'<span class="tag-yes">✓</span>':'<span class="tag-no">✗</span>')+'</td>'
+      +'<td style="text-align:center">'+(+d.access_email?'<span class="tag-yes">✓</span>':'<span class="tag-no">✗</span>')+'</td>'
+      +'<td><div style="font-size:11px;color:var(--text3)">รอเช็ก...</div>'+maintenanceBadgeHtml(d)+'</td>'
+      +'<td><div style="display:flex;gap:4px">'
+        +'<button class="act-btn" style="font-size:11px;padding:4px 7px" onclick=\'showDetail('+dj+')\' title="ดูรายละเอียด">🔍</button>'
+        +'<button class="act-btn edit" onclick=\'openModal('+dj+')\'>✏️</button>'
+        +'<button class="act-btn del" onclick="delDev(\''+d.id+'\')">🗑️</button>'
+      +'</div></td>'
+      +'</tr>';
+  }).join('');
+}
+
+// ── FILTERS ──────────────────────────────────────────────────
+var _dt;
+document.getElementById('qS').addEventListener('input',function(){clearTimeout(_dt);_dt=setTimeout(loadData,380);});
+document.getElementById('fT').addEventListener('change',loadData);
+document.getElementById('fS').addEventListener('change',loadData);
+document.getElementById('fD').addEventListener('change',loadData);
+function setF(k,v){if(k==='status')document.getElementById('fS').value=v;loadData();}
+function clearF(){document.getElementById('qS').value='';document.getElementById('fT').value='';document.getElementById('fS').value='';document.getElementById('fD').value='';loadData();}
+
+// ── DETAIL VIEW ───────────────────────────────────────────────
+function showDetail(d){
+  var t=TIPO[d.type]||{i:'💻',c:'ico-pc'};
+  document.getElementById('dT').innerHTML='<div style="display:flex;align-items:center;gap:10px"><div class="dev-ico '+t.c+'" style="font-size:20px">'+t.i+'</div><div><div>'+(d.computer_name||d.id)+'</div><div style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+d.id+(d.fixed_asset_no?' · FA: '+d.fixed_asset_no:'')+'</div></div></div>';
+  var sw=[];
+  if(+d.sw_hrm)sw.push('HRM');if(+d.sw_sap)sw.push('SAP');if(+d.sw_stock)sw.push('Stock');
+  if(+d.sw_garoon)sw.push('Garoon');if(+d.sw_team)sw.push('Team');
+  function row(l,v,mono){return '<div class="dv-row"><div class="dv-lbl">'+l+'</div><div class="dv-val'+(mono?' mono':'')+'">'+((v!==null&&v!==undefined&&v!=='')?v:'—')+'</div></div>';}
+  function yn(v){return +v?'<span class="tag-yes">✓ ใช้งาน</span>':'<span class="tag-no">✗ ไม่ใช้</span>';}
+  document.getElementById('dB').innerHTML=''
+    +'<div class="dv-section"><div class="dv-sec-title">🌐 Network Information</div><div class="dv-grid">'
+      +row('IP Address',d.ip,true)+row('Computer Name',d.computer_name,true)
+      +row('User Name',d.username)+row('Workgroup/Domain',d.workgroup)
+      +row('MAC Address',d.mac,true)+row('DHCP',+d.use_dhcp?'DHCP':'Static')
+      +row('Email',d.email)+row('Logon',d.logon)
+    +'</div></div>'
+    +'<div class="dv-section"><div class="dv-sec-title">📦 Physical Information</div><div class="dv-grid">'
+      +row('Type',d.type)+row('Maintenance',isMaintenanceDevice(d)?'<span class="badge badge-maintenance">กำลังซ่อม</span>':'—')
+      +row('PIC',d.pic)+row('Department',d.dept)
+      +row('Location',d.location)+row('Year Purchased',d.year_purchased)
+      +row('Fixed Asset No',d.fixed_asset_no)+row('Remark',d.remark)
+    +'</div></div>'
+    +'<div class="dv-section"><div class="dv-sec-title">🔩 Hardware</div><div class="dv-grid">'
+      +row('Brand',d.brand)+row('Model',d.model)
+      +row('CPU',d.cpu)+row('CPU Speed',(d.cpu_speed?d.cpu_speed+' GHz':null))
+      +row('RAM',(d.ram_mb?d.ram_mb+' MB ('+Math.round(d.ram_mb/1024)+' GB)':null))
+      +row('Serial No',d.serial_no,true)
+      +row('Service Tag',d.service_tag)+row('HDD',(d.hdd_gb?d.hdd_gb+' GB — '+d.hdd_name:null))
+      +row('SSD',(d.ssd_gb?d.ssd_gb+' GB — '+d.ssd_name:null))+row('','')
+    +'</div></div>'
+    +'<div class="dv-section"><div class="dv-sec-title">🖥 Monitor</div><div class="dv-grid">'
+      +row('Brand',d.monitor_brand)+row('Model',d.monitor_model)
+      +row('Specification',d.monitor_spec)+row('Serial No',d.monitor_serial,true)
+    +'</div></div>'
+    +'<div class="dv-section"><div class="dv-sec-title">🆔 Hardware ID</div><div class="dv-grid">'
+      +row('CPU',d.hw_id_cpu,true)+row('Monitor',d.hw_id_monitor,true)
+      +row('LAN',d.hw_id_lan,true)+row('Wireless',d.hw_id_wireless,true)
+    +'</div></div>'
+    +'<div class="dv-section"><div class="dv-sec-title">💿 Windows</div><div class="dv-grid">'
+      +row('Version',d.win_version)+row('Bit',(d.win_bit?d.win_bit+'-bit':null))
+      +row('License Type',d.win_license)+row('License Key',(d.win_key?d.win_key.replace(/./g,'•'):null))
+    +'</div></div>'
+    +'<div class="dv-section"><div class="dv-sec-title">📋 Office & Antivirus</div><div class="dv-grid">'
+      +row('Office Version',d.office_version)+row('Office License',d.office_license)
+      +row('Office Key',(d.office_key?d.office_key.replace(/./g,'•'):null))+row('Antivirus',d.av_name+(d.av_version?' v'+d.av_version:''))
+    +'</div></div>'
+    +'<div class="dv-section"><div class="dv-sec-title">📦 Software & Access</div>'
+      +'<div style="margin-bottom:10px"><span style="color:var(--text2);font-size:12.5px">Software: </span>'+(sw.length?sw.map(function(s){return'<span style="background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.15);padding:2px 8px;border-radius:4px;color:var(--cyan);margin:2px">'+s+'</span>';}).join(''):'—')+(d.sw_other?'<span style="color:var(--text2);font-size:12px"> + '+d.sw_other+'</span>':'')+'</div>'
+      +'<div style="display:flex;gap:16px">'
+        +'<div><span style="color:var(--text3);font-size:11px">INTERNET</span><br>'+yn(d.access_internet)+'</div>'
+        +'<div><span style="color:var(--text3);font-size:11px">EMAIL</span><br>'+yn(d.access_email)+'</div>'
+      +'</div></div>';
+  var dj=JSON.stringify(d).replace(/"/g,'&quot;');
+  document.getElementById('dF').innerHTML=''
+    +'<button class="btn btn-ghost" onclick="closeDetail()">ปิด</button>'
+    +'<button class="btn btn-primary" onclick=\'closeDetail();openModal('+dj+')\'>✏️ แก้ไข</button>';
+  document.getElementById('ov2').classList.add('open');
+}
+function closeDetail(){document.getElementById('ov2').classList.remove('open');}
+
+// ── TAB SWITCHING ─────────────────────────────────────────────
+function switchTab(idx,btn){
+  document.querySelectorAll('.fsec').forEach(function(s){s.classList.remove('active');});
+  document.querySelectorAll('.ftab').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('tab'+idx).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── OPEN MODAL ────────────────────────────────────────────────
+var FIDS=['ip','computer_name','username','workgroup','use_dhcp','mac','email','logon',
+  'type','pic','dept','location','year_purchased','fixed_asset_no','remark',
+  'brand','model','cpu','cpu_speed','ram_mb','serial_no','service_tag',
+  'hdd_gb','hdd_name','ssd_gb','ssd_name',
+  'monitor_brand','monitor_model','monitor_spec','monitor_serial',
+  'hw_id_cpu','hw_id_monitor','hw_id_lan','hw_id_wireless',
+  'win_version','win_bit','win_license','win_key',
+  'office_version','office_license','office_key',
+  'av_name','av_version','sw_other'];
+var CHKS=['sw_hrm','sw_sap','sw_stock','sw_garoon','sw_team','access_internet','access_email'];
+
+function openModal(d){
+  editId=null;
+  // Reset to first tab
+  switchTab(0,document.querySelectorAll('.ftab')[0]);
+  if(d&&typeof d==='object'){
+    editId=d.id;
+    document.getElementById('mT').textContent='✏️ แก้ไข: '+(d.computer_name||d.id);
+    FIDS.forEach(function(f){
+      var el=document.getElementById('f_'+f);
+      if(el){el.value=(d[f]!==null&&d[f]!==undefined)?d[f]:'';}
+    });
+    CHKS.forEach(function(f){
+      var el=document.getElementById('f_'+f);
+      if(el){el.checked=(+d[f]===1);}
+    });
+    document.getElementById('f_status_maintenance').checked=isMaintenanceDevice(d);
+  }else{
+    document.getElementById('mT').textContent='➕ เพิ่มอุปกรณ์ใหม่';
+    FIDS.forEach(function(f){
+      var el=document.getElementById('f_'+f);
+      if(el)el.value='';
+    });
+    CHKS.forEach(function(f){
+      var el=document.getElementById('f_'+f);
+      if(el)el.checked=false;
+    });
+    document.getElementById('f_type').value='Desktop PC';
+    document.getElementById('f_status_maintenance').checked=false;
+    document.getElementById('f_use_dhcp').value='0';
+  }
+  document.getElementById('ov').classList.add('open');
+}
+function closeModal(){document.getElementById('ov').classList.remove('open');editId=null;}
+
+// ── SAVE ──────────────────────────────────────────────────────
+async function saveDevice(){
+  var cname=document.getElementById('f_computer_name').value.trim();
+  if(!cname){showToast('กรุณากรอก Computer Name *','error');switchTab(0,document.querySelectorAll('.ftab')[0]);return;}
+  var btn=document.getElementById('sv');btn.disabled=true;btn.textContent='⏳...';
+  var body={};
+  FIDS.forEach(function(f){
+    var el=document.getElementById('f_'+f);
+    if(el)body[f]=el.value||null;
+  });
+  CHKS.forEach(function(f){
+    var el=document.getElementById('f_'+f);
+    if(el)body[f]=el.checked?1:0;
+  });
+  body.status=document.getElementById('f_status_maintenance').checked?'maintenance':null;
+  var _cu=getCurrentUser();
+  body['updated_by']=_cu?(_cu.name||_cu.username):'admin';
+  try{
+    if(editId)await apiPut(API.devices,editId,body);
+    else await apiPost(API.devices,body);
+    showToast(editId?'✅ แก้ไขแล้ว':'✅ เพิ่มอุปกรณ์แล้ว','success');
+    closeModal();await loadData();
+  }catch(e){showToast('❌ '+e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='💾 บันทึกลง MySQL';}
+}
+
+// ── DELETE ────────────────────────────────────────────────────
+async function delDev(id){
+  if(!confirm('ยืนยันลบ '+id+' ?'))return;
+  try{await apiDelete(API.devices,id);showToast('🗑️ ลบแล้ว','error');await loadData();}
+  catch(e){showToast('❌ '+e.message,'error');}
+}
+
+// ── EXPORT ────────────────────────────────────────────────────
+function exportXL(){
+  var rows=data.map(function(d){
+    var sw=[];if(+d.sw_hrm)sw.push('HRM');if(+d.sw_sap)sw.push('SAP');if(+d.sw_stock)sw.push('Stock');if(+d.sw_garoon)sw.push('Garoon');if(+d.sw_team)sw.push('Team');
+    return{
+      'รหัส':d.id,'Fixed Asset':d.fixed_asset_no||'',
+      'IP Address':d.ip||'','Computer Name':d.computer_name||'','User Name':d.username||'',
+      'MAC':d.mac||'','DHCP':+d.use_dhcp?'DHCP':'Static',
+      'ประเภท':d.type||'','PIC':d.pic||'','Department':d.dept||'','Location':d.location||'',
+      'Year':d.year_purchased||'','Brand':d.brand||'','Model':d.model||'',
+      'CPU':d.cpu||'','Speed(GHz)':d.cpu_speed||'','RAM(MB)':d.ram_mb||'',
+      'Serial No':d.serial_no||'','Service Tag':d.service_tag||'',
+      'HDD(GB)':d.hdd_gb||'','HDD Name':d.hdd_name||'',
+      'SSD(GB)':d.ssd_gb||'','SSD Name':d.ssd_name||'',
+      'Monitor':d.monitor_brand||''+(d.monitor_model?' '+d.monitor_model:''),
+      'Windows':d.win_version||'','Win Bit':d.win_bit?d.win_bit+'-bit':'','Win License':d.win_license||'',
+      'Office':d.office_version||'','Office License':d.office_license||'',
+      'Antivirus':d.av_name||'','AV Version':d.av_version||'',
+      'Software':sw.join(', ')+(d.sw_other?', '+d.sw_other:''),
+      'Internet':+d.access_internet?'✓':'','Email':+d.access_email?'✓':'',
+      'Maintenance':isMaintenanceDevice(d)?'✓':''
+    };
+  });
+  xlExport(rows,'IT-Asset-List.xlsx','🖥 IT Asset List — DeviceHub','รายงานอุปกรณ์ IT ทั้งหมด');
+  showToast('📥 Export Excel สวยๆ แล้ว ('+rows.length+' เครื่อง)');
+}
+function exportCSV(){
+  if(!data.length){showToast('ไม่มีข้อมูล','error');return;}
+  var keys=Object.keys({
+    'รหัส':1,'IP':1,'Computer Name':1,'User Name':1,'Type':1,'PIC':1,'Department':1,'Brand':1,'Model':1,'CPU':1,'RAM':1,'Windows':1,'Office':1,'Antivirus':1,'Internet':1,'Email Access':1,'Maintenance':1
+  });
+  var rows=data.map(function(d){return[d.id,d.ip,d.computer_name,d.username,d.type,d.pic,d.dept,d.brand,d.model,d.cpu,d.ram_mb,d.win_version,d.office_version,d.av_name,+d.access_internet?'Y':'N',+d.access_email?'Y':'N',isMaintenanceDevice(d)?'Y':''].join(',');});
+  var csv='\uFEFF'+['รหัส,IP,Computer Name,User Name,Type,PIC,Department,Brand,Model,CPU,RAM,Windows,Office,Antivirus,Internet,Email,Maintenance'].concat(rows).join('\n');
+  var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='IT-Asset.csv';a.click();
+  showToast('📥 Export CSV แล้ว');
+}
+
+// ── IMPORT ────────────────────────────────────────────────────
+var importedData=[];
+function handleImportFile(input){
+  if(!input.files.length){return;}
+  var file=input.files[0];
+  console.log('📁 File selected:', file.name, 'Size:', file.size, 'bytes');
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var data=new Uint8Array(e.target.result);
+      var book=XLSX.read(data,{type:'array'});
+      var sheet=book.Sheets[book.SheetNames[0]];
+      var rows=XLSX.utils.sheet_to_json(sheet,{header:1});
+      console.log('📊 Excel parsed, total rows:', rows.length);
+      if(!rows.length){showToast('❌ ไฟล์ว่างเปล่า','error');return;}
+      var headers=rows[0];
+      console.log('📋 Headers found:', headers);
+      var content=rows.slice(1).filter(function(r){return r.some(function(c){return c;});});
+      console.log('📋 Content rows:', content.length);
+      parseImportData(headers,content);
+    }catch(err){
+      console.error('❌ Parse error:', err);
+      showToast('❌ อ่านไฟล์ไม่ได้: '+err.message,'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  input.value='';
+}
+
+function parseImportData(headers,rows){
+  var colMap={};
+  var headerLower=headers.map(function(h){return (h||'').toString().toLowerCase().trim();});
+
+  var mapping=[
+    {cols:['รหัส','id'],field:'id'},
+    {cols:['fixed asset','fixed_asset','fixed asset no'],field:'fixed_asset_no'},
+    {cols:['ip','ip address'],field:'ip'},
+    {cols:['computer name','computer_name','ชื่อเครื่อง'],field:'computer_name'},
+    {cols:['user name','user_name','ชื่อผู้ใช้','ผู้ใช้งาน'],field:'username'},
+    {cols:['mac','mac address'],field:'mac'},
+    {cols:['dhcp','use dhcp'],field:'use_dhcp'},
+    {cols:['type','ประเภท'],field:'type'},
+    {cols:['pic'],field:'pic'},
+    {cols:['department','แผนก'],field:'dept'},
+    {cols:['location','สถานที่'],field:'location'},
+    {cols:['year','year purchased','ปีที่ซื้อ'],field:'year_purchased'},
+    {cols:['brand'],field:'brand'},
+    {cols:['model'],field:'model'},
+    {cols:['cpu'],field:'cpu'},
+    {cols:['speed','speed(ghz)','cpu speed'],field:'cpu_speed'},
+    {cols:['ram','ram(mb)'],field:'ram_mb'},
+    {cols:['serial no','serial number'],field:'serial_no'},
+    {cols:['service tag'],field:'service_tag'},
+    {cols:['hdd','hdd(gb)'],field:'hdd_gb'},
+    {cols:['hdd name'],field:'hdd_name'},
+    {cols:['ssd','ssd(gb)'],field:'ssd_gb'},
+    {cols:['ssd name'],field:'ssd_name'},
+    {cols:['monitor','monitor brand'],field:'monitor_brand'},
+    {cols:['windows','win version'],field:'win_version'},
+    {cols:['win bit'],field:'win_bit'},
+    {cols:['win license'],field:'win_license'},
+    {cols:['office','office version'],field:'office_version'},
+    {cols:['office license'],field:'office_license'},
+    {cols:['antivirus','av name'],field:'av_name'},
+    {cols:['av version'],field:'av_version'},
+    {cols:['software','sw other'],field:'sw_other'},
+    {cols:['internet','access internet','internet access'],field:'access_internet'},
+    {cols:['email access','access email'],field:'access_email'},
+    {cols:['status','สถานะ'],field:'status'}
+  ];
+
+  for(var i=0;i<headerLower.length;i++){
+    var h=headerLower[i];
+    mapping.forEach(function(m){
+      m.cols.forEach(function(c){
+        if(c && (h.indexOf(c)!==-1 || c.indexOf(h)!==-1)){
+          colMap[m.field]=i;
+        }
+      });
+    });
+  }
+
+  importedData=rows.map(function(row,idx){
+    var device={row_num:idx+2};
+    var errors=[];
+    
+    // Map each field
+    for(var field in colMap){
+      var colIdx=colMap[field];
+      var val=row[colIdx];
+      if(val===null||val===undefined||val==='')val='';
+      
+      if(field==='use_dhcp'){
+        device[field]=(val.toString().toLowerCase().indexOf('dhcp')!==-1?1:0);
+      }else if(field==='access_internet'||field==='access_email'){
+        device[field]=(val==='✓'||val==='Y'||val==='1'?1:0);
+      }else if(field==='ram_mb'||field==='hdd_gb'||field==='ssd_gb'||field==='cpu_speed'||field==='year_purchased'||field==='win_bit'){
+        device[field]=val?parseInt(val):null;
+      }else{
+        device[field]=val;
+      }
+    }
+    
+    // Validation
+    if(!device.computer_name){errors.push('ไม่มี Computer Name');}
+    if(!device.type){errors.push('ไม่มี Type');}
+    device.errors=errors;
+    return device;
+  });
+
+  showImportPreview();
+}
+
+function showImportPreview(){
+  var valid=importedData.filter(function(d){return !d.errors.length;});
+  var invalid=importedData.filter(function(d){return d.errors.length;});
+  
+  var html='<div style="margin-bottom:20px;padding:12px;background:var(--s2);border-radius:6px;border-left:3px solid var(--cyan)">';
+  html+='<div style="font-weight:500;font-size:14px">📊 สรุป: <strong>'+importedData.length+'</strong> รายการ';
+  if(valid.length)html+=' | ✅ ถูกต้อง: <strong style="color:var(--green)">'+valid.length+'</strong>';
+  if(invalid.length)html+=' | ⚠️ ข้อผิดพลาด: <strong style="color:var(--red)">'+invalid.length+'</strong>';
+  html+='</div></div>';
+  
+  if(invalid.length>0){
+    html+='<div style="margin-bottom:16px;padding:12px;background:rgba(255,100,100,.08);border:1px solid rgba(255,100,100,.15);border-radius:6px">';
+    html+='<div style="font-weight:500;color:var(--red);margin-bottom:10px">⚠️ ข้อมูลที่มีข้อผิดพลาด (ไม่นำเข้า)</div>';
+    html+='<div style="max-height:200px;overflow-y:auto">';
+    invalid.forEach(function(d){
+      html+='<div style="font-size:12px;padding:6px 0;border-bottom:1px solid rgba(255,100,100,.1);color:var(--text2)">';
+      html+='<strong>Row '+d.row_num+':</strong> '+d.computer_name+' — '+d.errors.join(', ');
+      html+='</div>';
+    });
+    html+='</div></div>';
+  }
+  
+  if(valid.length>0){
+    html+='<div style="margin-bottom:16px"><div style="font-weight:500;margin-bottom:10px">✅ ข้อมูลที่ถูกต้อง (นำเข้า)</div>';
+    html+='<div style="max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:6px">';
+    html+='<table style="width:100%;font-size:12px;border-collapse:collapse">';
+    html+='<thead><tr style="background:var(--s3);border-bottom:1px solid var(--border)">';
+    html+='<th style="padding:8px;text-align:left">Computer Name</th>';
+    html+='<th style="padding:8px;text-align:left">Type</th>';
+    html+='<th style="padding:8px;text-align:left">IP</th>';
+    html+='<th style="padding:8px;text-align:left">User</th>';
+    html+='<th style="padding:8px;text-align:left">Department</th>';
+    html+='</tr></thead><tbody>';
+    valid.forEach(function(d){
+      html+='<tr style="border-bottom:1px solid var(--border);hover{background:var(--s2)}">';
+      html+='<td style="padding:8px"><strong>'+d.computer_name+'</strong></td>';
+      html+='<td style="padding:8px">'+d.type+'</td>';
+      html+='<td style="padding:8px;font-family:var(--mono);font-size:11px">'+(d.ip||'—')+'</td>';
+      html+='<td style="padding:8px">'+( d.username||'—')+'</td>';
+      html+='<td style="padding:8px">'+(d.dept||'—')+'</td>';
+      html+='</tr>';
+    });
+    html+='</tbody></table></div></div>';
+  }
+  
+  document.getElementById('importPreview').innerHTML=html;
+  document.getElementById('importCount').textContent=valid.length;
+  document.getElementById('btnSaveImport').disabled=!valid.length;
+  document.getElementById('ovImport').style.display='flex';
+}
+
+function closeImport(){
+  document.getElementById('ovImport').style.display='none';
+  importedData=[];
+}
+
+async function saveImportedData(){
+  var valid=importedData.filter(function(d){return !d.errors.length;});
+  if(!valid.length){showToast('ไม่มีข้อมูลที่ถูกต้อง','error');return;}
+  
+  var btn=document.getElementById('btnSaveImport');
+  btn.disabled=true;
+  var btn_text=btn.textContent;
+  btn.textContent='⏳ กำลังบันทึก...';
+  
+  var saved=0, failed=0, failList=[];
+  for(var i=0;i<valid.length;i++){
+    try{
+      var d=valid[i];
+      var existing=data.find(function(x){return x.computer_name&&x.computer_name.toLowerCase()===d.computer_name.toLowerCase();});
+      
+      var payload={};
+      ['id','fixed_asset_no','ip','computer_name','username','mac','use_dhcp','type','pic','dept','location','year_purchased','brand','model','cpu','cpu_speed','ram_mb','serial_no','service_tag','hdd_gb','hdd_name','ssd_gb','ssd_name','monitor_brand','win_version','win_bit','win_license','office_version','office_license','av_name','av_version','sw_other','access_internet','access_email'].forEach(function(f){
+        if(d[f]!==undefined&&d[f]!=='')payload[f]=d[f];
+      });
+      payload.status=normalizeStoredStatus(d.status)==='maintenance'?'maintenance':null;
+      
+      if(existing){
+        await apiPut(API.devices,existing.id,payload);
+      }else{
+        await apiPost(API.devices,payload);
+      }
+      saved++;
+    }catch(e){
+      failed++;
+      failList.push(d.computer_name+': '+e.message);
+    }
+  }
+  
+  btn.disabled=false;
+  btn.textContent=btn_text;
+  
+  if(failed){
+    showToast('⚠️ สำเร็จ:'+saved+' | ล้มเหลว:'+failed,'error');
+    console.error(failList);
+  }else{
+    showToast('✅ นำเข้า Excel สำเร็จ '+saved+' เครื่อง');
+  }
+  
+  closeImport();
+  loadData();
+}
+
+function setDB(s,t){document.getElementById('dbDot').className='db-dot '+s;document.getElementById('dbTxt').textContent=t;}
+document.getElementById('ov').addEventListener('click',function(e){if(e.target===e.currentTarget)closeModal();});
+document.getElementById('ov2').addEventListener('click',function(e){if(e.target===e.currentTarget)closeDetail();});
+document.getElementById('ovImport').addEventListener('click',function(e){if(e.target===e.currentTarget)closeImport();});
+loadData();
+</script>
+<script src="device-import.js?v=20260324b"></script>
+<script src="device-power.js?v=20260325a"></script>
+</body>
+</html>

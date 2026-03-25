@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ตั้งค่า — DeviceHub</title>
+<link rel="stylesheet" href="style.css?v=20260325b">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="config.js"></script><script src="shared.js"></script>
+<style>
+.sg{display:grid;grid-template-columns:200px 1fr;gap:18px;align-items:start;}
+.snav{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;position:sticky;top:74px;}
+.si{display:flex;align-items:center;gap:9px;padding:12px 16px;font-size:13px;color:var(--text2);cursor:pointer;border-bottom:1px solid var(--border);transition:all .15s;}
+.si:last-child{border-bottom:none;}
+.si:hover{background:var(--s2);color:var(--text);}
+.si.active{background:rgba(0,212,255,.08);color:var(--cyan);border-left:2px solid var(--cyan);}
+.panel{display:none;}.panel.active{display:block;}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden;}
+.sc-hdr{padding:13px 20px;border-bottom:1px solid var(--border);background:var(--s2);font-size:13.5px;font-weight:600;}
+.sc-body{padding:18px 20px;}
+.sr{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);}
+.sr:last-child{border-bottom:none;}
+.slbl{font-size:13px;font-weight:500;}.ssub{font-size:11.5px;color:var(--text2);margin-top:2px;}
+.tog{position:relative;width:42px;height:22px;flex-shrink:0;}
+.tog input{opacity:0;width:0;height:0;}
+.ts{position:absolute;inset:0;background:var(--border2);border-radius:11px;transition:.2s;cursor:pointer;}
+.ts::before{content:'';position:absolute;width:16px;height:16px;bottom:3px;left:3px;background:#fff;border-radius:50%;transition:.2s;}
+.tog input:checked+.ts{background:var(--cyan);}
+.tog input:checked+.ts::before{transform:translateX(20px);}
+.dz{background:rgba(255,77,109,.04);border:1px solid rgba(255,77,109,.2);border-radius:10px;padding:20px;}
+.dz-title{color:var(--red);font-weight:600;font-size:13px;margin-bottom:14px;}
+.dz-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,77,109,.1);}
+.dz-row:last-child{border-bottom:none;}
+.codeblk{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:12px 16px;font-family:var(--mono);font-size:12.5px;color:var(--green);margin:10px 0;line-height:1.9;}
+.codeblk .k{color:var(--cyan);}.codeblk .v{color:var(--yellow);}.codeblk .c{color:var(--text3);}
+</style>
+</head>
+<body>
+<div class="layout">
+<div id="sidebar-slot"></div>
+<div class="main">
+  <div class="topbar">
+    <div style="flex:1"><h1>⚙️ ตั้งค่า</h1><p>System Settings</p></div>
+    <button class="btn btn-primary" onclick="saveAll()">💾 บันทึก</button>
+    <button class="btn btn-logout" onclick="logout()">⏻</button>
+  </div>
+  <div class="content">
+    <div class="sg">
+
+      <!-- SETTINGS NAV -->
+      <div class="snav">
+        <div class="si active" onclick="showP('profile',this)">👤 โปรไฟล์</div>
+        <div class="si" onclick="showP('database',this)">🗄️ ฐานข้อมูล</div>
+        <div class="si" onclick="showP('system',this)">🖥 ระบบ</div>
+        <div class="si" onclick="showP('notify',this)">🔔 การแจ้งเตือน</div>
+        <div class="si" onclick="showP('security',this)">🔒 ความปลอดภัย</div>
+        <div class="si" onclick="showP('danger',this)">⚠️ Danger Zone</div>
+      </div>
+
+      <!-- PANELS -->
+      <div>
+
+        <!-- PROFILE -->
+        <div class="panel active" id="p-profile">
+          <div class="sc">
+            <div class="sc-hdr">👤 ข้อมูลผู้ดูแลระบบ</div>
+            <div class="sc-body">
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+                <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700" id="avIco">A</div>
+                <div><div style="font-size:16px;font-weight:600" id="profName">Admin IT</div><div style="font-size:12px;color:var(--text2)">System Administrator</div></div>
+              </div>
+              <div class="form-grid">
+                <div class="form-grp"><label class="form-lbl">ชื่อแสดง</label><input class="form-inp" id="pName" value=""></div>
+                <div class="form-grp"><label class="form-lbl">Username</label><input class="form-inp" id="pUsername" readonly style="color:var(--text3)"></div>
+                <div class="form-grp form-full"><label class="form-lbl">อีเมล</label><input class="form-inp" id="pEmail" value=""></div>
+                <div class="form-grp"><label class="form-lbl">แผนก</label><input class="form-inp" id="pDept" value="" readonly style="color:var(--text3)"></div>
+                <div class="form-grp"><label class="form-lbl">Role</label><input class="form-inp" id="pRole" value="" readonly style="color:var(--text3)"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DATABASE -->
+        <div class="panel" id="p-database">
+          <div class="sc">
+            <div class="sc-hdr">🗄️ การเชื่อมต่อ MySQL (AppServ)</div>
+            <div class="sc-body">
+              <div class="sr">
+                <div><div class="slbl">สถานะการเชื่อมต่อ</div><div class="ssub" id="connTxt">กดปุ่มทดสอบ</div></div>
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div class="db-dot wait" id="connDot" style="width:10px;height:10px;border-radius:50%"></div>
+                  <button class="btn btn-ghost" onclick="testConn()">🔌 ทดสอบ</button>
+                </div>
+              </div>
+              <div class="codeblk">
+<span class="c">// api/config.php</span>
+<span class="k">define</span>(<span class="v">'DB_HOST'</span>, <span class="v">'localhost'</span>);
+<span class="k">define</span>(<span class="v">'DB_USER'</span>, <span class="v">'root'</span>);
+<span class="k">define</span>(<span class="v">'DB_PASS'</span>, <span class="v">'••••••'</span>);  <span class="c">// ← แก้ตรงนี้</span>
+<span class="k">define</span>(<span class="v">'DB_NAME'</span>, <span class="v">'devicehub'</span>);
+              </div>
+              <div class="sr">
+                <div><div class="slbl">API Base URL</div></div>
+                <code style="font-family:var(--mono);font-size:12px;color:var(--cyan)">http://localhost/devicehub/api</code>
+              </div>
+              <div id="dbStats"></div>
+            </div>
+          </div>
+          <div class="sc">
+            <div class="sc-hdr">🗺️ ลิงก์ด่วน</div>
+            <div class="sc-body">
+              <div class="sr"><div><div class="slbl">phpMyAdmin</div><div class="ssub">จัดการฐานข้อมูลโดยตรง</div></div><a href="http://localhost/phpMyAdmin/" target="_blank" class="btn btn-ghost">เปิด →</a></div>
+              <div class="sr"><div><div class="slbl">ทดสอบ API Devices</div></div><a href="http://localhost/devicehub/api/devices.php" target="_blank" class="btn btn-ghost">เปิด →</a></div>
+              <div class="sr"><div><div class="slbl">ทดสอบ API Dashboard</div></div><a href="http://localhost/devicehub/api/dashboard.php" target="_blank" class="btn btn-ghost">เปิด →</a></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SYSTEM -->
+        <div class="panel" id="p-system">
+          <div class="sc">
+            <div class="sc-hdr">🖥 การตั้งค่าระบบ</div>
+            <div class="sc-body">
+              <div class="sr"><div><div class="slbl">ชื่อระบบ</div></div><input class="form-inp" style="width:220px" value="DeviceHub IT Management"></div>
+              <div class="sr"><div><div class="slbl">ชื่อองค์กร</div></div><input class="form-inp" style="width:220px" value="บริษัท ตัวอย่าง จำกัด"></div>
+              <div class="sr"><div><div class="slbl">Auto Refresh</div><div class="ssub">โหลดข้อมูลอัตโนมัติ</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div>
+              <div class="sr"><div><div class="slbl">แสดงนาฬิกา</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div>
+            </div>
+          </div>
+          <div class="sc">
+            <div class="sc-hdr">🔗 ลิงก์ทุกหน้า</div>
+            <div class="sc-body">
+              <div class="sr"><div><div class="slbl">📊 Dashboard</div></div><a href="dashboard.html" class="btn btn-ghost">เปิด</a></div>
+              <div class="sr"><div><div class="slbl">🖥 อุปกรณ์</div></div><a href="device-list.html" class="btn btn-ghost">เปิด</a></div>
+              <div class="sr"><div><div class="slbl">✉️ บัญชีอีเมล</div></div><a href="email.html" class="btn btn-ghost">เปิด</a></div>
+              <div class="sr"><div><div class="slbl">👥 ผู้ใช้งาน</div></div><a href="users.html" class="btn btn-ghost">เปิด</a></div>
+              <div class="sr"><div><div class="slbl">🔧 แจ้งซ่อม</div></div><a href="repair.html" class="btn btn-ghost">เปิด</a></div>
+              <div class="sr"><div><div class="slbl">📋 รายงาน</div></div><a href="reports.html" class="btn btn-ghost">เปิด</a></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOTIFY -->
+        <div class="panel" id="p-notify">
+          <div class="sc">
+            <div class="sc-hdr">🔔 การแจ้งเตือน</div>
+            <div class="sc-body">
+              <div class="sr"><div><div class="slbl">แจ้งเตือนอุปกรณ์ออฟไลน์</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div>
+              <div class="sr"><div><div class="slbl">แจ้งเตือน Ticket ด่วนสูง</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div>
+              <div class="sr"><div><div class="slbl">แจ้งเตือน Email Quota เกิน 90%</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div>
+              <div class="sr"><div><div class="slbl">เสียงแจ้งเตือน</div></div><label class="tog"><input type="checkbox"><span class="ts"></span></label></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECURITY -->
+        <div class="panel" id="p-security">
+          <div class="sc">
+            <div class="sc-hdr">🔒 ความปลอดภัย</div>
+            <div class="sc-body">
+              <div class="sr"><div><div class="slbl">Session Timeout</div></div><select class="filter-sel"><option>30 นาที</option><option>1 ชั่วโมง</option><option>ไม่ timeout</option></select></div>
+              <div class="sr"><div><div class="slbl">บันทึก Activity Log</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div>
+            </div>
+          </div>
+          <div class="sc">
+            <div class="sc-hdr">🔐 เปลี่ยนรหัสผ่าน</div>
+            <div class="sc-body">
+              <div class="form-grid">
+                <div class="form-grp form-full"><label class="form-lbl">รหัสผ่านปัจจุบัน</label><input class="form-inp" type="password" id="pOld"></div>
+                <div class="form-grp"><label class="form-lbl">รหัสผ่านใหม่</label><input class="form-inp" type="password" id="pNew"></div>
+                <div class="form-grp"><label class="form-lbl">ยืนยันรหัสใหม่</label><input class="form-inp" type="password" id="pCon"></div>
+              </div>
+              <button class="btn btn-primary" style="margin-top:14px" onclick="changePass()">💾 บันทึกรหัสใหม่</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- DANGER ZONE -->
+        <div class="panel" id="p-danger">
+          <div class="dz">
+            <div class="dz-title">⚠️ Danger Zone</div>
+            <div class="dz-row"><div><div class="slbl">Export Database Backup</div><div class="ssub">ดาวน์โหลดข้อมูลทั้งหมดเป็น Excel</div></div><button class="btn btn-success" onclick="fullBackup()">💾 Backup</button></div>
+            <div class="dz-row"><div><div class="slbl">ทดสอบการเชื่อมต่อ</div></div><button class="btn btn-ghost" onclick="showP('database');testConn()">🔌 ทดสอบ</button></div>
+            <div class="dz-row"><div><div class="slbl">ออกจากระบบ</div></div><button class="btn btn-danger" onclick="logout()">⏻ Logout</button></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+buildSidebar('settings');
+var _cu=getCurrentUser()||{username:'admin',name:'Admin IT',role:'admin',dept:''};
+document.getElementById('avIco').textContent=(_cu.name||_cu.username||'A').charAt(0).toUpperCase();
+document.getElementById('profName').textContent=_cu.name||_cu.username||'Admin';
+// Fill profile fields from session
+(function(){
+  var pn=document.getElementById('pName'); if(pn)pn.value=_cu.name||'';
+  var pu=document.getElementById('pUsername'); if(pu)pu.value=_cu.username||'';
+  var pd=document.getElementById('pDept'); if(pd)pd.value=_cu.dept||'';
+  var pr=document.getElementById('pRole'); if(pr)pr.value=_cu.role||'user';
+})();
+
+function showP(id,el){
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.si').forEach(function(i){i.classList.remove('active');});
+  document.getElementById('p-'+id).classList.add('active');
+  if(el)el.classList.add('active');
+  if(id==='database')testConn();
+}
+
+async function testConn(){
+  var dot=document.getElementById('connDot'),txt=document.getElementById('connTxt');
+  dot.className='db-dot wait';txt.textContent='กำลังทดสอบ...';
+  try{
+    var s=await apiGet(API.dashboard);
+    dot.className='db-dot ok';txt.textContent='✅ เชื่อมต่อ MySQL สำเร็จ';
+    document.getElementById('dbStats').innerHTML=''
+      +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px">'
+      +'<div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center"><div style="font-size:20px;font-weight:700;color:var(--cyan)">'+s.devices.total+'</div><div style="font-size:11px;color:var(--text3);margin-top:3px">อุปกรณ์</div></div>'
+      +'<div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center"><div style="font-size:20px;font-weight:700;color:var(--violet)">'+s.emails.total+'</div><div style="font-size:11px;color:var(--text3);margin-top:3px">อีเมล</div></div>'
+      +'<div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center"><div style="font-size:20px;font-weight:700;color:var(--green)">'+s.users.total+'</div><div style="font-size:11px;color:var(--text3);margin-top:3px">ผู้ใช้</div></div>'
+      +'<div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center"><div style="font-size:20px;font-weight:700;color:var(--yellow)">'+s.tickets.total+'</div><div style="font-size:11px;color:var(--text3);margin-top:3px">Tickets</div></div>'
+      +'</div>';
+    showToast('✅ MySQL เชื่อมต่อสำเร็จ','success');
+  }catch(e){
+    dot.className='db-dot err';txt.textContent='❌ เชื่อมต่อไม่ได้: '+e.message;
+    showToast('❌ '+e.message,'error');
+  }
+}
+
+function saveAll(){
+  var n=document.getElementById('pName');
+  if(n&&n.value){document.getElementById('profName').textContent=n.value;}
+  showToast('✅ บันทึกการตั้งค่าแล้ว','success');
+}
+
+async function changePass(){
+  var o=document.getElementById('pOld').value;
+  var nw=document.getElementById('pNew').value;
+  var co=document.getElementById('pCon').value;
+  if(!o||!nw||!co){showToast('❌ กรุณากรอกให้ครบ','error');return;}
+  if(nw!==co){showToast('❌ รหัสผ่านใหม่ไม่ตรงกัน','error');return;}
+  if(nw.length<4){showToast('❌ รหัสผ่านต้องมีอย่างน้อย 4 ตัว','error');return;}
+  var cu=getCurrentUser();
+  if(!cu||!cu.user_id){showToast('❌ ไม่พบข้อมูลผู้ใช้งาน กรุณา login ใหม่','error');return;}
+  var btn=document.querySelector('button[onclick="changePass()"]');
+  if(btn){btn.disabled=true;btn.textContent='⏳...';}
+  try{
+    await apiPost(API.auth+'?action=change_password',{
+      user_id:     cu.user_id,
+      old_password: o,
+      new_password: nw
+    });
+    showToast('✅ เปลี่ยนรหัสผ่านสำเร็จ','success');
+    document.getElementById('pOld').value='';
+    document.getElementById('pNew').value='';
+    document.getElementById('pCon').value='';
+  }catch(e){
+    showToast('❌ '+e.message,'error');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='💾 บันทึกรหัสใหม่';}
+  }
+}
+
+async function fullBackup(){
+  try{
+    var dv=await apiGet(API.devices),em=await apiGet(API.emails),us=await apiGet(API.users),tk=await apiGet(API.repair);
+    var wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(dv),'Devices');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(em),'Emails');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(us),'Users');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(tk),'Tickets');
+    XLSX.writeFile(wb,'DeviceHub-Backup-'+new Date().toISOString().slice(0,10)+'.xlsx');
+    showToast('💾 Backup Excel แล้ว','success');
+  }catch(e){showToast('❌ '+e.message,'error');}
+}
+</script>
+</body>
+</html>

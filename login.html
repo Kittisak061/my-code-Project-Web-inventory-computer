@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DeviceHub — Login</title>
+<link rel="stylesheet" href="style.css?v=20260325b">
+<style>
+body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:28px;}
+body::after{inset:auto auto -16vh -12vw;width:40vw;height:40vw;background:radial-gradient(circle,rgba(167,139,250,.12),transparent 68%);}
+.wrap{width:min(460px,100%);max-width:100%;position:relative;animation:fadeIn .35s ease;}
+.wrap::before{content:'';position:absolute;inset:88px -22px -16px;z-index:-1;border-radius:32px;background:linear-gradient(135deg,rgba(53,216,255,.2),rgba(167,139,250,.12));filter:blur(34px);opacity:.65;}
+.logo{text-align:center;margin-bottom:24px;}
+.logo-ico{width:76px;height:76px;border-radius:24px;background:linear-gradient(135deg,#35d8ff,#0a67ad 74%);display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 16px;box-shadow:0 18px 34px rgba(53,216,255,.28);}
+.logo-name{font-family:var(--display);font-size:34px;font-weight:800;color:var(--text);line-height:1;}
+.logo-sub{font-size:11.5px;color:var(--text2);font-family:var(--mono);letter-spacing:2.4px;margin-top:8px;}
+.card{position:relative;background:linear-gradient(180deg,rgba(14,21,33,.96),rgba(9,13,20,.98));border:1px solid rgba(53,216,255,.14);border-radius:26px;overflow:hidden;box-shadow:var(--shadow-lg);}
+.card::before{content:'';position:absolute;right:-50px;top:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(53,216,255,.16),transparent 70%);pointer-events:none;}
+.stripe{height:5px;background:linear-gradient(90deg,var(--cyan),var(--green),var(--violet));}
+.card-body{padding:30px 32px 34px;}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.7px;}
+.iw{position:relative;}
+.ii{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;color:var(--text2);}
+.inp{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:14px;padding:12px 44px 12px 42px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s,background .15s;}
+.inp:focus{border-color:var(--border2);background:rgba(255,255,255,.05);box-shadow:0 0 0 3px rgba(53,216,255,.12);}
+.inp::placeholder{color:var(--text3);}
+.eye{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;color:var(--text3);}
+.btn-go{width:100%;min-height:48px;padding:12px 16px;font-size:14px;font-weight:700;border-radius:14px;margin-top:10px;background:linear-gradient(135deg,var(--cyan),#1ab2e8 82%);color:#06111a;border:none;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 16px 28px rgba(53,216,255,.22);transition:all .2s;}
+.btn-go:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 20px 32px rgba(53,216,255,.3);}
+.btn-go:disabled{opacity:.68;cursor:not-allowed;transform:none;}
+.errmsg{background:rgba(255,100,131,.09);border:1px solid rgba(255,100,131,.25);border-radius:14px;padding:12px 14px;font-size:13px;color:var(--red);margin-bottom:14px;display:none;gap:8px;align-items:center;}
+.info{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:16px;padding:14px 16px;font-size:12.5px;color:var(--text2);margin-top:18px;text-align:center;line-height:1.85;}
+.info b{color:var(--cyan);}
+.sbar{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:16px;padding-top:14px;font-size:11px;color:var(--text3);font-family:var(--mono);border-top:1px solid var(--border);}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--yellow);flex-shrink:0;}
+@keyframes shake{0%,100%{transform:none}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+.shake{animation:shake .35s ease;}
+@media (max-width:560px){
+  body{padding:18px;}
+  .card-body{padding:24px 20px 24px;}
+  .logo-name{font-size:28px;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+    <div class="logo">
+        <div class="logo-ico">🖥</div>
+        <div class="logo-name">DeviceHub</div>
+        <div class="logo-sub">IT MANAGEMENT SYSTEM</div>
+    </div>
+    <div class="card" id="card">
+        <div class="stripe"></div>
+        <div class="card-body">
+            <div class="errmsg" id="err"><span>❌</span><span id="errTxt">—</span></div>
+            <div class="field">
+                <label>Username</label>
+                <div class="iw">
+                    <span class="ii">👤</span>
+                    <input class="inp" id="fU" type="text" placeholder="กรอก Username" autocomplete="username" autofocus>
+                </div>
+            </div>
+            <div class="field">
+                <label>Password</label>
+                <div class="iw">
+                    <span class="ii">🔒</span>
+                    <input class="inp" id="fP" type="password" placeholder="กรอก Password" autocomplete="current-password">
+                    <button class="eye" type="button" onclick="toggleEye()">👁</button>
+                </div>
+            </div>
+            <button class="btn-go" id="btn" onclick="doLogin()">
+                <span id="bico">🔑</span><span id="btxt">เข้าสู่ระบบ</span>
+            </button>
+            <div class="info">
+                🔒 ต้องได้รับ <b>Username &amp; Password</b> จาก <b>Admin</b><br>
+                ก่อนเข้าใช้งาน — ติดต่อฝ่าย IT
+            </div>
+            <div class="sbar">
+                <div class="sdot" id="sdot" style="animation:pulse .8s infinite"></div>
+                <span id="stxt">กำลังตรวจสอบ...</span>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+// ── ถ้า login แล้ว → ไป dashboard ทันที ──────────────────────
+var _u = sessionStorage.getItem('dh_user');
+if(_u){
+    try{
+        var _o = JSON.parse(_u);
+        if(_o && _o.username) { window.location.replace('dashboard.html'); }
+    }catch(e){
+        sessionStorage.removeItem('dh_user');
+    }
+}
+
+var API_AUTH = 'http://localhost/devicehub/api/auth.php';
+
+// Check DB connection (background)
+setTimeout(function(){
+    fetch(API_AUTH+'?ping=1')
+        .then(function(r){return r.json();})
+        .then(function(){setS('ok','เชื่อมต่อ MySQL สำเร็จ');})
+        .catch(function(e){setS('err','ตรวจสอบ AppServ — '+e.message);});
+},300);
+
+function doLogin(){
+    var u=document.getElementById('fU').value.trim();
+    var p=document.getElementById('fP').value;
+    document.getElementById('err').style.display='none';
+    if(!u||!p){showErr('กรุณากรอก Username และ Password');return;}
+    setBusy(true);
+    setS('wait','กำลังตรวจสอบ...');
+    fetch(API_AUTH,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({username:u,password:p})
+    })
+    .then(function(r){return r.json().then(function(d){return{ok:r.ok,d:d};});})
+    .then(function(res){
+        if(res.ok&&res.d.success){
+            sessionStorage.setItem('dh_user',JSON.stringify({
+                user_id: res.d.user_id,
+                username:res.d.username,
+                name:    res.d.name,
+                role:    res.d.role,
+                dept:    res.d.dept||''
+            }));
+            setS('ok','Login สำเร็จ กำลังนำไป Dashboard...');
+            window.location.href='dashboard.html';
+        } else {
+            setBusy(false);
+            setS('err','ไม่สำเร็จ');
+            showErr(res.d.error||'Username หรือ Password ไม่ถูกต้อง');
+        }
+    })
+    .catch(function(e){
+        setBusy(false);
+        setS('err','เชื่อมต่อไม่ได้');
+        showErr('ไม่สามารถเชื่อมต่อ API ได้<br>ตรวจสอบว่า AppServ เปิดอยู่<br><small>'+e.message+'</small>');
+    });
+}
+
+function showErr(m){
+    document.getElementById('errTxt').innerHTML=m;
+    document.getElementById('err').style.display='flex';
+    var c=document.getElementById('card');
+    c.classList.remove('shake');void c.offsetWidth;c.classList.add('shake');
+}
+function setBusy(on){
+    document.getElementById('btn').disabled=on;
+    document.getElementById('bico').textContent=on?'⏳':'🔑';
+    document.getElementById('btxt').textContent=on?'กำลังตรวจสอบ...':'เข้าสู่ระบบ';
+}
+function setS(t,m){
+    var d=document.getElementById('sdot');
+    document.getElementById('stxt').textContent=m;
+    d.style.animation='none';
+    if(t==='ok'){d.style.background='var(--green)';d.style.boxShadow='0 0 6px var(--green)';}
+    else if(t==='err'){d.style.background='var(--red)';d.style.boxShadow='none';}
+    else{d.style.background='var(--yellow)';d.style.animation='pulse .8s infinite';}
+}
+function toggleEye(){
+    var p=document.getElementById('fP');
+    p.type=p.type==='password'?'text':'password';
+}
+document.addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+</script>
+</body>
+</html>

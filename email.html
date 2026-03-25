@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Email & Computer — DeviceHub</title>
+<link rel="stylesheet" href="style.css?v=20260325b">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="config.js"></script><script src="shared.js"></script>
+<style>
+.tbl-scroll{overflow-x:auto;}.tbl-scroll table{min-width:1600px;}
+th,td{white-space:nowrap;}
+.col-group{background:var(--s3);font-size:9px;letter-spacing:1.5px;color:var(--text3);text-align:center;padding:4px 8px;border-bottom:1px solid var(--border);}
+/* tabs */
+.ftabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:8px;flex-wrap:wrap;}
+.ftab{padding:6px 14px;border-radius:7px 7px 0 0;border:1px solid transparent;font-size:12.5px;cursor:pointer;color:var(--text2);background:transparent;font-family:var(--font);}
+.ftab:hover{color:var(--text);background:var(--s2);}
+.ftab.active{background:rgba(0,212,255,.1);color:var(--cyan);border-color:rgba(0,212,255,.2);}
+.fsec{display:none;}.fsec.active{display:block;}
+.fsec-title{font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+/* checkboxes */
+.chk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;}
+.chk-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);}
+.chk-row:last-child{border-bottom:none;}
+.chk-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--cyan);cursor:pointer;}
+.chk-row label{font-size:13px;cursor:pointer;user-select:none;}
+/* badges */
+.tag-y{background:rgba(0,232,150,.1);color:var(--green);border:1px solid rgba(0,232,150,.2);padding:2px 7px;border-radius:4px;font-size:11px;}
+.tag-n{background:rgba(122,136,153,.07);color:var(--text3);border:1px solid var(--border);padding:2px 7px;border-radius:4px;font-size:11px;}
+.tag-p{background:rgba(255,204,68,.08);color:var(--yellow);border:1px solid rgba(255,204,68,.2);padding:2px 7px;border-radius:4px;font-size:11px;}
+.mfa-enabled{color:var(--green);font-family:var(--mono);font-size:11.5px;}
+.mfa-disabled{color:var(--text3);font-family:var(--mono);font-size:11.5px;}
+.mfa-pending{color:var(--yellow);font-family:var(--mono);font-size:11.5px;}
+/* detail */
+.dv-sec-title{font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.dv-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.dv-row{display:flex;flex-direction:column;gap:3px;}
+.dv-lbl{font-size:10.5px;color:var(--text3);font-family:var(--mono);}
+.dv-val{font-size:13px;color:var(--text);}
+</style>
+</head>
+<body>
+<div class="layout">
+<div id="sidebar-slot"></div>
+<div class="main">
+  <div class="topbar">
+    <div style="flex:1"><h1>✉️ Email &amp; Computer</h1><p>Account Management — MySQL</p></div>
+    <div class="db-pill"><div class="db-dot wait" id="dbDot"></div><span id="dbTxt">โหลด...</span></div>
+    <button class="btn btn-ghost" onclick="loadData()">🔄</button>
+    <button class="btn btn-ghost" onclick="exportCSV()">⬇ CSV</button>
+    <button class="btn btn-excel" onclick="exportXL()">📥 Excel</button>
+    <button class="btn btn-primary" onclick="openModal(null)">+ เพิ่มบัญชี</button>
+    <button class="btn btn-logout" onclick="logout()">⏻</button>
+  </div>
+  <div class="content">
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-icon si-v">✉️</div><div><div class="stat-num" style="color:var(--violet)" id="s0">—</div><div class="stat-label">ทั้งหมด</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-g">✅</div><div><div class="stat-num sn-g" id="s1">—</div><div class="stat-label">Active</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-y">🔐</div><div><div class="stat-num sn-y" id="s2">—</div><div class="stat-label">MFA Enabled</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-r">⏳</div><div><div class="stat-num sn-r" id="s3">—</div><div class="stat-label">MFA Pending</div></div></div>
+    </div>
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-box"><span class="search-ico">🔍</span><input class="search-input" id="qS" placeholder="ค้นหา Email, ชื่อ, Computer, แผนก..."></div>
+      <select class="filter-sel" id="fS"><option value="">ทุกสถานะ</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="suspended">Suspended</option></select>
+      <select class="filter-sel" id="fMfa"><option value="">ทุก MFA</option><option value="enabled">MFA Enabled</option><option value="pending">MFA Pending</option><option value="disabled">MFA Disabled</option></select>
+      <select class="filter-sel" id="fD" style="max-width:200px"><option value="">ทุกแผนก</option></select>
+      <button class="btn btn-ghost" onclick="clearF()">✕ ล้าง</button>
+    </div>
+    <!-- Table -->
+    <div class="table-wrap tbl-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th colspan="4" class="col-group">EMAIL &amp; COMPUTER</th>
+            <th colspan="3" class="col-group">USER INFO</th>
+            <th colspan="4" class="col-group">MFA SETTING</th>
+            <th colspan="5" class="col-group">LOGIN ON DEVICE</th>
+            <th colspan="2" class="col-group">AUDIT</th>
+            <th class="col-group"></th>
+          </tr>
+          <tr>
+            <th style="padding-left:14px;position:sticky;left:0;background:var(--s2);z-index:5;min-width:200px">Email</th>
+            <th>Email (Old)</th>
+            <th>Computer Name</th>
+            <th>Computer (Old)</th>
+            <th>Name - Surname</th>
+            <th>Department</th>
+            <th>Status</th>
+            <th>MFA Email</th>
+            <th>MFA iPad</th>
+            <th>Enable MFA</th>
+            <th>MFA Status</th>
+            <th>Outlook</th>
+            <th>Web</th>
+            <th>MS Team</th>
+            <th>iPad</th>
+            <th>iPhone</th>
+            <th>Update</th>
+            <th>By</th>
+            <th>จัดการ</th>
+          </tr>
+        </thead>
+        <tbody id="tb"></tbody>
+      </table>
+      <div class="pager"><div class="pager-info" id="pi">—</div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ FORM MODAL ═══ -->
+<div class="overlay" id="ov">
+<div class="modal" style="width:680px">
+  <div class="modal-hdr">
+    <div class="modal-title" id="mT">➕ เพิ่มบัญชี Email</div>
+    <button class="modal-x" onclick="closeModal()">✕</button>
+  </div>
+  <div class="modal-body" style="padding-top:0">
+    <!-- TABS -->
+    <div class="ftabs">
+      <button class="ftab active" onclick="switchTab(0,this)">✉️ Email &amp; Computer</button>
+      <button class="ftab" onclick="switchTab(1,this)">👤 User Info</button>
+      <button class="ftab" onclick="switchTab(2,this)">🔐 MFA Setting</button>
+      <button class="ftab" onclick="switchTab(3,this)">📱 Login Device</button>
+      <button class="ftab" onclick="switchTab(4,this)">📝 Other</button>
+    </div>
+
+    <!-- TAB 0: EMAIL & COMPUTER -->
+    <div class="fsec active" id="ftab0">
+      <div class="fsec-title">Email &amp; Computer</div>
+      <div class="form-grid">
+        <div class="form-grp form-full"><label class="form-lbl">E-Mail address *</label><input class="form-inp" id="f_email" type="email" placeholder="user@company.com"></div>
+        <div class="form-grp form-full"><label class="form-lbl">E-Mail address (Old)</label><input class="form-inp" id="f_email_old" type="email" placeholder="old@company.com"></div>
+        <div class="form-grp"><label class="form-lbl">Computer Name</label><input class="form-inp" id="f_computer_name" placeholder="PC-IT-001"></div>
+        <div class="form-grp"><label class="form-lbl">Computer Name (Old)</label><input class="form-inp" id="f_computer_name_old" placeholder="PC-IT-OLD"></div>
+        <div class="form-grp"><label class="form-lbl">User Computer</label><input class="form-inp" id="f_user_computer" placeholder="ชื่อผู้ใช้งาน Computer"></div>
+        <div class="form-grp"><label class="form-lbl">Status User Email</label>
+          <select class="form-sel" id="f_status_user_email">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="suspended">Suspended</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 1: USER INFO -->
+    <div class="fsec" id="ftab1">
+      <div class="fsec-title">User Information</div>
+      <div class="form-grid">
+        <div class="form-grp form-full"><label class="form-lbl">Name - Surname *</label><input class="form-inp" id="f_name" placeholder="ชื่อ นามสกุล"></div>
+        <div class="form-grp form-full"><label class="form-lbl">Department</label>
+          <select class="form-sel" id="f_dept"></select>
+        </div>
+        <div class="form-grp"><label class="form-lbl">Password</label>
+          <div style="position:relative">
+            <input class="form-inp" id="f_password" type="password" placeholder="••••••••" style="width:100%;padding-right:36px">
+            <button type="button" onclick="togglePw()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:13px;color:var(--text3)">👁</button>
+          </div>
+        </div>
+        <div class="form-grp"><label class="form-lbl">Quota (GB)</label><input class="form-inp" id="f_quota" type="number" value="50" min="1"></div>
+        <div class="form-grp"><label class="form-lbl">Type</label>
+          <select class="form-sel" id="f_type">
+            <option>บุคคล</option><option>กลุ่ม</option><option>ระบบ</option><option>แผนก</option>
+          </select>
+        </div>
+        <div class="form-grp"><label class="form-lbl">One Drive email list</label><input class="form-inp" id="f_onedrive_list" placeholder="email list / group"></div>
+      </div>
+    </div>
+
+    <!-- TAB 2: MFA -->
+    <div class="fsec" id="ftab2">
+      <div class="fsec-title">Setting MFA</div>
+      <div class="chk-grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:16px">
+        <div class="chk-row"><input type="checkbox" id="f_mfa_email_user"><label for="f_mfa_email_user">✉️ Add MFA (Email User)</label></div>
+        <div class="chk-row"><input type="checkbox" id="f_mfa_ipad_app"><label for="f_mfa_ipad_app">📱 Add MFA (iPad App)</label></div>
+        <div class="chk-row"><input type="checkbox" id="f_mfa_enable_admin"><label for="f_mfa_enable_admin">👑 Enable MFA (Admin)</label></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-grp"><label class="form-lbl">Status MFA</label>
+          <select class="form-sel" id="f_mfa_status">
+            <option value="disabled">Disabled</option>
+            <option value="pending">Pending</option>
+            <option value="enabled">Enabled</option>
+          </select>
+        </div>
+        <div class="form-grp"><label class="form-lbl">Announcement (Start MFA Email)</label><input class="form-inp" id="f_mfa_announcement" type="date"></div>
+      </div>
+    </div>
+
+    <!-- TAB 3: LOGIN ON DEVICE -->
+    <div class="fsec" id="ftab3">
+      <div class="fsec-title">Login on Device</div>
+      <div class="chk-grid" style="grid-template-columns:1fr 1fr">
+        <div class="chk-row"><input type="checkbox" id="f_login_outlook"><label for="f_login_outlook">📧 Outlook</label></div>
+        <div class="chk-row"><input type="checkbox" id="f_login_web_browser"><label for="f_login_web_browser">🌐 Web Browser</label></div>
+        <div class="chk-row"><input type="checkbox" id="f_login_ms_team"><label for="f_login_ms_team">💬 MS Team</label></div>
+        <div class="chk-row"><input type="checkbox" id="f_login_ipad"><label for="f_login_ipad">📱 iPad (App)</label></div>
+        <div class="chk-row" style="border-bottom:none"><input type="checkbox" id="f_login_iphone"><label for="f_login_iphone">📱 iPhone</label></div>
+      </div>
+    </div>
+
+    <!-- TAB 4: OTHER -->
+    <div class="fsec" id="ftab4">
+      <div class="fsec-title">Other / Audit</div>
+      <div class="form-grid">
+        <div class="form-grp"><label class="form-lbl">Update Date</label><input class="form-inp" id="f_update_date" type="date"></div>
+        <div class="form-grp"><label class="form-lbl">Update By</label><input class="form-inp" id="f_update_by" placeholder="ชื่อผู้อัปเดต"></div>
+        <div class="form-grp form-full"><label class="form-lbl">Note / Remark</label><textarea class="form-ta" id="f_note" placeholder="หมายเหตุ..."></textarea></div>
+      </div>
+    </div>
+
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
+    <button class="btn btn-primary" id="sv" onclick="save()">💾 บันทึกลง MySQL</button>
+  </div>
+</div>
+</div>
+
+<!-- ═══ DETAIL MODAL ═══ -->
+<div class="overlay" id="ov2">
+<div class="modal" style="width:700px;max-height:90vh">
+  <div class="modal-hdr">
+    <div class="modal-title" id="dT">รายละเอียด</div>
+    <button class="modal-x" onclick="closeDetail()">✕</button>
+  </div>
+  <div class="modal-body" id="dB" style="overflow-y:auto;max-height:calc(90vh - 120px)"></div>
+  <div class="modal-foot" id="dF"></div>
+</div>
+</div>
+
+<script>
+buildSidebar('email');
+
+// Fill dept filter
+(function(){
+  var sel=document.getElementById('fD');
+  sel.innerHTML='<option value="">ทุกแผนก</option>';
+  for(var i=0;i<DEPARTMENTS.length;i++){
+    sel.innerHTML+='<option>'+DEPARTMENTS[i]+'</option>';
+  }
+  // Fill form dept
+  document.getElementById('f_dept').innerHTML=deptOptions('');
+})();
+
+var data=[],editId=null;
+var STH={active:'Active',inactive:'Inactive',suspended:'Suspended'};
+var MFAS={enabled:'🔐 Enabled',pending:'⏳ Pending',disabled:'—'};
+
+// ── LOAD ──
+async function loadData(){
+  setDB('wait','โหลด...');
+  try{
+    var p={};
+    var q=document.getElementById('qS').value.trim();
+    var s=document.getElementById('fS').value;
+    var mfa=document.getElementById('fMfa').value;
+    var dp=document.getElementById('fD').value;
+    if(q)p.q=q; if(s)p.status=s; if(mfa)p.mfa_status=mfa; if(dp)p.dept=dp;
+    data=await apiGet(API.emails,p);
+    render();
+    setDB('ok','MySQL · '+data.length+' บัญชี');
+  }catch(e){setDB('err','error');showToast('❌ '+e.message,'error');}
+}
+
+// ── RENDER ──
+function render(){
+  var tot=data.length,act=0,mfaOn=0,mfaPend=0;
+  for(var i=0;i<data.length;i++){
+    if(data[i].status_user_email==='active')act++;
+    if(data[i].mfa_status==='enabled')mfaOn++;
+    if(data[i].mfa_status==='pending')mfaPend++;
+  }
+  document.getElementById('s0').textContent=tot;
+  document.getElementById('s1').textContent=act;
+  document.getElementById('s2').textContent=mfaOn;
+  document.getElementById('s3').textContent=mfaPend;
+  document.getElementById('pi').textContent='แสดง '+tot+' บัญชี';
+
+  if(!data.length){document.getElementById('tb').innerHTML='<tr><td colspan="19" style="text-align:center;padding:36px;color:var(--text3)">📭 ไม่พบข้อมูล</td></tr>';return;}
+
+  document.getElementById('tb').innerHTML=data.map(function(d,i){
+    var dj=JSON.stringify(d).replace(/"/g,'&quot;');
+    var mfaCls=d.mfa_status==='enabled'?'mfa-enabled':d.mfa_status==='pending'?'mfa-pending':'mfa-disabled';
+    var mfaTxt=d.mfa_status==='enabled'?'🔐 ON':d.mfa_status==='pending'?'⏳ Pending':'—';
+    function chk(v){return +v?'<span class="tag-y">✓</span>':'<span class="tag-n">—</span>';}
+    return '<tr style="animation:rowIn .2s ease '+(i*.015)+'s both">'
+      +'<td style="padding-left:14px;position:sticky;left:0;background:var(--surface);z-index:2;min-width:200px">'
+        +'<div style="font-family:var(--mono);font-size:12.5px;color:var(--cyan)">✉ '+d.email+'</div>'
+        +(d.dept?'<div style="font-size:10.5px;color:var(--text3);margin-top:2px">'+d.dept+'</div>':'')
+      +'</td>'
+      +'<td style="font-size:11.5px;color:var(--text3);font-family:var(--mono)">'+(d.email_old||'—')+'</td>'
+      +'<td style="font-family:var(--mono);font-size:12px;color:var(--text2)">'+(d.computer_name||'—')+'</td>'
+      +'<td style="font-size:11.5px;color:var(--text3);font-family:var(--mono)">'+(d.computer_name_old||'—')+'</td>'
+      +'<td style="font-size:12.5px;font-weight:500">'+d.name+'</td>'
+      +'<td style="font-size:12px;color:var(--text2);max-width:140px;overflow:hidden;text-overflow:ellipsis">'+(d.dept||'—')+'</td>'
+      +'<td><span class="badge badge-'+(d.status_user_email||'inactive')+'">'+(STH[d.status_user_email]||'—')+'</span></td>'
+      +'<td style="text-align:center">'+chk(d.mfa_email_user)+'</td>'
+      +'<td style="text-align:center">'+chk(d.mfa_ipad_app)+'</td>'
+      +'<td style="text-align:center">'+chk(d.mfa_enable_admin)+'</td>'
+      +'<td><span class="'+mfaCls+'">'+mfaTxt+'</span></td>'
+      +'<td style="text-align:center">'+chk(d.login_outlook)+'</td>'
+      +'<td style="text-align:center">'+chk(d.login_web_browser)+'</td>'
+      +'<td style="text-align:center">'+chk(d.login_ms_team)+'</td>'
+      +'<td style="text-align:center">'+chk(d.login_ipad)+'</td>'
+      +'<td style="text-align:center">'+chk(d.login_iphone)+'</td>'
+      +'<td style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+(d.update_date||'—')+'</td>'
+      +'<td style="font-size:12px;color:var(--text2)">'+(d.update_by||'—')+'</td>'
+      +'<td><div style="display:flex;gap:4px">'
+        +'<button class="act-btn" style="font-size:11px;padding:4px 7px" onclick=\'showDetail('+dj+')\' title="ดูรายละเอียด">🔍</button>'
+        +'<button class="act-btn edit" onclick=\'openModal('+dj+')\'>✏️</button>'
+        +'<button class="act-btn del" onclick="del('+d.id+')">🗑️</button>'
+      +'</div></td>'
+      +'</tr>';
+  }).join('');
+}
+
+// ── DETAIL VIEW ──
+function showDetail(d){
+  function row(l,v,mono){var val=(v!==null&&v!==undefined&&v!=='')?v:'—';return '<div class="dv-row"><div class="dv-lbl">'+l+'</div><div class="dv-val'+(mono?' style="font-family:var(--mono);color:var(--cyan)"':'')+'">'+val+'</div></div>';}
+  function yn(v,lbl){return '<span class="'+(+v?'tag-y':'tag-n')+'">'+(+v?'✓ '+lbl:'—')+'</span>';}
+  var mfaColor=d.mfa_status==='enabled'?'var(--green)':d.mfa_status==='pending'?'var(--yellow)':'var(--text3)';
+  document.getElementById('dT').innerHTML='<div style="font-family:var(--mono);color:var(--cyan)">✉ '+d.email+'</div><div style="font-size:11px;color:var(--text3);margin-top:2px">'+d.name+' · '+(d.dept||'—')+'</div>';
+  document.getElementById('dB').innerHTML=''
+    +'<div class="dv-sec-title" style="margin-top:0">✉️ Email &amp; Computer</div>'
+    +'<div class="dv-grid">'
+      +row('E-Mail',d.email,true)+row('E-Mail (Old)',d.email_old,true)
+      +row('Computer Name',d.computer_name,true)+row('Computer Name (Old)',d.computer_name_old,true)
+      +row('User Computer',d.user_computer)+row('Status','<span class="badge badge-'+(d.status_user_email||'inactive')+'">'+(STH[d.status_user_email]||'—')+'</span>')
+    +'</div>'
+    +'<div class="dv-sec-title">👤 User Info</div>'
+    +'<div class="dv-grid">'
+      +row('Name',d.name)+row('Department',d.dept)
+      +row('Type',d.type)+row('Quota',d.quota?d.quota+' GB':'—')
+      +row('One Drive',d.onedrive_list)+row('','')
+    +'</div>'
+    +'<div class="dv-sec-title">🔐 MFA Setting</div>'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">'
+      +yn(d.mfa_email_user,'Add MFA Email')+' '
+      +yn(d.mfa_ipad_app,'Add MFA iPad')+' '
+      +yn(d.mfa_enable_admin,'Enable Admin')
+    +'</div>'
+    +'<div class="dv-grid">'
+      +'<div class="dv-row"><div class="dv-lbl">MFA Status</div><div style="font-family:var(--mono);font-size:13px;color:'+mfaColor+'">'+(d.mfa_status?d.mfa_status.toUpperCase():'—')+'</div></div>'
+      +row('Announcement',d.mfa_announcement)
+    +'</div>'
+    +'<div class="dv-sec-title">📱 Login on Device</div>'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">'
+      +yn(d.login_outlook,'Outlook')+' '
+      +yn(d.login_web_browser,'Web Browser')+' '
+      +yn(d.login_ms_team,'MS Team')+' '
+      +yn(d.login_ipad,'iPad')+' '
+      +yn(d.login_iphone,'iPhone')
+    +'</div>'
+    +(d.note?'<div class="dv-sec-title">📝 Note</div><div style="background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:12px;font-size:13px;color:var(--text2)">'+d.note+'</div>':'')
+    +'<div class="dv-grid" style="margin-top:14px">'
+      +row('Update Date',d.update_date)+row('Update By',d.update_by)
+    +'</div>';
+  var dj=JSON.stringify(d).replace(/"/g,'&quot;');
+  document.getElementById('dF').innerHTML=''
+    +'<button class="btn btn-ghost" onclick="closeDetail()">ปิด</button>'
+    +'<button class="btn btn-primary" onclick=\'closeDetail();openModal('+dj+')\'>✏️ แก้ไข</button>';
+  document.getElementById('ov2').classList.add('open');
+}
+function closeDetail(){document.getElementById('ov2').classList.remove('open');}
+
+// ── TABS ──
+function switchTab(idx,btn){
+  document.querySelectorAll('.fsec').forEach(function(s){s.classList.remove('active');});
+  document.querySelectorAll('.ftab').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('ftab'+idx).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── MODAL ──
+var TEXT_FIELDS=['email','email_old','computer_name','computer_name_old','user_computer',
+  'name','password','quota','type','onedrive_list',
+  'mfa_announcement','update_date','update_by','note'];
+var SEL_FIELDS=['status_user_email','mfa_status'];
+var CHK_FIELDS=['mfa_email_user','mfa_ipad_app','mfa_enable_admin','login_outlook','login_web_browser','login_ms_team','login_ipad','login_iphone'];
+
+function openModal(d){
+  editId=null;
+  switchTab(0,document.querySelectorAll('.ftab')[0]);
+  if(d&&typeof d==='object'){
+    editId=d.id;
+    document.getElementById('mT').textContent='✏️ แก้ไข: '+d.name;
+    TEXT_FIELDS.forEach(function(f){
+      var el=document.getElementById('f_'+f);
+      if(el)el.value=(d[f]!==null&&d[f]!==undefined)?d[f]:'';
+    });
+    SEL_FIELDS.forEach(function(f){
+      var el=document.getElementById('f_'+f);
+      if(el)el.value=d[f]||'';
+    });
+    CHK_FIELDS.forEach(function(f){
+      var el=document.getElementById('f_'+f);
+      if(el)el.checked=(+d[f]===1);
+    });
+    document.getElementById('f_dept').innerHTML=deptOptions(d.dept||'');
+  }else{
+    document.getElementById('mT').textContent='➕ เพิ่มบัญชี Email ใหม่';
+    TEXT_FIELDS.forEach(function(f){var el=document.getElementById('f_'+f);if(el)el.value='';});
+    document.getElementById('f_quota').value=50;
+    document.getElementById('f_type').value='บุคคล';
+    document.getElementById('f_status_user_email').value='active';
+    document.getElementById('f_mfa_status').value='disabled';
+    CHK_FIELDS.forEach(function(f){var el=document.getElementById('f_'+f);if(el)el.checked=false;});
+    document.getElementById('f_dept').innerHTML=deptOptions('');
+    // Auto-fill today as update date
+    document.getElementById('f_update_date').value=new Date().toISOString().slice(0,10);
+    var _cu=getCurrentUser();
+    document.getElementById('f_update_by').value=_cu?(_cu.name||_cu.username):'admin';
+  }
+  document.getElementById('ov').classList.add('open');
+}
+function closeModal(){document.getElementById('ov').classList.remove('open');editId=null;}
+
+function togglePw(){
+  var p=document.getElementById('f_password');
+  p.type=p.type==='password'?'text':'password';
+}
+
+// ── SAVE ──
+async function save(){
+  var email=document.getElementById('f_email').value.trim();
+  var name=document.getElementById('f_name').value.trim();
+  if(!email||!name){showToast('กรุณากรอก Email และ Name','error');return;}
+  var btn=document.getElementById('sv');btn.disabled=true;btn.textContent='⏳...';
+  var body={};
+  TEXT_FIELDS.forEach(function(f){var el=document.getElementById('f_'+f);if(el)body[f]=el.value||null;});
+  SEL_FIELDS.forEach(function(f){var el=document.getElementById('f_'+f);if(el)body[f]=el.value||null;});
+  CHK_FIELDS.forEach(function(f){var el=document.getElementById('f_'+f);if(el)body[f]=el.checked?1:0;});
+  body['dept']=document.getElementById('f_dept').value||null;
+  var _cu=getCurrentUser();
+  body['update_by']=body['update_by']||(_cu?(_cu.name||_cu.username):'admin');
+  body['update_date']=body['update_date']||new Date().toISOString().slice(0,10);
+  try{
+    if(editId)await apiPut(API.emails,editId,body);else await apiPost(API.emails,body);
+    showToast(editId?'✅ แก้ไขแล้ว':'✅ เพิ่มบัญชีแล้ว','success');
+    closeModal();await loadData();
+  }catch(e){showToast('❌ '+e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='💾 บันทึกลง MySQL';}
+}
+
+// ── DELETE ──
+async function del(id){
+  if(!confirm('ยืนยันลบบัญชีนี้?'))return;
+  try{await apiDelete(API.emails,id);showToast('🗑️ ลบแล้ว','error');await loadData();}
+  catch(e){showToast('❌ '+e.message,'error');}
+}
+
+// ── FILTERS ──
+var _dt;
+document.getElementById('qS').addEventListener('input',function(){clearTimeout(_dt);_dt=setTimeout(loadData,380);});
+document.getElementById('fS').addEventListener('change',loadData);
+document.getElementById('fMfa').addEventListener('change',loadData);
+document.getElementById('fD').addEventListener('change',loadData);
+function clearF(){document.getElementById('qS').value='';document.getElementById('fS').value='';document.getElementById('fMfa').value='';document.getElementById('fD').value='';loadData();}
+
+// ── EXPORT ──
+function exportXL(){
+  var rows = data.map(function(d){return{
+    'Department':d.dept||'',
+    'E-Mail':d.email||'','E-Mail (Old)':d.email_old||'',
+    'Computer Name':d.computer_name||'','Computer (Old)':d.computer_name_old||'',
+    'Name - Surname':d.name||'','User Computer':d.user_computer||'',
+    'Status':d.status_user_email||'',
+    'Add MFA (Email)':+d.mfa_email_user?'✓':'',
+    'Add MFA (iPad)':+d.mfa_ipad_app?'✓':'',
+    'Enable MFA (Admin)':+d.mfa_enable_admin?'✓':'',
+    'MFA Status':d.mfa_status||'',
+    'Announcement MFA':d.mfa_announcement||'',
+    'Outlook':+d.login_outlook?'✓':'',
+    'Web Browser':+d.login_web_browser?'✓':'',
+    'MS Team':+d.login_ms_team?'✓':'',
+    'iPad':+d.login_ipad?'✓':'',
+    'iPhone':+d.login_iphone?'✓':'',
+    'One Drive':d.onedrive_list||'',
+    'Update Date':d.update_date||'',
+    'Update By':d.update_by||'',
+    'Note':d.note||''
+  };});
+  xlExport(rows,'Email-Computer-List.xlsx','✉️ Email & Computer Account','รายงานบัญชีอีเมล DeviceHub');
+  showToast('📥 Export Excel สวยๆ แล้ว ('+rows.length+' บัญชี)');
+}
+function exportCSV(){
+  var rows=[['Department','Email','Email(Old)','Computer','Computer(Old)','Name','Status','MFA Status','Outlook','Web','MS Team','iPad','iPhone','Update','By']];
+  data.forEach(function(d){rows.push([d.dept,d.email,d.email_old,d.computer_name,d.computer_name_old,d.name,d.status_user_email,d.mfa_status,+d.login_outlook?'Y':'',+d.login_web_browser?'Y':'',+d.login_ms_team?'Y':'',+d.login_ipad?'Y':'',+d.login_iphone?'Y':'',d.update_date,d.update_by]);});
+  var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(rows.map(function(r){return r.map(function(c){return'"'+(c||'')+'"';}).join(',');}).join('\n'));a.download='Email-List.csv';a.click();
+  showToast('📥 Export CSV แล้ว');
+}
+
+function setDB(s,t){document.getElementById('dbDot').className='db-dot '+s;document.getElementById('dbTxt').textContent=t;}
+document.getElementById('ov').addEventListener('click',function(e){if(e.target===e.currentTarget)closeModal();});
+document.getElementById('ov2').addEventListener('click',function(e){if(e.target===e.currentTarget)closeDetail();});
+loadData();
+</script>
+</body>
+</html>

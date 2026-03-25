@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>รายงาน — DeviceHub</title>
+<link rel="stylesheet" href="style.css?v=20260325b">
+<script src="config.js"></script>
+<script src="shared.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+.rg{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.rg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+.rc{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.rc-hdr{padding:13px 18px;border-bottom:1px solid var(--border);background:var(--s2);display:flex;align-items:center;justify-content:space-between;}
+.rc-title{font-size:13px;font-weight:600;}
+.rc-body{padding:16px;}
+.sum-tbl{width:100%;border-collapse:collapse;}
+.sum-tbl td{padding:9px 12px;border-bottom:1px solid var(--border);font-size:13px;}
+.sum-tbl tr:last-child td{border-bottom:none;}
+.sum-tbl td:first-child{color:var(--text2);}
+.sum-tbl td:last-child{font-family:var(--mono);font-weight:600;text-align:right;}
+</style>
+</head>
+<body>
+<div class="layout">
+<div id="sidebar-slot"></div>
+<div class="main">
+  <div class="topbar">
+    <div style="flex:1"><h1>📋 รายงาน</h1><p>Reports & Analytics — MySQL</p></div>
+    <div class="db-pill"><div class="db-dot wait" id="dbDot"></div><span id="dbTxt">โหลด...</span></div>
+    <button class="btn btn-ghost" onclick="loadAll()">🔄 รีเฟรช</button>
+    <button class="btn btn-excel" onclick="exportFull()">📥 Export ทั้งหมด</button>
+    <button class="btn btn-logout" onclick="logout()">⏻</button>
+  </div>
+  <div class="content">
+    <div class="stats-row" style="margin-bottom:18px">
+      <div class="stat-card" onclick="location.href='device-list.html'" style="cursor:pointer"><div class="stat-icon si-c">🖥</div><div><div class="stat-num sn-c" id="r0">—</div><div class="stat-label">อุปกรณ์ทั้งหมด</div></div></div>
+      <div class="stat-card" onclick="location.href='email.html'" style="cursor:pointer"><div class="stat-icon si-v">✉️</div><div><div class="stat-num" style="color:var(--violet)" id="r1">—</div><div class="stat-label">บัญชีอีเมล</div></div></div>
+      <div class="stat-card" onclick="location.href='repair.html'" style="cursor:pointer"><div class="stat-icon si-y">🎫</div><div><div class="stat-num sn-y" id="r2">—</div><div class="stat-label">Tickets รวม</div></div></div>
+      <div class="stat-card" onclick="location.href='users.html'" style="cursor:pointer"><div class="stat-icon si-g">👥</div><div><div class="stat-num sn-g" id="r3">—</div><div class="stat-label">ผู้ใช้งาน</div></div></div>
+    </div>
+    <div class="rg3">
+      <div class="rc"><div class="rc-hdr"><span class="rc-title">🖥 สถานะอุปกรณ์</span><button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="exportSec('devices')">📥</button></div><div class="rc-body"><canvas id="cS" height="180"></canvas></div></div>
+      <div class="rc"><div class="rc-hdr"><span class="rc-title">📦 ประเภทอุปกรณ์</span></div><div class="rc-body"><canvas id="cT" height="180"></canvas></div></div>
+      <div class="rc"><div class="rc-hdr"><span class="rc-title">🎫 Repair Tickets</span><button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="exportSec('tickets')">📥</button></div><div class="rc-body"><canvas id="cTk" height="180"></canvas></div></div>
+    </div>
+    <div class="rg">
+      <div class="rc"><div class="rc-hdr"><span class="rc-title">🏢 อุปกรณ์แยกตามแผนก</span></div><div class="rc-body"><canvas id="cD" height="220"></canvas></div></div>
+      <div class="rc"><div class="rc-hdr"><span class="rc-title">✉️ สถานะอีเมล</span><button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="exportSec('emails')">📥</button></div><div class="rc-body"><canvas id="cE" height="220"></canvas></div></div>
+    </div>
+    <div class="rg">
+      <div class="rc"><div class="rc-hdr"><span class="rc-title">📊 สรุปอุปกรณ์</span></div>
+        <div class="rc-body"><table class="sum-tbl">
+          <tr><td>ทั้งหมด</td><td style="color:var(--cyan)" id="sd0">—</td></tr>
+          <tr><td>ออนไลน์</td><td style="color:var(--green)" id="sd1">—</td></tr>
+          <tr><td>ซ่อมบำรุง</td><td style="color:var(--yellow)" id="sd2">—</td></tr>
+          <tr><td>ออฟไลน์</td><td style="color:var(--red)" id="sd3">—</td></tr>
+        </table></div>
+      </div>
+      <div class="rc"><div class="rc-hdr"><span class="rc-title">📊 สรุป Tickets</span></div>
+        <div class="rc-body"><table class="sum-tbl">
+          <tr><td>ทั้งหมด</td><td style="color:var(--cyan)" id="st0">—</td></tr>
+          <tr><td>เปิดค้าง</td><td style="color:var(--red)" id="st1">—</td></tr>
+          <tr><td>กำลังซ่อม</td><td style="color:var(--yellow)" id="st2">—</td></tr>
+          <tr><td>แก้ไขแล้ว</td><td style="color:var(--green)" id="st3">—</td></tr>
+          <tr><td>ด่วนสูง</td><td style="color:var(--red)" id="st4">—</td></tr>
+        </table></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+buildSidebar('reports');
+
+// Load Chart.js dynamically (ไม่ block render)
+(function() {
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+    s.onload = function() { loadAll(); };
+    s.onerror = function() { loadAll(); };
+    document.head.appendChild(s);
+})();
+var stats=null,ch={};
+var CO={plugins:{legend:{labels:{color:'#7a8899',font:{size:11}}}},animation:{duration:700}};
+function mk(id,cfg){if(ch[id])ch[id].destroy();ch[id]=new Chart(document.getElementById(id),cfg);}
+async function loadAll(){
+  setDB('wait','โหลด...');
+  try{
+    stats=await apiGet(API.dashboard);
+    var d=stats.devices,t=stats.tickets,e=stats.emails;
+    document.getElementById('r0').textContent=d.total;
+    document.getElementById('r1').textContent=e.total;
+    document.getElementById('r2').textContent=t.total;
+    document.getElementById('r3').textContent=stats.users.total;
+    document.getElementById('sd0').textContent=d.total;
+    document.getElementById('sd1').textContent=d.online;
+    document.getElementById('sd2').textContent=d.maintenance;
+    document.getElementById('sd3').textContent=d.offline;
+    document.getElementById('st0').textContent=t.total;
+    document.getElementById('st1').textContent=t.open;
+    document.getElementById('st2').textContent=t.in_progress;
+    document.getElementById('st3').textContent=t.resolved;
+    document.getElementById('st4').textContent=t.high;
+    mk('cS',{type:'doughnut',data:{labels:['ออนไลน์','ซ่อมบำรุง','ออฟไลน์'],datasets:[{data:[d.online,d.maintenance,d.offline],backgroundColor:['rgba(0,232,150,.8)','rgba(255,204,68,.8)','rgba(255,77,109,.8)'],borderWidth:0}]},options:{...CO,cutout:'65%'}});
+    var bt=stats.by_type||[];
+    mk('cT',{type:'bar',data:{labels:bt.map(function(r){return r.type;}),datasets:[{data:bt.map(function(r){return+r.cnt;}),backgroundColor:['rgba(0,212,255,.7)','rgba(167,139,250,.7)','rgba(0,232,150,.7)'],borderRadius:5,borderWidth:0}]},options:{...CO,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#7a8899'},grid:{color:'rgba(255,255,255,.03)'}},y:{ticks:{color:'#7a8899'},grid:{color:'rgba(255,255,255,.03)'}}}}});
+    mk('cTk',{type:'doughnut',data:{labels:['เปิดค้าง','กำลังซ่อม','แก้ไขแล้ว'],datasets:[{data:[t.open,t.in_progress,t.resolved],backgroundColor:['rgba(255,77,109,.8)','rgba(255,204,68,.8)','rgba(0,232,150,.8)'],borderWidth:0}]},options:{...CO,cutout:'65%'}});
+    var bd=stats.by_dept||[];
+    mk('cD',{type:'bar',data:{labels:bd.map(function(r){return r.dept||'?';}),datasets:[{label:'อุปกรณ์',data:bd.map(function(r){return+r.cnt;}),backgroundColor:'rgba(0,212,255,.6)',borderRadius:5,borderWidth:0}]},options:{...CO,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#7a8899'},grid:{color:'rgba(255,255,255,.03)'}},y:{ticks:{color:'#7a8899'},grid:{display:false}}}}});
+    mk('cE',{type:'pie',data:{labels:['Active','Inactive','Suspended'],datasets:[{data:[e.active,e.inactive,e.suspended],backgroundColor:['rgba(0,232,150,.8)','rgba(122,136,153,.6)','rgba(255,77,109,.8)'],borderWidth:0}]},options:{...CO}});
+    setDB('ok','MySQL · Live');
+  }catch(e){setDB('err','error');showToast('❌ '+e.message,'error');}
+}
+async function exportSec(type){
+  try{
+    var rows,fn;
+    if(type==='devices'){var d=await apiGet(API.devices);rows=d.map(function(r){return{'รหัส':r.id,'ชื่อ':r.name,'ประเภท':r.type,'ผู้ใช้':r.user,'แผนก':r.dept,'สถานะ':r.status};});fn='report-devices.xlsx';}
+    else if(type==='emails'){var d=await apiGet(API.emails);rows=d.map(function(r){return{'อีเมล':r.email,'ชื่อ':r.name,'แผนก':r.dept,'Quota':r.quota,'ใช้':r.used,'สถานะ':r.status};});fn='report-emails.xlsx';}
+    else{var d=await apiGet(API.repair);rows=d.map(function(r){return{'Ticket':r.ticket,'หัวข้อ':r.title,'Priority':r.priority,'สถานะ':r.status,'ช่าง':r.tech};});fn='report-tickets.xlsx';}
+    var ws=XLSX.utils.json_to_sheet(rows);var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Report');XLSX.writeFile(wb,fn);
+    showToast('📥 Export แล้ว');
+  }catch(e){showToast('❌ '+e.message,'error');}
+}
+async function exportFull(){
+  try{
+    var dv=await apiGet(API.devices),em=await apiGet(API.emails),us=await apiGet(API.users),tk=await apiGet(API.repair);
+    var wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(dv),'Devices');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(em),'Emails');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(us),'Users');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(tk),'Tickets');
+    XLSX.writeFile(wb,'DeviceHub-Report-Full.xlsx');
+    showToast('📥 Export รายงานเต็มแล้ว');
+  }catch(e){showToast('❌ '+e.message,'error');}
+}
+function setDB(s,t){document.getElementById('dbDot').className='db-dot '+s;document.getElementById('dbTxt').textContent=t;}
+</script>
+</body>
+</html>

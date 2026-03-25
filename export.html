@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ส่งออกรายงาน — DeviceHub</title>
+<link rel="stylesheet" href="style.css?v=20260325b">
+<script src="config.js"></script>
+<script src="shared.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:none}}
+
+/* Stats Bar */
+.stats-bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:24px;}
+.stat-pill{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(15,22,35,.96),rgba(10,14,22,.98));border:1px solid var(--border);border-radius:16px;padding:20px;display:flex;align-items:center;gap:14px;transition:all .2s ease;box-shadow:0 4px 12px rgba(0,0,0,.2);}
+.stat-pill::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 0%,rgba(53,216,255,.06) 100%);pointer-events:none;opacity:0;transition:opacity .2s;}
+.stat-pill:hover{transform:translateY(-2px);border-color:var(--border2);box-shadow:0 12px 28px rgba(0,0,0,.3);}
+.stat-pill:hover::before{opacity:1;}
+.sp-ico{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+.sp-content{flex:1;}
+.sp-num{font-size:32px;font-weight:800;font-family:var(--mono);line-height:1;background:linear-gradient(135deg,var(--cyan),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.sp-lbl{font-size:12px;color:var(--text2);margin-top:6px;font-weight:500;}
+
+/* Theme Selector */
+.theme-section{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:24px;}
+.section-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+.section-sub{font-size:12px;color:var(--text3);margin-bottom:18px;}
+.theme-grid{display:flex;gap:12px;flex-wrap:wrap;padding:8px 0;}
+.theme-btn{width:48px;height:48px;border-radius:14px;border:2px solid transparent;cursor:pointer;transition:all .2s ease;position:relative;box-shadow:0 4px 12px rgba(0,0,0,.2);}
+.theme-btn:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 8px 20px rgba(0,0,0,.3);}
+.theme-btn.active{border-color:var(--cyan);transform:scale(1.08);box-shadow:0 0 0 4px rgba(53,216,255,.15),0 8px 20px rgba(0,0,0,.3);}
+.theme-btn::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;opacity:0;transition:opacity .2s;}
+.theme-btn.active::after{opacity:1;}
+
+/* Options */
+.opt-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;}
+.opt-item{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);padding:10px 16px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid var(--border);transition:all .18s ease;}
+.opt-item:hover{color:var(--text);background:rgba(53,216,255,.08);border-color:var(--border2);}
+.opt-item input[type="checkbox"]{width:16px;height:16px;accent-color:var(--cyan);cursor:pointer;margin:0;}
+
+/* Export Cards */
+.export-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;margin-bottom:24px;}
+.ex-card{position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(15,22,35,.98),rgba(9,13,21,.98));border:1px solid var(--border);border-radius:18px;transition:all .25s ease;animation:fadeUp .4s ease both;box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.ex-card::before{content:'';position:absolute;right:-60px;top:-60px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(53,216,255,.08),transparent 70%);pointer-events:none;transition:opacity .3s;}
+.ex-card:hover{border-color:var(--border2);transform:translateY(-6px);box-shadow:0 16px 40px rgba(0,0,0,.3);}
+.ex-card:hover::before{opacity:1.5;}
+.ex-card.featured{background:linear-gradient(180deg,rgba(17,29,45,.98),rgba(12,20,32,.98));border:2px solid rgba(53,216,255,.3);box-shadow:0 8px 28px rgba(53,216,255,.15),0 0 0 1px rgba(53,216,255,.1) inset;}
+.ex-banner{height:5px;background:linear-gradient(90deg,var(--cyan),var(--green));}
+.ex-body{padding:24px;}
+.ex-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;}
+.ex-ico{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02);}
+.ex-title{font-size:16px;font-weight:700;line-height:1.3;color:var(--text);}
+.ex-sub{font-size:12px;color:var(--text3);margin-top:6px;line-height:1.5;}
+.ex-cols{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:14px 16px;font-size:11px;font-family:var(--mono);color:var(--text3);line-height:1.9;margin-bottom:16px;min-height:100px;}
+.ex-cols b{color:var(--cyan);font-weight:600;}
+.ex-foot{display:flex;gap:10px;flex-wrap:wrap;}
+.ex-btn{flex:1;min-width:120px;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all .2s ease;display:flex;align-items:center;justify-content:center;gap:6px;}
+.ex-btn-export{background:linear-gradient(135deg,var(--cyan),#1ab2e8);color:#0a1420;box-shadow:0 4px 12px rgba(53,216,255,.25);}
+.ex-btn-export:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(53,216,255,.35);}
+.ex-btn-preview{background:rgba(255,255,255,.04);color:var(--text2);border:1px solid var(--border);}
+.ex-btn-preview:hover{background:rgba(255,255,255,.08);color:var(--text);border-color:var(--border2);}
+
+/* Preview Modal */
+.prev-wrap{background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:24px;display:none;box-shadow:0 8px 24px rgba(0,0,0,.3);animation:fadeUp .4s ease;}
+.prev-hdr{padding:18px 24px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.prev-title{font-size:15px;font-weight:700;color:var(--text);}
+.prev-count{font-size:12px;color:var(--text3);font-family:var(--mono);}
+.prev-tbl{overflow-x:auto;max-height:400px;}
+.prev-tbl table{width:100%;border-collapse:collapse;}
+.prev-tbl th{padding:12px 16px;font-size:11px;font-family:var(--mono);font-weight:600;color:var(--text2);text-align:left;border-bottom:2px solid var(--border);background:rgba(255,255,255,.02);white-space:nowrap;position:sticky;top:0;z-index:2;}
+.prev-tbl td{padding:11px 16px;font-size:12px;border-bottom:1px solid var(--border);white-space:nowrap;max-width:250px;overflow:hidden;text-overflow:ellipsis;}
+.prev-tbl tr:last-child td{border-bottom:none;}
+.prev-tbl tr:hover td{background:rgba(53,216,255,.06);}
+
+/* Progress Overlay */
+.prog-ov{position:fixed;inset:0;background:rgba(2,4,8,.85);backdrop-filter:blur(8px);z-index:9999;display:none;align-items:center;justify-content:center;}
+.prog-box{background:linear-gradient(135deg,rgba(13,20,32,.98),rgba(9,13,21,.98));border:2px solid rgba(53,216,255,.2);border-radius:20px;padding:40px;text-align:center;min-width:360px;box-shadow:0 24px 60px rgba(0,0,0,.5),0 0 0 1px rgba(53,216,255,.1) inset;}
+.prog-ico{font-size:64px;margin-bottom:20px;}
+.prog-ico.spin{animation:spin 1.2s linear infinite;display:inline-block;}
+.prog-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px;}
+.prog-sub{font-size:13px;color:var(--text3);margin-bottom:24px;}
+.prog-steps{display:flex;flex-direction:column;gap:8px;align-items:flex-start;text-align:left;}
+.prog-step{font-size:12px;color:var(--text3);font-family:var(--mono);padding:6px 12px;border-radius:8px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);transition:all .25s ease;width:100%;}
+.prog-step.active{color:var(--cyan);background:rgba(53,216,255,.08);border-color:rgba(53,216,255,.2);}
+.prog-step.done{color:var(--green);background:rgba(0,232,150,.08);border-color:rgba(0,232,150,.2);}
+.prog-step::before{content:'○';margin-right:8px;font-size:14px;}
+.prog-step.active::before{content:'◐';}
+.prog-step.done::before{content:'✓';}
+
+/* Helper */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;margin-bottom:24px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.1);}
+.card-hdr{padding:18px 24px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02);}
+.card-title{font-size:14px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;}
+.card-body{padding:24px;}
+
+/* Responsive */
+@media (max-width:1280px){
+  .stats-bar{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .export-grid{grid-template-columns:repeat(auto-fit,minmax(280px,1fr));}
+}
+
+@media (max-width:768px){
+  .stats-bar,.export-grid{grid-template-columns:1fr;}
+  .opt-row{flex-direction:column;gap:8px;}
+  .opt-item{width:100%;}
+  .ex-foot{flex-direction:column;}
+  .ex-btn{width:100%;min-width:auto;}
+  .prog-box{min-width:min(92vw,360px);padding:32px 24px;}
+  .sp-num{font-size:28px;}
+}
+
+/* Animation Delays */
+.ex-card:nth-child(1){animation-delay:.05s;}
+.ex-card:nth-child(2){animation-delay:.1s;}
+.ex-card:nth-child(3){animation-delay:.15s;}
+.ex-card:nth-child(4){animation-delay:.2s;}
+.ex-card:nth-child(5){animation-delay:.25s;}
+.ex-card:nth-child(6){animation-delay:.3s;}
+</style>
+</head>
+<body>
+<div class="layout">
+<div id="sidebar-slot"></div>
+<div class="main">
+  <div class="topbar">
+    <div style="flex:1">
+      <h1>📥 ส่งออกรายงาน</h1>
+      <p style="font-size:12px;color:var(--text2);margin-top:4px">ส่งออกข้อมูลเป็นไฟล์ Excel พร้อมรูปแบบสวยงาม</p>
+    </div>
+    <div class="db-pill"><div class="db-dot wait" id="dbDot"></div><span id="dbTxt">กำลังโหลด...</span></div>
+    <button class="btn btn-ghost" onclick="refreshData()">🔄 รีเฟรช</button>
+    <button class="btn btn-primary" onclick="exportFull()" style="font-weight:700">📊 รายงานฉบับเต็ม</button>
+    <button class="btn btn-logout" onclick="logout()">⏻</button>
+  </div>
+
+  <div class="content">
+
+    <!-- STATISTICS -->
+    <div class="stats-bar">
+      <div class="stat-pill">
+        <div class="sp-ico" style="background:linear-gradient(135deg,rgba(53,216,255,.15),rgba(53,216,255,.05))">🖥</div>
+        <div class="sp-content">
+          <div class="sp-num" id="s0">—</div>
+          <div class="sp-lbl">อุปกรณ์ IT</div>
+        </div>
+      </div>
+      <div class="stat-pill">
+        <div class="sp-ico" style="background:linear-gradient(135deg,rgba(167,139,250,.15),rgba(167,139,250,.05))">✉️</div>
+        <div class="sp-content">
+          <div class="sp-num" id="s1" style="background:linear-gradient(135deg,var(--violet),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">—</div>
+          <div class="sp-lbl">บัญชีอีเมล</div>
+        </div>
+      </div>
+      <div class="stat-pill">
+        <div class="sp-ico" style="background:linear-gradient(135deg,rgba(0,232,150,.15),rgba(0,232,150,.05))">👥</div>
+        <div class="sp-content">
+          <div class="sp-num" id="s2" style="background:linear-gradient(135deg,var(--green),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">—</div>
+          <div class="sp-lbl">ผู้ใช้งาน</div>
+        </div>
+      </div>
+      <div class="stat-pill">
+        <div class="sp-ico" style="background:linear-gradient(135deg,rgba(255,77,109,.15),rgba(255,77,109,.05))">🔧</div>
+        <div class="sp-content">
+          <div class="sp-num" id="s3" style="background:linear-gradient(135deg,var(--red),var(--yellow));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">—</div>
+          <div class="sp-lbl">แจ้งซ่อม</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- THEME & OPTIONS -->
+    <div class="theme-section">
+      <div class="section-title">
+        <span>🎨</span>
+        <span>ตกแต่งไฟล์ Excel</span>
+      </div>
+      <div class="section-sub">เลือกธีมสีและรูปแบบการจัดรูปแบบสำหรับไฟล์ Excel ที่ส่งออก</div>
+      
+      <div style="display:flex;gap:40px;flex-wrap:wrap;align-items:flex-start;">
+        <!-- Theme Colors -->
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px">ธีมสี</div>
+          <div class="theme-grid" id="themeGrid"></div>
+        </div>
+        
+        <!-- Options -->
+        <div style="flex:1;min-width:300px;">
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px">ตัวเลือกเพิ่มเติม</div>
+          <div class="opt-row">
+            <label class="opt-item">
+              <input type="checkbox" id="chkTitle" checked>
+              <span>หัวเรื่อง + วันที่</span>
+            </label>
+            <label class="opt-item">
+              <input type="checkbox" id="chkBorder" checked>
+              <span>ขอบตาราง</span>
+            </label>
+            <label class="opt-item">
+              <input type="checkbox" id="chkAlt" checked>
+              <span>แถวสลับสี</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXPORT CARDS -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+        <span>📦</span>
+        <span>ส่งออกตามหมวดหมู่</span>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:20px;">เลือกประเภทข้อมูลที่ต้องการส่งออกเป็นไฟล์ Excel</div>
+    </div>
+
+    <div class="export-grid">
+      
+      <!-- IT Assets -->
+      <div class="ex-card featured">
+        <div class="ex-banner"></div>
+        <div class="ex-body">
+          <div class="ex-head">
+            <div class="ex-ico" style="background:linear-gradient(135deg,rgba(53,216,255,.15),rgba(53,216,255,.05))">🖥</div>
+            <div>
+              <div class="ex-title">รายการอุปกรณ์ IT</div>
+              <div class="ex-sub">ข้อมูลครบถ้วนของอุปกรณ์คอมพิวเตอร์และอุปกรณ์ IT ทั้งหมด</div>
+            </div>
+          </div>
+          <div class="ex-cols">
+<b>คอลัมน์ที่รวม:</b> รหัส, Fixed Asset, สถานะ, IP Address, ชื่อเครื่อง, ผู้ใช้งาน, Workgroup, MAC Address, ประเภท, ผู้รับผิดชอบ, แผนก, สถานที่, ปีที่ซื้อ, ยี่ห้อ, รุ่น, CPU, RAM, HDD, SSD, จอภาพ, Windows, Office, Antivirus, ซอฟต์แวร์, อินเทอร์เน็ต, อีเมล, หมายเหตุ
+          </div>
+          <div class="ex-foot">
+            <button class="ex-btn ex-btn-export" onclick="exportSingle('devices')">
+              <span>📥</span>
+              <span>ส่งออก</span>
+            </button>
+            <button class="ex-btn ex-btn-preview" onclick="showPreview('devices')">
+              <span>👁</span>
+              <span>ดูตัวอย่าง</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Email & Computer -->
+      <div class="ex-card">
+        <div class="ex-banner" style="background:linear-gradient(90deg,var(--violet),var(--cyan))"></div>
+        <div class="ex-body">
+          <div class="ex-head">
+            <div class="ex-ico" style="background:linear-gradient(135deg,rgba(167,139,250,.15),rgba(167,139,250,.05))">✉️</div>
+            <div>
+              <div class="ex-title">บัญชีอีเมลและคอมพิวเตอร์</div>
+              <div class="ex-sub">รายการบัญชี Email, การตั้งค่า MFA และข้อมูลคอมพิวเตอร์</div>
+            </div>
+          </div>
+          <div class="ex-cols">
+<b>คอลัมน์ที่รวม:</b> แผนก, อีเมล, อีเมลเก่า, ชื่อเครื่อง, ชื่อเครื่องเก่า, ชื่อผู้ใช้, รหัสผ่าน, สถานะบัญชี, ผู้ใช้คอมพิวเตอร์, MFA Email, MFA iPad, MFA Admin, สถานะ MFA, ประกาศ MFA, Login Outlook/Web/Teams/iPad/iPhone, OneDrive, Quota, ใช้แล้ว, ประเภท, หมายเหตุ
+          </div>
+          <div class="ex-foot">
+            <button class="ex-btn ex-btn-export" onclick="exportSingle('emails')">
+              <span>📥</span>
+              <span>ส่งออก</span>
+            </button>
+            <button class="ex-btn ex-btn-preview" onclick="showPreview('emails')">
+              <span>👁</span>
+              <span>ดูตัวอย่าง</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Users -->
+      <div class="ex-card">
+        <div class="ex-banner" style="background:linear-gradient(90deg,var(--green),var(--cyan))"></div>
+        <div class="ex-body">
+          <div class="ex-head">
+            <div class="ex-ico" style="background:linear-gradient(135deg,rgba(0,232,150,.15),rgba(0,232,150,.05))">👥</div>
+            <div>
+              <div class="ex-title">ผู้ใช้งานระบบ</div>
+              <div class="ex-sub">บัญชีผู้ใช้งาน DeviceHub และสิทธิ์การเข้าถึง</div>
+            </div>
+          </div>
+          <div class="ex-cols">
+<b>คอลัมน์ที่รวม:</b> ID, ชื่อ-สกุล, Username, อีเมล, แผนก, บทบาท (Admin/User), เบอร์โทร, จำนวนอุปกรณ์, สถานะ, Login ล่าสุด, สร้างเมื่อ
+          </div>
+          <div class="ex-foot">
+            <button class="ex-btn ex-btn-export" onclick="exportSingle('users')">
+              <span>📥</span>
+              <span>ส่งออก</span>
+            </button>
+            <button class="ex-btn ex-btn-preview" onclick="showPreview('users')">
+              <span>👁</span>
+              <span>ดูตัวอย่าง</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Repair Tickets -->
+      <div class="ex-card">
+        <div class="ex-banner" style="background:linear-gradient(90deg,var(--red),var(--yellow))"></div>
+        <div class="ex-body">
+          <div class="ex-head">
+            <div class="ex-ico" style="background:linear-gradient(135deg,rgba(255,77,109,.15),rgba(255,77,109,.05))">🔧</div>
+            <div>
+              <div class="ex-title">ใบแจ้งซ่อม</div>
+              <div class="ex-sub">รายการแจ้งซ่อม ติดตามสถานะ และประวัติการแก้ไข</div>
+            </div>
+          </div>
+          <div class="ex-cols">
+<b>คอลัมน์ที่รวม:</b> เลขที่ Ticket, หัวเรื่อง, อุปกรณ์, ผู้แจ้ง, ระดับความสำคัญ (High/Medium/Low), สถานะ (Open/In Progress/Resolved), ช่างผู้รับผิดชอบ, รายละเอียด, วันที่สร้าง, อัปเดตล่าสุด
+          </div>
+          <div class="ex-foot">
+            <button class="ex-btn ex-btn-export" onclick="exportSingle('repair')">
+              <span>📥</span>
+              <span>ส่งออก</span>
+            </button>
+            <button class="ex-btn ex-btn-preview" onclick="showPreview('repair')">
+              <span>👁</span>
+              <span>ดูตัวอย่าง</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <div class="ex-card">
+        <div class="ex-banner" style="background:linear-gradient(90deg,var(--yellow),var(--cyan))"></div>
+        <div class="ex-body">
+          <div class="ex-head">
+            <div class="ex-ico" style="background:linear-gradient(135deg,rgba(255,204,68,.15),rgba(255,204,68,.05))">📊</div>
+            <div>
+              <div class="ex-title">สรุปภาพรวม</div>
+              <div class="ex-sub">สถิติและตัวเลขสำคัญของระบบทั้งหมด</div>
+            </div>
+          </div>
+          <div class="ex-cols">
+<b>รายการสรุป:</b> จำนวนอุปกรณ์ทั้งหมด, อุปกรณ์แต่ละประเภท, อุปกรณ์แต่ละแผนก, สถานะอุปกรณ์, บัญชีอีเมล Active/Inactive, ผู้ใช้งาน Admin/User, Tickets แต่ละสถานะ, Tickets แต่ละระดับความสำคัญ
+          </div>
+          <div class="ex-foot">
+            <button class="ex-btn ex-btn-export" onclick="exportSummary()">
+              <span>📥</span>
+              <span>ส่งออก</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full Report -->
+      <div class="ex-card featured">
+        <div class="ex-banner" style="background:linear-gradient(90deg,var(--cyan),var(--violet),var(--green))"></div>
+        <div class="ex-body">
+          <div class="ex-head">
+            <div class="ex-ico" style="background:linear-gradient(135deg,rgba(53,216,255,.2),rgba(167,139,250,.1))">📚</div>
+            <div>
+              <div class="ex-title">รายงานฉบับเต็ม (All-in-One)</div>
+              <div class="ex-sub">ไฟล์เดียว รวมทุกข้อมูล 5 Sheet พร้อมส่งออก</div>
+            </div>
+          </div>
+          <div class="ex-cols">
+<b>รวม 5 Sheets:</b>
+<br>• Sheet 1: รายการอุปกรณ์ IT (IT Assets)
+<br>• Sheet 2: บัญชีอีเมลและคอมพิวเตอร์ (Email & Computer)
+<br>• Sheet 3: ผู้ใช้งานระบบ (Users)
+<br>• Sheet 4: ใบแจ้งซ่อม (Repair Tickets)
+<br>• Sheet 5: สรุปภาพรวม (Summary & By Department)
+          </div>
+          <div class="ex-foot">
+            <button class="ex-btn ex-btn-export" onclick="exportFull()" style="width:100%;">
+              <span>📊</span>
+              <span>ส่งออกรายงานฉบับเต็ม</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PREVIEW TABLE -->
+    <div class="prev-wrap" id="prevWrap">
+      <div class="prev-hdr">
+        <div>
+          <div class="prev-title" id="prevTitle">ตัวอย่างข้อมูล</div>
+          <div class="prev-count" id="prevCount">—</div>
+        </div>
+        <button class="btn btn-ghost" onclick="closePrev()" style="font-size:12px;padding:6px 12px">✕ ปิด</button>
+      </div>
+      <div class="prev-tbl" id="prevTbl"></div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- PROGRESS OVERLAY -->
+<div class="prog-ov" id="progOv">
+  <div class="prog-box">
+    <div class="prog-ico spin" id="progIco">⚙️</div>
+    <div class="prog-title" id="progTitle">กำลังประมวลผล...</div>
+    <div class="prog-sub" id="progSub">โปรดรอสักครู่</div>
+    <div class="prog-steps" id="progSteps"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// INITIALIZATION
+// ═══════════════════════════════════════════════════════════════════════════
+buildSidebar('export');
+
+var allData = { devices: [], emails: [], users: [], repair: [] };
+var _xlTheme = 0; // Default theme index
+
+// ═══════════════════════════════════════════════════════════════════════════
+// THEME SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════
+var XL_THEMES = [
+  { name: 'น้ำเงิน', headerBg: '1E3A5F', headerFg: 'FFFFFF', headerBg2: '2E5299', altBg: 'EBF3FC', borderC: '2E5299', totalBg: '1E3A5F', totalFg: 'FFFFFF', preview: 'linear-gradient(135deg,#1E3A5F,#2E5299)' },
+  { name: 'เขียว', headerBg: '1A3C2A', headerFg: 'FFFFFF', headerBg2: '2D6A4F', altBg: 'EDFFF2', borderC: '2D6A4F', totalBg: '1A3C2A', totalFg: 'FFFFFF', preview: 'linear-gradient(135deg,#1A3C2A,#2D6A4F)' },
+  { name: 'ส้ม', headerBg: '7C2D12', headerFg: 'FFFFFF', headerBg2: 'C2410C', altBg: 'FFF7ED', borderC: 'C2410C', totalBg: '7C2D12', totalFg: 'FFFFFF', preview: 'linear-gradient(135deg,#7C2D12,#C2410C)' },
+  { name: 'ม่วง', headerBg: '3B0764', headerFg: 'FFFFFF', headerBg2: '6D28D9', altBg: 'F5F3FF', borderC: '6D28D9', totalBg: '3B0764', totalFg: 'FFFFFF', preview: 'linear-gradient(135deg,#3B0764,#6D28D9)' },
+  { name: 'มืด', headerBg: '1A1A2E', headerFg: '00D4FF', headerBg2: '16213E', altBg: '1A2744', borderC: '00D4FF', totalBg: '0D0D1A', totalFg: '00E896', preview: 'linear-gradient(135deg,#1A1A2E,#16213E)' },
+];
+
+function initThemes() {
+  var html = '';
+  for (var i = 0; i < XL_THEMES.length; i++) {
+    var active = i === _xlTheme ? ' active' : '';
+    html += '<button class="theme-btn' + active + '" onclick="selectTheme(' + i + ')" title="' + XL_THEMES[i].name + '" style="background:' + XL_THEMES[i].preview + '"></button>';
+  }
+  document.getElementById('themeGrid').innerHTML = html;
+}
+
+function selectTheme(idx) {
+  _xlTheme = idx;
+  var btns = document.querySelectorAll('.theme-btn');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].classList.toggle('active', i === idx);
+  }
+  showToast('เปลี่ยนเป็นธีม ' + XL_THEMES[idx].name + ' แล้ว', 'info');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DATA LOADING
+// ═══════════════════════════════════════════════════════════════════════════
+function setDB(s, t) {
+  document.getElementById('dbDot').className = 'db-dot ' + s;
+  document.getElementById('dbTxt').textContent = t;
+}
+
+async function loadData() {
+  setDB('wait', 'กำลังโหลด...');
+  try {
+    var results = await Promise.allSettled([
+      apiGet(API.devices),
+      apiGet(API.emails),
+      apiGet(API.users),
+      apiGet(API.repair)
+    ]);
+
+    if (results[0].status === 'fulfilled') allData.devices = results[0].value || [];
+    if (results[1].status === 'fulfilled') allData.emails = results[1].value || [];
+    if (results[2].status === 'fulfilled') allData.users = results[2].value || [];
+    if (results[3].status === 'fulfilled') allData.repair = results[3].value || [];
+
+    document.getElementById('s0').textContent = allData.devices.length;
+    document.getElementById('s1').textContent = allData.emails.length;
+    document.getElementById('s2').textContent = allData.users.length;
+    document.getElementById('s3').textContent = allData.repair.length;
+
+    setDB('ok', 'MySQL · พร้อมใช้งาน · ' + (allData.devices.length + allData.emails.length + allData.users.length + allData.repair.length) + ' รายการ');
+  } catch (e) {
+    setDB('err', 'เชื่อมต่อล้มเหลว');
+    showToast('❌ โหลดข้อมูลไม่สำเร็จ: ' + e.message, 'error');
+  }
+}
+
+function refreshData() {
+  loadData();
+  showToast('🔄 รีเฟรชข้อมูลแล้ว', 'info');
+}
+
+async function ensureData() {
+  if (!allData.devices.length) await loadData();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PROGRESS OVERLAY
+// ═══════════════════════════════════════════════════════════════════════════
+function showProg(title, steps) {
+  document.getElementById('progTitle').textContent = title;
+  document.getElementById('progSub').textContent = 'กำลังดำเนินการ โปรดรอสักครู่...';
+  var html = '';
+  for (var i = 0; i < steps.length; i++) {
+    html += '<div class="prog-step" id="step' + i + '">' + steps[i] + '</div>';
+  }
+  document.getElementById('progSteps').innerHTML = html;
+  document.getElementById('progOv').style.display = 'flex';
+}
+
+function stepDone(idx) {
+  var el = document.getElementById('step' + idx);
+  if (el) {
+    el.classList.remove('active');
+    el.classList.add('done');
+  }
+  var next = document.getElementById('step' + (idx + 1));
+  if (next) next.classList.add('active');
+}
+
+function hideProg() {
+  setTimeout(function() {
+    document.getElementById('progOv').style.display = 'none';
+  }, 400);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EXCEL UTILITIES
+// ═══════════════════════════════════════════════════════════════════════════
+function colLetter(n) {
+  var s = '';
+  while (n > 0) {
+    var r = (n - 1) % 26;
+    s = String.fromCharCode(65 + r) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+}
+
+function getDateStr() {
+  var d = new Date();
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+}
+
+function pad(n) {
+  return n < 10 ? '0' + n : '' + n;
+}
+
+function buildSheet(rows, title, subtitle) {
+  if (!rows || !rows.length) return XLSX.utils.json_to_sheet([]);
+
+  var theme = XL_THEMES[_xlTheme];
+  var cols = Object.keys(rows[0]);
+  var ws = {};
+  var border = {
+    top: { style: 'thin', color: { rgb: theme.borderC } },
+    bottom: { style: 'thin', color: { rgb: theme.borderC } },
+    left: { style: 'thin', color: { rgb: theme.borderC } },
+    right: { style: 'thin', color: { rgb: theme.borderC } }
+  };
+
+  var useBorder = document.getElementById('chkBorder').checked;
+  var useTitle = document.getElementById('chkTitle').checked;
+  var useAlt = document.getElementById('chkAlt').checked;
+
+  var today = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+  var startRow = useTitle ? 4 : 1;
+
+  // Title Row
+  if (useTitle) {
+    ws['A1'] = {
+      v: title || 'รายงาน',
+      t: 's',
+      s: {
+        font: { bold: true, sz: 16, color: { rgb: theme.headerFg }, name: 'Angsana New' },
+        fill: { fgColor: { rgb: theme.headerBg }, patternType: 'solid' },
+        alignment: { horizontal: 'center', vertical: 'center' }
+      }
+    };
+
+    ws['A2'] = {
+      v: (subtitle || '') + ' | ' + today + ' | จำนวน ' + rows.length + ' รายการ',
+      t: 's',
+      s: {
+        font: { sz: 12, italic: true, color: { rgb: theme.headerFg }, name: 'Angsana New' },
+        fill: { fgColor: { rgb: theme.headerBg2 }, patternType: 'solid' },
+        alignment: { horizontal: 'center', vertical: 'center' }
+      }
+    };
+
+    ws['A3'] = { v: '', t: 's', s: { fill: { fgColor: { rgb: 'F8F9FA' }, patternType: 'solid' } } };
+  }
+
+  // Header Row
+  cols.forEach(function(col, ci) {
+    ws[colLetter(ci + 1) + startRow] = {
+      v: col,
+      t: 's',
+      s: {
+        font: { bold: true, sz: 12, color: { rgb: theme.headerFg }, name: 'Angsana New' },
+        fill: { fgColor: { rgb: theme.headerBg }, patternType: 'solid' },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        border: useBorder ? border : undefined
+      }
+    };
+  });
+
+  // Data Rows
+  rows.forEach(function(row, ri) {
+    var isAlt = useAlt && (ri % 2 === 1);
+    var fillColor = isAlt ? theme.altBg : 'FFFFFF';
+    
+    cols.forEach(function(col, ci) {
+      var val = row[col];
+      var isNum = typeof val === 'number' || (typeof val === 'string' && val !== '' && !isNaN(val));
+      
+      ws[colLetter(ci + 1) + (startRow + 1 + ri)] = {
+        v: (val !== null && val !== undefined) ? val : '',
+        t: isNum ? 'n' : 's',
+        s: {
+          font: { sz: 11, name: 'Angsana New' },
+          fill: { fgColor: { rgb: fillColor }, patternType: 'solid' },
+          alignment: { vertical: 'center', horizontal: isNum ? 'right' : 'left' },
+          border: useBorder ? border : undefined
+        }
+      };
+    });
+  });
+
+  // Total Row
+  var totalRow = startRow + rows.length;
+  cols.forEach(function(col, ci) {
+    ws[colLetter(ci + 1) + totalRow] = {
+      v: ci === 0 ? 'รวมทั้งหมด: ' + rows.length + ' รายการ' : '',
+      t: 's',
+      s: {
+        font: { bold: true, sz: 12, color: { rgb: theme.totalFg }, name: 'Angsana New' },
+        fill: { fgColor: { rgb: theme.totalBg }, patternType: 'solid' },
+        alignment: { horizontal: ci === 0 ? 'left' : 'center', vertical: 'center' },
+        border: useBorder ? border : undefined
+      }
+    };
+  });
+
+  // Sheet Range
+  ws['!ref'] = 'A1:' + colLetter(cols.length) + totalRow;
+
+  // Merges
+  if (useTitle) {
+    ws['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: cols.length - 1 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: cols.length - 1 } },
+      { s: { r: 2, c: 0 }, e: { r: 2, c: cols.length - 1 } }
+    ];
+    ws['!rows'] = [{ hpt: 26 }, { hpt: 20 }, { hpt: 6 }, { hpt: 24 }];
+  } else {
+    ws['!rows'] = [{ hpt: 24 }];
+  }
+
+  // Column Widths
+  ws['!cols'] = cols.map(function(col) {
+    var maxLen = col.length;
+    rows.forEach(function(r) {
+      var v = String(r[col] || '');
+      if (v.length > maxLen) maxLen = v.length;
+    });
+    return { wch: Math.min(Math.max(maxLen + 2, 10), 45) };
+  });
+
+  return ws;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DATA MAPPING
+// ═══════════════════════════════════════════════════════════════════════════
+function mapDevices(data) {
+  return data.map(function(d) {
+    return {
+      'รหัส': d.id || '',
+      'Fixed Asset': d.fixed_asset_no || '',
+      'สถานะ': d.status === 'online' ? 'ออนไลน์' : d.status === 'offline' ? 'ออฟไลน์' : d.status === 'maintenance' ? 'กำลังซ่อม' : '',
+      'IP Address': d.ip || '',
+      'ชื่อเครื่อง': d.computer_name || '',
+      'ผู้ใช้งาน': d.username || '',
+      'Workgroup': d.workgroup || '',
+      'MAC Address': d.mac || '',
+      'ประเภท': d.type || '',
+      'ผู้รับผิดชอบ': d.pic || '',
+      'แผนก': d.dept || '',
+      'สถานที่': d.location || '',
+      'ปีที่ซื้อ': d.year_purchased || '',
+      'ยี่ห้อ': d.brand || '',
+      'รุ่น': d.model || '',
+      'CPU': d.cpu || '',
+      'ความเร็ว CPU (GHz)': d.cpu_speed || '',
+      'RAM (MB)': d.ram_mb || '',
+      'Serial No': d.serial_no || '',
+      'Service Tag': d.service_tag || '',
+      'HDD (GB)': d.hdd_gb || '',
+      'ชื่อ HDD': d.hdd_name || '',
+      'SSD (GB)': d.ssd_gb || '',
+      'ชื่อ SSD': d.ssd_name || '',
+      'ยี่ห้อจอภาพ': d.monitor_brand || '',
+      'รุ่นจอภาพ': d.monitor_model || '',
+      'ขนาดจอ': d.monitor_spec || '',
+      'Serial จอ': d.monitor_serial || '',
+      'Windows': d.win_version || '',
+      'Bit': d.win_bit || '',
+      'Win License': d.win_license || '',
+      'Win Key': d.win_key || '',
+      'Office': d.office_version || '',
+      'Office License': d.office_license || '',
+      'Office Key': d.office_key || '',
+      'Antivirus': d.av_name || '',
+      'AV Version': d.av_version || '',
+      'HRM': d.sw_hrm ? '✓' : '',
+      'SAP': d.sw_sap ? '✓' : '',
+      'Stock': d.sw_stock ? '✓' : '',
+      'Garoon': d.sw_garoon ? '✓' : '',
+      'Team': d.sw_team ? '✓' : '',
+      'ซอฟต์แวร์อื่น': d.sw_other || '',
+      'อินเทอร์เน็ต': d.access_internet ? '✓' : '',
+      'อีเมล': d.access_email ? '✓' : '',
+      'Email Address': d.email || '',
+      'Logon': d.logon || '',
+      'หมายเหตุ': d.remark || ''
+    };
+  });
+}
+
+function mapEmails(data) {
+  return data.map(function(e) {
+    return {
+      'แผนก': e.dept || '',
+      'อีเมล': e.email || '',
+      'อีเมลเก่า': e.email_old || '',
+      'ชื่อเครื่อง': e.computer_name || '',
+      'ชื่อเครื่องเก่า': e.computer_name_old || '',
+      'ชื่อผู้ใช้': e.name || '',
+      'รหัสผ่าน': e.password || '',
+      'สถานะบัญชี': e.status_user_email === 'active' ? 'ใช้งาน' : e.status_user_email === 'inactive' ? 'ไม่ใช้งาน' : 'ระงับ',
+      'ผู้ใช้คอมพิวเตอร์': e.user_computer || '',
+      'MFA Email': e.mfa_email_user ? '✓' : '',
+      'MFA iPad App': e.mfa_ipad_app ? '✓' : '',
+      'MFA Enable Admin': e.mfa_enable_admin ? '✓' : '',
+      'สถานะ MFA': e.mfa_status || '',
+      'ประกาศ MFA': e.mfa_announcement || '',
+      'Login Outlook': e.login_outlook ? '✓' : '',
+      'Login Web Browser': e.login_web_browser ? '✓' : '',
+      'Login MS Team': e.login_ms_team ? '✓' : '',
+      'Login iPad': e.login_ipad ? '✓' : '',
+      'Login iPhone': e.login_iphone ? '✓' : '',
+      'OneDrive List': e.onedrive_list || '',
+      'Quota (GB)': e.quota || '',
+      'ใช้แล้ว (GB)': e.used || '',
+      'ประเภท': e.type || '',
+      'หมายเหตุ': e.note || ''
+    };
+  });
+}
+
+function mapUsers(data) {
+  return data.map(function(u) {
+    return {
+      'ID': u.id || '',
+      'ชื่อ-สกุล': u.name || '',
+      'Username': u.username || '',
+      'อีเมล': u.email || '',
+      'แผนก': u.dept || '',
+      'บทบาท': u.role === 'admin' ? 'Admin' : 'User',
+      'เบอร์โทร': u.phone || '',
+      'จำนวนอุปกรณ์': u.devices || 0,
+      'สถานะ': u.status === 'active' ? 'ใช้งาน' : 'ไม่ใช้งาน',
+      'Login ล่าสุด': u.last_login || '',
+      'สร้างเมื่อ': u.created_at || ''
+    };
+  });
+}
+
+function mapRepair(data) {
+  return data.map(function(r) {
+    return {
+      'เลขที่ Ticket': r.ticket || '',
+      'หัวเรื่อง': r.title || '',
+      'อุปกรณ์': r.device || '',
+      'ผู้แจ้ง': r.reporter || '',
+      'ระดับ': r.priority === 'high' ? 'สูง' : r.priority === 'medium' ? 'ปานกลาง' : 'ต่ำ',
+      'สถานะ': r.status === 'open' ? 'เปิดค้าง' : r.status === 'in_progress' ? 'กำลังดำเนินการ' : 'แก้ไขแล้ว',
+      'ช่างผู้รับผิดชอบ': r.tech || '',
+      'รายละเอียด': r.description || '',
+      'สร้างเมื่อ': r.created_at || '',
+      'อัปเดตล่าสุด': r.updated_at || ''
+    };
+  });
+}
+
+function mapSummary(devices, emails, users, tickets) {
+  var dOnline = 0, dOffline = 0, dMaint = 0;
+  devices.forEach(function(d) {
+    if (d.status === 'online') dOnline++;
+    else if (d.status === 'offline') dOffline++;
+    else if (d.status === 'maintenance') dMaint++;
+  });
+
+  var eActive = 0, eInactive = 0, eSuspended = 0;
+  emails.forEach(function(e) {
+    if (e.status_user_email === 'active') eActive++;
+    else if (e.status_user_email === 'inactive') eInactive++;
+    else eSuspended++;
+  });
+
+  var uActive = 0, uAdmin = 0, uUser = 0;
+  users.forEach(function(u) {
+    if (u.status === 'active') uActive++;
+    if (u.role === 'admin') uAdmin++;
+    else uUser++;
+  });
+
+  var tOpen = 0, tProgress = 0, tResolved = 0, tHigh = 0, tMedium = 0, tLow = 0;
+  tickets.forEach(function(t) {
+    if (t.status === 'open') tOpen++;
+    else if (t.status === 'in_progress') tProgress++;
+    else tResolved++;
+    if (t.priority === 'high') tHigh++;
+    else if (t.priority === 'medium') tMedium++;
+    else tLow++;
+  });
+
+  return [
+    { 'หมวดหมู่': 'อุปกรณ์ IT', 'รายการ': 'ทั้งหมด', 'จำนวน': devices.length },
+    { 'หมวดหมู่': 'อุปกรณ์ IT', 'รายการ': 'ออนไลน์', 'จำนวน': dOnline },
+    { 'หมวดหมู่': 'อุปกรณ์ IT', 'รายการ': 'ออฟไลน์', 'จำนวน': dOffline },
+    { 'หมวดหมู่': 'อุปกรณ์ IT', 'รายการ': 'กำลังซ่อม', 'จำนวน': dMaint },
+    { 'หมวดหมู่': 'บัญชีอีเมล', 'รายการ': 'ทั้งหมด', 'จำนวน': emails.length },
+    { 'หมวดหมู่': 'บัญชีอีเมล', 'รายการ': 'Active', 'จำนวน': eActive },
+    { 'หมวดหมู่': 'บัญชีอีเมล', 'รายการ': 'Inactive', 'จำนวน': eInactive },
+    { 'หมวดหมู่': 'บัญชีอีเมล', 'รายการ': 'Suspended', 'จำนวน': eSuspended },
+    { 'หมวดหมู่': 'ผู้ใช้งาน', 'รายการ': 'ทั้งหมด', 'จำนวน': users.length },
+    { 'หมวดหมู่': 'ผู้ใช้งาน', 'รายการ': 'Active', 'จำนวน': uActive },
+    { 'หมวดหมู่': 'ผู้ใช้งาน', 'รายการ': 'Admin', 'จำนวน': uAdmin },
+    { 'หมวดหมู่': 'ผู้ใช้งาน', 'รายการ': 'User', 'จำนวน': uUser },
+    { 'หมวดหมู่': 'แจ้งซ่อม', 'รายการ': 'ทั้งหมด', 'จำนวน': tickets.length },
+    { 'หมวดหมู่': 'แจ้งซ่อม', 'รายการ': 'เปิดค้าง', 'จำนวน': tOpen },
+    { 'หมวดหมู่': 'แจ้งซ่อม', 'รายการ': 'กำลังดำเนินการ', 'จำนวน': tProgress },
+    { 'หมวดหมู่': 'แจ้งซ่อม', 'รายการ': 'แก้ไขแล้ว', 'จำนวน': tResolved },
+    { 'หมวดหมู่': 'แจ้งซ่อม', 'รายการ': 'ระดับสูง', 'จำนวน': tHigh },
+    { 'หมวดหมู่': 'แจ้งซ่อม', 'รายการ': 'ระดับกลาง', 'จำนวน': tMedium },
+    { 'หมวดหมู่': 'แจ้งซ่อม', 'รายการ': 'ระดับต่ำ', 'จำนวน': tLow }
+  ];
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EXPORT FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+async function exportSingle(type) {
+  await ensureData();
+  
+  var configs = {
+    devices: { data: allData.devices, map: mapDevices, title: '🖥 รายการอุปกรณ์ IT — DeviceHub', sub: 'ข้อมูลอุปกรณ์คอมพิวเตอร์และอุปกรณ์ IT', sheet: 'IT Assets', file: 'IT-Assets' },
+    emails: { data: allData.emails, map: mapEmails, title: '✉️ บัญชีอีเมลและคอมพิวเตอร์ — DeviceHub', sub: 'รายการบัญชีอีเมลและข้อมูลคอมพิวเตอร์', sheet: 'Email & Computer', file: 'Email-Computer' },
+    users: { data: allData.users, map: mapUsers, title: '👥 ผู้ใช้งานระบบ — DeviceHub', sub: 'รายชื่อผู้ใช้งานระบบ', sheet: 'Users', file: 'Users' },
+    repair: { data: allData.repair, map: mapRepair, title: '🔧 ใบแจ้งซ่อม — DeviceHub', sub: 'รายการ Ticket แจ้งซ่อม', sheet: 'Repair Tickets', file: 'Repair-Tickets' }
+  };
+
+  var cfg = configs[type];
+  showProg('กำลัง Export ' + cfg.sheet + '...', ['โหลดข้อมูล', 'สร้าง Sheet', 'บันทึกไฟล์']);
+  stepDone(0);
+
+  try {
+    var rows = cfg.map(cfg.data);
+    var ws = buildSheet(rows, cfg.title, cfg.sub);
+    stepDone(1);
+    
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, cfg.sheet.substring(0, 31));
+    XLSX.writeFile(wb, cfg.file + '-' + getDateStr() + '.xlsx');
+    stepDone(2);
+    
+    showToast('📥 ส่งออก ' + cfg.sheet + ' สำเร็จ! (' + rows.length + ' รายการ)', 'success');
+  } catch (e) {
+    showToast('❌ เกิดข้อผิดพลาด: ' + e.message, 'error');
+  }
+  
+  hideProg();
+}
+
+async function exportSummary() {
+  await ensureData();
+  showProg('กำลังสร้าง Summary...', ['สรุปตัวเลข', 'แยกตามแผนก', 'บันทึกไฟล์']);
+  
+  try {
+    var sumRows = mapSummary(allData.devices, allData.emails, allData.users, allData.repair);
+    var ws1 = buildSheet(sumRows, '📊 สรุปภาพรวม IT — DeviceHub', 'สรุปภาพรวม DeviceHub IT Management');
+    stepDone(0);
+
+    // By Department
+    var deptMap = {};
+    allData.devices.forEach(function(d) {
+      var dept = d.dept || 'ไม่ระบุ';
+      deptMap[dept] = (deptMap[dept] || 0) + 1;
+    });
+    var deptRows = Object.keys(deptMap).sort().map(function(d) {
+      return { 'แผนก': d, 'จำนวนอุปกรณ์': deptMap[d] };
+    });
+    var ws2 = buildSheet(deptRows, '🏢 อุปกรณ์แยกตามแผนก', '');
+    stepDone(1);
+
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws1, 'Summary');
+    XLSX.utils.book_append_sheet(wb, ws2, 'By Department');
+    XLSX.writeFile(wb, 'Summary-Report-' + getDateStr() + '.xlsx');
+    stepDone(2);
+    
+    showToast('📥 ส่งออกสรุปภาพรวมสำเร็จ!', 'success');
+  } catch (e) {
+    showToast('❌ เกิดข้อผิดพลาด: ' + e.message, 'error');
+  }
+  
+  hideProg();
+}
+
+async function exportFull() {
+  await ensureData();
+  showProg('กำลังสร้างรายงานฉบับเต็ม (5 Sheets)...', [
+    'Sheet 1: IT Assets',
+    'Sheet 2: Email & Computer',
+    'Sheet 3: Users',
+    'Sheet 4: Repair Tickets',
+    'Sheet 5: Summary',
+    'บันทึกไฟล์'
+  ]);
+
+  try {
+    var today = new Date().toLocaleDateString('th-TH');
+    var wb = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(wb, buildSheet(mapDevices(allData.devices), '🖥 รายการอุปกรณ์ IT', 'รายการอุปกรณ์ IT | ' + today), 'IT Assets');
+    stepDone(0);
+
+    XLSX.utils.book_append_sheet(wb, buildSheet(mapEmails(allData.emails), '✉️ บัญชีอีเมลและคอมพิวเตอร์', 'รายการบัญชีอีเมล | ' + today), 'Email & Computer');
+    stepDone(1);
+
+    XLSX.utils.book_append_sheet(wb, buildSheet(mapUsers(allData.users), '👥 ผู้ใช้งานระบบ', 'รายชื่อผู้ใช้งาน | ' + today), 'Users');
+    stepDone(2);
+
+    XLSX.utils.book_append_sheet(wb, buildSheet(mapRepair(allData.repair), '🔧 ใบแจ้งซ่อม', 'Ticket แจ้งซ่อม | ' + today), 'Repair Tickets');
+    stepDone(3);
+
+    var sumRows = mapSummary(allData.devices, allData.emails, allData.users, allData.repair);
+    var deptMap = {};
+    allData.devices.forEach(function(d) {
+      var dept = d.dept || 'ไม่ระบุ';
+      deptMap[dept] = (deptMap[dept] || 0) + 1;
+    });
+    
+    var wsSummary = buildSheet(sumRows, '📊 สรุปภาพรวม', 'สรุปภาพรวม | ' + today);
+    XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+    stepDone(4);
+
+    XLSX.writeFile(wb, 'DeviceHub-Full-Report-' + getDateStr() + '.xlsx');
+    stepDone(5);
+    
+    showToast('📊 ส่งออกรายงานฉบับเต็มสำเร็จ! (5 Sheets)', 'success');
+  } catch (e) {
+    showToast('❌ เกิดข้อผิดพลาด: ' + e.message, 'error');
+  }
+  
+  hideProg();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PREVIEW
+// ═══════════════════════════════════════════════════════════════════════════
+function xe(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+async function showPreview(type) {
+  await ensureData();
+  
+  var configs = {
+    devices: { data: allData.devices.slice(0, 10), map: mapDevices, title: '🖥 รายการอุปกรณ์ IT — 10 แถวแรก' },
+    emails: { data: allData.emails.slice(0, 10), map: mapEmails, title: '✉️ บัญชีอีเมล — 10 แถวแรก' },
+    users: { data: allData.users.slice(0, 10), map: mapUsers, title: '👥 ผู้ใช้งาน — 10 แถวแรก' },
+    repair: { data: allData.repair.slice(0, 10), map: mapRepair, title: '🔧 ใบแจ้งซ่อม — 10 แถวแรก' }
+  };
+
+  var cfg = configs[type];
+  var mapped = cfg.map(cfg.data);
+  
+  if (!mapped.length) {
+    showToast('ไม่มีข้อมูลให้แสดง', 'error');
+    return;
+  }
+
+  var keys = Object.keys(mapped[0]);
+  var html = '<table><thead><tr>' + keys.map(function(k) { return '<th>' + xe(k) + '</th>'; }).join('') + '</tr></thead><tbody>';
+  
+  mapped.forEach(function(row) {
+    html += '<tr>' + keys.map(function(k) {
+      var v = row[k];
+      var style = v === '✓' ? 'color:var(--green);text-align:center;font-size:16px' : 
+                  (v && typeof v === 'string' && v.indexOf('@') !== -1) ? 'color:var(--cyan);font-family:var(--mono);font-size:11px' : '';
+      return '<td' + (style ? ' style="' + style + '"' : '') + '>' + xe(String(v || '')) + '</td>';
+    }).join('') + '</tr>';
+  });
+  
+  html += '</tbody></table>';
+  
+  document.getElementById('prevTitle').textContent = cfg.title;
+  document.getElementById('prevCount').textContent = 'แสดง ' + mapped.length + ' / ' + allData[type].length + ' รายการ';
+  document.getElementById('prevTbl').innerHTML = html;
+  
+  var wrap = document.getElementById('prevWrap');
+  wrap.style.display = 'block';
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closePrev() {
+  document.getElementById('prevWrap').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════════════
+initThemes();
+loadData();
+</script>
+</body>
+</html>

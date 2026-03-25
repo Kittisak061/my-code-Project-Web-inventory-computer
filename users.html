@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ผู้ใช้งาน — DeviceHub</title>
+<link rel="stylesheet" href="style.css?v=20260325b">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="config.js"></script><script src="shared.js"></script>
+<style>
+.perm-bar{display:flex;align-items:center;gap:12px;border-radius:9px;padding:12px 18px;margin-bottom:16px;font-size:13px;}
+.perm-bar.admin{background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.2);color:var(--cyan);}
+.perm-bar.user{background:rgba(255,77,109,.06);border:1px solid rgba(255,77,109,.2);color:var(--red);}
+.perm-bar .ico{font-size:20px;flex-shrink:0;}
+.lock-overlay{position:absolute;inset:0;background:rgba(8,11,17,.72);backdrop-filter:blur(3px);z-index:10;display:flex;align-items:center;justify-content:center;border-radius:10px;}
+.lock-box{text-align:center;padding:32px;}
+.lock-ico{font-size:52px;margin-bottom:14px;}
+.lock-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px;}
+.lock-sub{font-size:13px;color:var(--text2);line-height:1.7;}
+</style>
+</head>
+<body>
+<div class="layout">
+<div id="sidebar-slot"></div>
+<div class="main">
+  <div class="topbar">
+    <div style="flex:1"><h1>👥 ผู้ใช้งาน</h1><p>Users — MySQL</p></div>
+    <div class="db-pill"><div class="db-dot wait" id="dbDot"></div><span id="dbTxt">โหลด...</span></div>
+    <button class="btn btn-ghost" onclick="loadData()">🔄</button>
+    <button class="btn btn-excel" onclick="exportXL()">📥 Excel</button>
+    <button class="btn btn-primary" id="btnAdd" style="display:none" onclick="openModal(null)">+ เพิ่มผู้ใช้</button>
+    <button class="btn btn-logout" onclick="logout()">⏻</button>
+  </div>
+  <div class="content">
+
+    <!-- Permission Banner -->
+    <div class="perm-bar" id="permBar">
+      <span class="ico" id="permIco"></span>
+      <div>
+        <div style="font-weight:600" id="permTitle"></div>
+        <div style="font-size:12px;margin-top:2px;opacity:.8" id="permSub"></div>
+      </div>
+    </div>
+
+    <!-- Stats — เฉพาะ admin ดู count admin -->
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-icon si-c">👥</div><div><div class="stat-num sn-c" id="s0">—</div><div class="stat-label">ทั้งหมด</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-g">✅</div><div><div class="stat-num sn-g" id="s1">—</div><div class="stat-label">Active</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-v">👑</div><div><div class="stat-num" style="color:var(--violet)" id="s2">—</div><div class="stat-label">Admin</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-y">👤</div><div><div class="stat-num sn-y" id="s3">—</div><div class="stat-label">User</div></div></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box"><span class="search-ico">🔍</span><input class="search-input" id="qS" placeholder="ค้นหาชื่อ, username, แผนก..."></div>
+      <select class="filter-sel" id="fR">
+        <option value="">ทุก Role</option>
+        <option value="admin">Admin</option>
+        <option value="user">User</option>
+      </select>
+      <select class="filter-sel" id="fS">
+        <option value="">ทุกสถานะ</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
+      <button class="btn btn-ghost" onclick="clearF()">✕ ล้าง</button>
+    </div>
+
+    <div style="position:relative">
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th style="padding-left:18px">ผู้ใช้</th>
+            <th>Username</th>
+            <th>อีเมล</th>
+            <th>แผนก</th>
+            <th>Role</th>
+            <th>เบอร์โทร</th>
+            <th>อุปกรณ์</th>
+            <th>สถานะ</th>
+            <th id="thAct">จัดการ</th>
+          </tr></thead>
+          <tbody id="tb"></tbody>
+        </table>
+        <div class="pager"><div class="pager-info" id="pi">—</div></div>
+      </div>
+      <!-- Lock overlay สำหรับ user role -->
+      <div class="lock-overlay" id="lockOv" style="display:none">
+        <div class="lock-box">
+          <div class="lock-ico">🔐</div>
+          <div class="lock-title">สิทธิ์ไม่เพียงพอ</div>
+          <div class="lock-sub">
+            Role ของคุณคือ <b style="color:var(--cyan)">User</b><br>
+            เฉพาะ <b style="color:var(--cyan)">Admin</b> เท่านั้นที่จัดการผู้ใช้งานได้<br>
+            <span style="font-size:12px;color:var(--text3)">ติดต่อ Admin หากต้องการดำเนินการ</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- Modal — Admin only -->
+<div class="overlay" id="ov">
+<div class="modal">
+  <div class="modal-hdr">
+    <div class="modal-title" id="mT">➕ เพิ่มผู้ใช้ใหม่</div>
+    <button class="modal-x" onclick="closeModal()">✕</button>
+  </div>
+  <div class="modal-body">
+    <div style="display:flex;align-items:center;gap:8px;background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.15);border-radius:7px;padding:9px 14px;margin-bottom:16px;font-size:12px;color:var(--cyan)">
+      👑 &nbsp;เฉพาะ Admin เท่านั้นที่สามารถสร้าง/แก้ไขผู้ใช้งานได้
+    </div>
+    <div class="form-grid">
+      <div class="form-grp"><label class="form-lbl">ชื่อ-นามสกุล *</label><input class="form-inp" id="fn" placeholder="ชื่อ นามสกุล"></div>
+      <div class="form-grp"><label class="form-lbl">Username</label><input class="form-inp" id="fu" placeholder="username"></div>
+      <div class="form-grp form-full"><label class="form-lbl">อีเมล *</label><input class="form-inp" id="fe" type="email" placeholder="user@company.com"></div>
+      <div class="form-grp"><label class="form-lbl">แผนก</label>
+        <select class="form-sel" id="fd">
+          <option value="">— เลือกแผนก —</option>
+          <option>AD - AC</option><option>AD - GA</option><option>AD - HRD</option>
+          <option>AD - HRM</option><option>AD-IT</option>
+          <option>AUTOMOTIVE - PD</option>
+          <option>BC CENTER</option><option>BC CENTER - PC</option>
+          <option>BC CENTER - PURCHASE</option><option>BC CENTER - SALE</option>
+          <option>BC CENTER - STANDARD SETTING</option><option>BC CENTER - WAREHOUSE</option>
+          <option>EC - FM</option><option>EC - ME</option><option>EC - PE</option>
+          <option>EC DIVISION</option><option>MARKETING</option>
+          <option>MEDICAL - PD</option><option>MEDICAL - PE</option>
+          <option>PD1 - PE</option><option>PD1 - PE (ME/AUTO)</option>
+          <option>PD1 - PE (ME/INJ)</option><option>PD1 - PE (MN/ASSY)</option>
+          <option>PD1 - PE (PE/AUTO)</option><option>PD1 - PE (PE/INJ)</option>
+          <option>PRECISION - PD ASSY</option><option>PRECISION - PD ASSY(ASSY)</option>
+          <option>PRECISION - PD ASSY(PAINT)</option>
+          <option>PRECISION - PD INJ1</option><option>PRECISION - PD INJ2</option>
+          <option>PRODUCTION DIVISION 1</option><option>PRODUCTION DIVISION 2</option>
+          <option>QA CENTER</option><option>QA CENTER - QA</option>
+          <option>QA CENTER - QC</option><option>QA CENTER - QM</option><option>QA CENTER - QS</option>
+          <option>SLIT - PD</option><option>SLIT - PE</option>
+        </select>
+      </div>
+      <div class="form-grp"><label class="form-lbl">Role</label>
+        <select class="form-sel" id="fr">
+          <option value="user">👤 User</option>
+          <option value="admin">👑 Admin</option>
+        </select>
+      </div>
+      <div class="form-grp"><label class="form-lbl">เบอร์โทร</label><input class="form-inp" id="fp" placeholder="08x-xxx-xxxx"></div>
+      <div class="form-grp"><label class="form-lbl">สถานะ</label>
+        <select class="form-sel" id="fs">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+      <div class="form-grp" id="pwGrp"><label class="form-lbl">Password <span id="pwReq" style="color:var(--red)">*</span></label>
+        <div style="position:relative">
+          <input class="form-inp" id="fpw" type="password" placeholder="อย่างน้อย 4 ตัวอักษร" style="padding-right:36px">
+          <button type="button" onclick="var e=document.getElementById('fpw');e.type=e.type==='password'?'text':'password'" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:13px;color:var(--text3)">👁</button>
+        </div>
+        <div id="pwHint" style="font-size:11px;color:var(--text3);margin-top:3px">เว้นว่างไว้เพื่อคงรหัสผ่านเดิม (แก้ไขเท่านั้น)</div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
+    <button class="btn btn-primary" id="sv" onclick="save()">💾 บันทึกลง MySQL</button>
+  </div>
+</div>
+</div>
+
+<script>
+buildSidebar('users');
+
+// ── Role System ────────────────────────────────────────────────
+var _cu = getCurrentUser() || {}; var currentUser = _cu.username || '';
+
+var data = [], editId = null;
+var RL = { admin: 'Admin', user: 'User' };
+
+// ── Setup UI ตาม Role ──
+function setupUI() {
+  var bar   = document.getElementById('permBar');
+  var ico   = document.getElementById('permIco');
+  var title = document.getElementById('permTitle');
+  var sub   = document.getElementById('permSub');
+
+  if (isAdmin()) {
+    bar.className   = 'perm-bar admin';
+    ico.textContent = '👑';
+    title.textContent = 'คุณ Login เป็น Admin — มีสิทธิ์เต็ม';
+    sub.textContent   = 'สามารถเพิ่ม แก้ไข และลบผู้ใช้งานได้ทั้งหมด';
+    document.getElementById('btnAdd').style.display = 'inline-flex';
+    document.getElementById('lockOv').style.display = 'none';
+  } else {
+    bar.className   = 'perm-bar user';
+    ico.textContent = '👤';
+    title.textContent = 'คุณ Login เป็น User — ดูได้อย่างเดียว';
+    sub.textContent   = 'ไม่มีสิทธิ์เพิ่ม แก้ไข หรือลบผู้ใช้งาน';
+    document.getElementById('btnAdd').style.display = 'none';
+    document.getElementById('lockOv').style.display = 'flex';
+    document.getElementById('thAct').style.display  = 'none';
+  }
+}
+
+async function loadData() {
+  setDB('wait', 'โหลด...');
+  try {
+    var p = {};
+    var q = document.getElementById('qS').value.trim();
+    var r = document.getElementById('fR').value;
+    var s = document.getElementById('fS').value;
+    if (q) p.q = q;
+    if (r) p.role = r;
+    if (s) p.status = s;
+    data = await apiGet(API.users, p);
+    render();
+    setDB('ok', 'MySQL · ' + data.length + ' คน');
+  } catch(e) {
+    setDB('err', 'error');
+    showToast('❌ ' + e.message, 'error');
+  }
+}
+
+function render() {
+  var tot = data.length, act = 0, adm = 0, usr = 0;
+  for (var i = 0; i < data.length; i++) {
+    if (data[i].status === 'active') act++;
+    if (data[i].role === 'admin')    adm++;
+    if (data[i].role === 'user')     usr++;
+  }
+  document.getElementById('s0').textContent = tot;
+  document.getElementById('s1').textContent = act;
+  document.getElementById('s2').textContent = adm;
+  document.getElementById('s3').textContent = usr;
+  document.getElementById('pi').textContent = 'แสดง ' + tot + ' รายการ';
+
+  if (!data.length) {
+    document.getElementById('tb').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--text3)">📭 ไม่พบข้อมูล</td></tr>';
+    return;
+  }
+
+  document.getElementById('tb').innerHTML = data.map(function(d, i) {
+    var dj  = JSON.stringify(d).replace(/"/g, '&quot;');
+    var isMe = (d.username === currentUser);
+    var roleIcon = d.role === 'admin' ? '👑' : '👤';
+
+    // ปุ่มจัดการ: admin เห็น, user ไม่เห็น
+    var actCell = isAdmin()
+      ? '<td><div style="display:flex;gap:5px">'
+        + '<button class="act-btn edit" onclick=\'openModal(' + dj + ')\'>✏️</button>'
+        + '<button class="act-btn del" onclick="del(' + d.id + ')" ' + (isMe ? 'disabled title="ไม่สามารถลบตัวเองได้"' : '') + '>🗑️</button>'
+        + '</div></td>'
+      : '<td></td>';
+
+    return '<tr style="animation:rowIn .25s ease ' + (i * .02) + 's both">'
+      + '<td style="padding-left:18px"><div style="display:flex;align-items:center;gap:10px">'
+      + '<div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,'
+      + (d.role === 'admin' ? '#0066cc,#00d4ff' : '#667eea,#764ba2')
+      + ');display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">'
+      + (d.role === 'admin' ? '👑' : d.name.charAt(0))
+      + '</div>'
+      + '<div><div style="font-weight:500">' + d.name
+      + (isMe ? '&nbsp;<span style="background:rgba(0,212,255,.12);color:var(--cyan);border-radius:4px;padding:1px 7px;font-size:10px;font-family:var(--mono)">คุณ</span>' : '')
+      + '</div>'
+      + '<div style="font-size:10.5px;color:var(--text3)">#' + d.id + '</div></div>'
+      + '</div></td>'
+      + '<td style="font-family:var(--mono);font-size:12.5px;color:var(--cyan)">@' + d.username + '</td>'
+      + '<td style="font-size:12.5px;color:var(--text2)">✉ ' + d.email + '</td>'
+      + '<td style="font-size:12.5px;color:var(--text2)">' + (d.dept || '—') + '</td>'
+      + '<td><span class="badge badge-' + d.role + '">' + roleIcon + ' ' + (RL[d.role] || d.role) + '</span></td>'
+      + '<td style="font-size:12.5px;color:var(--text2)">' + (d.phone || '—') + '</td>'
+      + '<td style="font-family:var(--mono);text-align:center">' + (d.devices || 0) + '</td>'
+      + '<td><span class="badge badge-' + d.status + '">' + (d.status === 'active' ? 'Active' : 'Inactive') + '</span></td>'
+      + actCell
+      + '</tr>';
+  }).join('');
+}
+
+var _dt;
+document.getElementById('qS').addEventListener('input', function() { clearTimeout(_dt); _dt = setTimeout(loadData, 380); });
+document.getElementById('fR').addEventListener('change', loadData);
+document.getElementById('fS').addEventListener('change', loadData);
+function clearF() {
+  document.getElementById('qS').value = '';
+  document.getElementById('fR').value = '';
+  document.getElementById('fS').value = '';
+  loadData();
+}
+
+function openModal(d) {
+  if (!isAdmin()) { showToast('🔒 เฉพาะ Admin เท่านั้น', 'error'); return; }
+  editId = null;
+  document.getElementById('fpw').value = '';
+  if (d && typeof d === 'object') {
+    editId = d.id;
+    document.getElementById('mT').textContent = '✏️ แก้ไขผู้ใช้: ' + d.name;
+    document.getElementById('fn').value = d.name     || '';
+    document.getElementById('fu').value = d.username || '';
+    document.getElementById('fe').value = d.email    || '';
+    document.getElementById('fd').value = d.dept     || '';
+    document.getElementById('fr').value = (d.role === 'admin') ? 'admin' : 'user';
+    document.getElementById('fp').value = d.phone    || '';
+    document.getElementById('fs').value = d.status   || 'active';
+    // แก้ไข: password ไม่บังคับ
+    document.getElementById('pwReq').style.display = 'none';
+    document.getElementById('pwHint').style.display = 'block';
+    document.getElementById('fpw').required = false;
+  } else {
+    document.getElementById('mT').textContent = '➕ เพิ่มผู้ใช้ใหม่';
+    ['fn','fu','fe','fp'].forEach(function(x) { document.getElementById(x).value = ''; });
+    document.getElementById('fd').value = '';
+    document.getElementById('fr').value = 'user';
+    document.getElementById('fs').value = 'active';
+    // สร้างใหม่: password บังคับ
+    document.getElementById('pwReq').style.display = 'inline';
+    document.getElementById('pwHint').style.display = 'none';
+    document.getElementById('fpw').required = true;
+  }
+  document.getElementById('ov').classList.add('open');
+}
+function closeModal() { document.getElementById('ov').classList.remove('open'); editId = null; }
+
+async function save() {
+  if (!isAdmin()) { showToast('🔒 ไม่มีสิทธิ์', 'error'); return; }
+  var name  = document.getElementById('fn').value.trim();
+  var email = document.getElementById('fe').value.trim();
+  var pw    = document.getElementById('fpw').value;
+  if (!name || !email) { showToast('กรุณากรอกชื่อและอีเมล', 'error'); return; }
+  if (!editId && (!pw || pw.length < 4)) { showToast('กรุณากรอก Password อย่างน้อย 4 ตัว', 'error'); return; }
+  var btn = document.getElementById('sv');
+  btn.disabled = true; btn.textContent = '⏳...';
+  var body = {
+    name:     name,
+    username: document.getElementById('fu').value.trim() || null,
+    email:    email,
+    dept:     document.getElementById('fd').value || null,
+    role:     document.getElementById('fr').value,
+    phone:    document.getElementById('fp').value || null,
+    status:   document.getElementById('fs').value
+  };
+  if (pw && pw.length >= 4) body.password = pw;
+  try {
+    if (editId) await apiPut(API.users, editId, body);
+    else        await apiPost(API.users, body);
+    showToast(editId ? '✅ แก้ไขแล้ว' : '✅ เพิ่มผู้ใช้แล้ว', 'success');
+    closeModal();
+    await loadData();
+  } catch(e) { showToast('❌ ' + e.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = '💾 บันทึกลง MySQL'; }
+}
+
+async function del(id) {
+  if (!isAdmin()) { showToast('🔒 ไม่มีสิทธิ์', 'error'); return; }
+  // กัน admin ลบตัวเอง
+  var target = data.filter(function(d) { return d.id == id; })[0];
+  if (target && target.username === currentUser) {
+    showToast('⚠️ ไม่สามารถลบบัญชีตัวเองได้', 'error'); return;
+  }
+  if (!confirm('ยืนยันลบผู้ใช้นี้ออกจาก MySQL?')) return;
+  try {
+    await apiDelete(API.users, id);
+    showToast('🗑️ ลบแล้ว', 'error');
+    await loadData();
+  } catch(e) { showToast('❌ ' + e.message, 'error'); }
+}
+
+function exportXL() {
+  var rows = data.map(function(d) {return{
+    'ชื่อ-นามสกุล':d.name||'','Username':d.username||'',
+    'E-Mail':d.email||'','Department':d.dept||'',
+    'Role':d.role||'','Phone':d.phone||'',
+    'Devices':d.devices||0,'Status':d.status||'',
+    'Last Login':d.last_login?d.last_login.substring(0,16):''
+  };});
+  xlExport(rows,'Users-Report.xlsx','👥 ผู้ใช้งานระบบ — DeviceHub','รายงานผู้ใช้งาน DeviceHub');
+  showToast('📥 Export Excel สวยๆ แล้ว ('+rows.length+' คน)');
+}
+
+function setDB(s,t) { document.getElementById('dbDot').className = 'db-dot ' + s; document.getElementById('dbTxt').textContent = t; }
+document.getElementById('ov').addEventListener('click', function(e) { if (e.target === e.currentTarget) closeModal(); });
+
+setupUI();
+loadData();
+</script>
+</body>
+</html>

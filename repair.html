@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>แจ้งซ่อม — DeviceHub</title>
+<link rel="stylesheet" href="style.css?v=20260325b">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="config.js"></script><script src="shared.js"></script>
+<style>
+.tid{font-family:var(--mono);font-size:11.5px;color:var(--cyan);background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.15);padding:2px 8px;border-radius:4px;display:inline-block;}
+.kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+.kol{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.kol-hdr{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;}
+.kol-body{padding:12px;display:flex;flex-direction:column;gap:8px;min-height:80px;}
+.kcard{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:all .15s;}
+.kcard:hover{border-color:var(--border2);transform:translateY(-1px);}
+.kcard-title{font-size:12.5px;font-weight:500;margin-bottom:7px;}
+.kcard-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.view-tabs{display:flex;gap:8px;margin-bottom:14px;}
+.vtab{padding:7px 18px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;font-size:13px;font-family:var(--font);}
+.vtab.active{background:rgba(0,212,255,.1);color:var(--cyan);border-color:rgba(0,212,255,.2);}
+</style>
+</head>
+<body>
+<div class="layout">
+<div id="sidebar-slot"></div>
+<div class="main">
+  <div class="topbar">
+    <div style="flex:1"><h1>🔧 แจ้งซ่อม</h1><p>Repair Tickets — MySQL</p></div>
+    <div class="db-pill"><div class="db-dot wait" id="dbDot"></div><span id="dbTxt">โหลด...</span></div>
+    <button class="btn btn-ghost" onclick="loadData()">🔄</button>
+    <button class="btn btn-excel" onclick="exportXL()">📥 Excel</button>
+    <button class="btn btn-primary" onclick="openModal(null)">+ สร้าง Ticket</button>
+    <button class="btn btn-logout" onclick="logout()">⏻</button>
+  </div>
+  <div class="content">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-icon si-c">🎫</div><div><div class="stat-num sn-c" id="s0">—</div><div class="stat-label">ทั้งหมด</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-r">🔴</div><div><div class="stat-num sn-r" id="s1">—</div><div class="stat-label">เปิดค้าง</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-y">⚙️</div><div><div class="stat-num sn-y" id="s2">—</div><div class="stat-label">กำลังซ่อม</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-g">✅</div><div><div class="stat-num sn-g" id="s3">—</div><div class="stat-label">แก้ไขแล้ว</div></div></div>
+    </div>
+
+    <!-- VIEW TABS -->
+    <div class="view-tabs">
+      <button class="vtab active" id="tab-k" onclick="switchView('kanban')">📊 Kanban Board</button>
+      <button class="vtab" id="tab-t" onclick="switchView('table')">📋 ตาราง</button>
+    </div>
+
+    <!-- KANBAN -->
+    <div id="kView">
+      <div class="kanban">
+        <div class="kol">
+          <div class="kol-hdr"><span style="color:var(--red)">🔴</span> เปิดค้าง <span class="sb-badge badge-r" id="kc0">0</span></div>
+          <div class="kol-body" id="kO"></div>
+        </div>
+        <div class="kol">
+          <div class="kol-hdr"><span style="color:var(--yellow)">⚙️</span> กำลังซ่อม <span class="sb-badge badge-y" id="kc1">0</span></div>
+          <div class="kol-body" id="kP"></div>
+        </div>
+        <div class="kol">
+          <div class="kol-hdr"><span style="color:var(--green)">✅</span> แก้ไขแล้ว <span class="sb-badge badge-g" id="kc2">0</span></div>
+          <div class="kol-body" id="kD"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div id="tView" style="display:none">
+      <div class="toolbar">
+        <div class="search-box"><span class="search-ico">🔍</span><input class="search-input" id="qS" placeholder="ค้นหา Ticket, อุปกรณ์, ผู้แจ้ง..."></div>
+        <select class="filter-sel" id="fS"><option value="">ทุกสถานะ</option><option value="open">เปิดค้าง</option><option value="in_progress">กำลังซ่อม</option><option value="resolved">แก้ไขแล้ว</option></select>
+        <select class="filter-sel" id="fP"><option value="">ทุก Priority</option><option value="high">สูง</option><option value="medium">กลาง</option><option value="low">ต่ำ</option></select>
+        <button class="btn btn-ghost" onclick="clearF()">✕ ล้าง</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="padding-left:18px">Ticket</th><th>หัวข้อ</th><th>อุปกรณ์</th><th>ผู้แจ้ง</th><th>ช่างซ่อม</th><th>Priority</th><th>สถานะ</th><th>วันที่</th><th>จัดการ</th></tr></thead>
+          <tbody id="tb"></tbody>
+        </table>
+        <div class="pager"><div class="pager-info" id="pi">—</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- FORM MODAL -->
+<div class="overlay" id="ov">
+<div class="modal">
+  <div class="modal-hdr"><div class="modal-title" id="mT">➕ สร้าง Ticket</div><button class="modal-x" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">
+    <div class="form-grid">
+      <div class="form-grp form-full"><label class="form-lbl">หัวข้อปัญหา *</label><input class="form-inp" id="ftit" placeholder="อธิบายปัญหาโดยย่อ"></div>
+      <div class="form-grp"><label class="form-lbl">อุปกรณ์</label><input class="form-inp" id="fdev" placeholder="PC-IT-001"></div>
+      <div class="form-grp"><label class="form-lbl">ผู้แจ้ง</label><input class="form-inp" id="frep" placeholder="ชื่อผู้แจ้ง"></div>
+      <div class="form-grp"><label class="form-lbl">Priority</label><select class="form-sel" id="fpri"><option value="high">🔴 สูง</option><option value="medium" selected>🟡 กลาง</option><option value="low">🔵 ต่ำ</option></select></div>
+      <div class="form-grp"><label class="form-lbl">สถานะ</label><select class="form-sel" id="fstat"><option value="open">เปิดค้าง</option><option value="in_progress">กำลังซ่อม</option><option value="resolved">แก้ไขแล้ว</option></select></div>
+      <div class="form-grp form-full"><label class="form-lbl">ช่างซ่อม</label><input class="form-inp" id="ftech" placeholder="ชื่อช่าง"></div>
+      <div class="form-grp form-full"><label class="form-lbl">รายละเอียด</label><textarea class="form-ta" id="fdesc" placeholder="รายละเอียดปัญหา..."></textarea></div>
+    </div>
+  </div>
+  <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button><button class="btn btn-primary" id="sv" onclick="save()">💾 บันทึก</button></div>
+</div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="overlay" id="ov2">
+<div class="modal">
+  <div class="modal-hdr"><div class="modal-title" id="dT">—</div><button class="modal-x" onclick="closeDetail()">✕</button></div>
+  <div class="modal-body" id="dB"></div>
+  <div class="modal-foot" id="dF"></div>
+</div>
+</div>
+
+<script>
+buildSidebar('repair');
+var data=[],editId=null,curView='kanban';
+var STH={open:'เปิดค้าง',in_progress:'กำลังซ่อม',resolved:'แก้ไขแล้ว'};
+var PRH={high:'สูง',medium:'กลาง',low:'ต่ำ'};
+
+var _up=new URLSearchParams(location.search);
+if(_up.get('priority'))document.getElementById('fP').value=_up.get('priority');
+
+function switchView(v){
+  curView=v;
+  document.getElementById('kView').style.display=v==='kanban'?'block':'none';
+  document.getElementById('tView').style.display=v==='table'?'block':'none';
+  document.getElementById('tab-k').className='vtab'+(v==='kanban'?' active':'');
+  document.getElementById('tab-t').className='vtab'+(v==='table'?' active':'');
+  if(v==='table')renderTable();
+}
+
+async function loadData(){
+  setDB('wait','โหลด...');
+  try{
+    var p={};
+    if(curView==='table'){
+      var q=document.getElementById('qS').value.trim();var s=document.getElementById('fS').value;var pr=document.getElementById('fP').value;
+      if(q)p.q=q;if(s)p.status=s;if(pr)p.priority=pr;
+    }
+    data=await apiGet(API.repair,p);
+    renderKanban();renderTable();
+    setDB('ok','MySQL · '+data.length+' tickets');
+  }catch(e){setDB('err','error');showToast('❌ '+e.message,'error');}
+}
+
+function renderKanban(){
+  var op=[],pr=[],dn=[];
+  for(var i=0;i<data.length;i++){
+    if(data[i].status==='open')op.push(data[i]);
+    else if(data[i].status==='in_progress')pr.push(data[i]);
+    else dn.push(data[i]);
+  }
+  document.getElementById('s0').textContent=data.length;
+  document.getElementById('s1').textContent=op.length;
+  document.getElementById('s2').textContent=pr.length;
+  document.getElementById('s3').textContent=dn.length;
+  document.getElementById('kc0').textContent=op.length;
+  document.getElementById('kc1').textContent=pr.length;
+  document.getElementById('kc2').textContent=dn.length;
+  function mkCard(d){
+    var dj=JSON.stringify(d).replace(/"/g,'&quot;');
+    return '<div class="kcard" onclick=\'showDetail('+dj+')\''+'>'
+      +'<div class="kcard-title">'+d.title+'</div>'
+      +'<div class="kcard-meta">'
+      +'<span class="tid">'+(d.ticket||'—')+'</span>'
+      +'<span class="badge badge-'+d.priority+'">'+(PRH[d.priority]||d.priority)+'</span>'
+      +(d.device?'<span style="font-size:11px;color:var(--text3)">📟 '+d.device+'</span>':'')
+      +'</div>'
+      +(d.tech?'<div style="font-size:11px;color:var(--text3);margin-top:6px">🔧 '+d.tech+'</div>':'')
+      +'</div>';
+  }
+  var empty='<div style="text-align:center;padding:16px;color:var(--text3);font-size:12px">ไม่มี Ticket</div>';
+  document.getElementById('kO').innerHTML=op.map(mkCard).join('')||empty;
+  document.getElementById('kP').innerHTML=pr.map(mkCard).join('')||empty;
+  document.getElementById('kD').innerHTML=dn.map(mkCard).join('')||empty;
+}
+
+function renderTable(){
+  document.getElementById('pi').textContent='แสดง '+data.length+' รายการ';
+  if(!data.length){document.getElementById('tb').innerHTML='<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text3)">📭 ไม่พบข้อมูล</td></tr>';return;}
+  document.getElementById('tb').innerHTML=data.map(function(d,i){
+    var dj=JSON.stringify(d).replace(/"/g,'&quot;');
+    return '<tr style="animation:rowIn .25s ease '+(i*.02)+'s both">'
+      +'<td style="padding-left:18px"><span class="tid">'+(d.ticket||'—')+'</span></td>'
+      +'<td style="max-width:200px"><div style="font-weight:500;font-size:13px">'+d.title+'</div>'
+      +(d.description?'<div style="font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">'+d.description+'</div>':'')
+      +'</td>'
+      +'<td style="font-size:12.5px;color:var(--text2)">'+(d.device||'—')+'</td>'
+      +'<td style="font-size:12.5px">'+(d.reporter||'—')+'</td>'
+      +'<td style="font-size:12.5px;color:var(--text2)">'+(d.tech||'—')+'</td>'
+      +'<td><span class="badge badge-'+(d.priority||'low')+'">'+(PRH[d.priority]||'—')+'</span></td>'
+      +'<td><span class="badge badge-'+d.status+'">'+(STH[d.status]||d.status)+'</span></td>'
+      +'<td style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+(d.created_at?d.created_at.substring(0,10):'—')+'</td>'
+      +'<td><div style="display:flex;gap:5px">'
+      +'<button class="act-btn edit" onclick=\'openModal('+dj+')\'>✏️</button>'
+      +'<button class="act-btn del" onclick="del('+d.id+')">🗑️</button>'
+      +'</div></td></tr>';
+  }).join('');
+}
+
+function showDetail(d){
+  document.getElementById('dT').innerHTML='<span class="tid">'+(d.ticket||'—')+'</span>&nbsp;&nbsp;'+d.title;
+  document.getElementById('dB').innerHTML=''
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">'
+    +'<div><div style="font-size:10.5px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">PRIORITY</div><span class="badge badge-'+(d.priority||'low')+'">'+(PRH[d.priority]||'—')+'</span></div>'
+    +'<div><div style="font-size:10.5px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">STATUS</div><span class="badge badge-'+d.status+'">'+(STH[d.status]||d.status)+'</span></div>'
+    +'<div><div style="font-size:10.5px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">อุปกรณ์</div><span style="font-family:var(--mono);font-size:13px;color:var(--cyan)">'+(d.device||'—')+'</span></div>'
+    +'<div><div style="font-size:10.5px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">ผู้แจ้ง</div>'+(d.reporter||'—')+'</div>'
+    +'<div><div style="font-size:10.5px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">ช่างซ่อม</div>'+(d.tech||'—')+'</div>'
+    +'<div><div style="font-size:10.5px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">วันที่</div>'+(d.created_at?d.created_at.substring(0,10):'—')+'</div>'
+    +'</div>'
+    +(d.description?'<div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;color:var(--text2);line-height:1.7">'+d.description+'</div>':'');
+  var dj=JSON.stringify(d).replace(/"/g,'&quot;');
+  document.getElementById('dF').innerHTML=''
+    +'<button class="btn btn-ghost" onclick="closeDetail()">ปิด</button>'
+    +'<button class="btn btn-primary" onclick=\'closeDetail();openModal('+dj+')\'>✏️ แก้ไข</button>';
+  document.getElementById('ov2').classList.add('open');
+}
+function closeDetail(){document.getElementById('ov2').classList.remove('open');}
+
+var _dt;
+document.getElementById('qS').addEventListener('input',function(){clearTimeout(_dt);_dt=setTimeout(loadData,380);});
+document.getElementById('fS').addEventListener('change',loadData);
+document.getElementById('fP').addEventListener('change',loadData);
+function clearF(){document.getElementById('qS').value='';document.getElementById('fS').value='';document.getElementById('fP').value='';loadData();}
+
+function openModal(d){
+  editId=null;
+  if(d&&typeof d==='object'){
+    editId=d.id;document.getElementById('mT').textContent='✏️ แก้ไข Ticket';
+    document.getElementById('ftit').value=d.title||'';document.getElementById('fdev').value=d.device||'';
+    document.getElementById('frep').value=d.reporter||'';document.getElementById('fpri').value=d.priority||'medium';
+    document.getElementById('fstat').value=d.status||'open';document.getElementById('ftech').value=d.tech||'';
+    document.getElementById('fdesc').value=d.description||'';
+  }else{
+    document.getElementById('mT').textContent='➕ สร้าง Ticket ใหม่';
+    ['ftit','fdev','ftech','fdesc'].forEach(function(x){document.getElementById(x).value='';});
+    document.getElementById('fpri').value='medium';document.getElementById('fstat').value='open';
+    // Auto-fill reporter จาก current user
+    var _cu=getCurrentUser();
+    document.getElementById('frep').value=_cu?(_cu.name||_cu.username):'';
+  }
+  document.getElementById('ov').classList.add('open');
+}
+function closeModal(){document.getElementById('ov').classList.remove('open');editId=null;}
+
+async function save(){
+  var title=document.getElementById('ftit').value.trim();
+  if(!title){showToast('กรุณากรอกหัวข้อปัญหา','error');return;}
+  var btn=document.getElementById('sv');btn.disabled=true;btn.textContent='⏳...';
+  var body={title:title,device:document.getElementById('fdev').value||null,reporter:document.getElementById('frep').value||null,priority:document.getElementById('fpri').value,status:document.getElementById('fstat').value,tech:document.getElementById('ftech').value||null,description:document.getElementById('fdesc').value||null};
+  try{
+    if(editId)await apiPut(API.repair,editId,body);else await apiPost(API.repair,body);
+    showToast(editId?'✅ แก้ไขแล้ว':'✅ สร้าง Ticket แล้ว','success');closeModal();await loadData();
+  }catch(e){showToast('❌ '+e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='💾 บันทึก';}
+}
+async function del(id){
+  if(!confirm('ยืนยันลบ Ticket?'))return;
+  try{await apiDelete(API.repair,id);showToast('🗑️ ลบแล้ว','error');await loadData();}
+  catch(e){showToast('❌ '+e.message,'error');}
+}
+function exportXL(){
+  var PR={high:'สูง',medium:'กลาง',low:'ต่ำ'};
+  var ST={open:'เปิดค้าง',in_progress:'กำลังซ่อม',resolved:'แก้ไขแล้ว'};
+  var rows=data.map(function(d){return{
+    'Ticket No':d.ticket||'','หัวข้อปัญหา':d.title||'',
+    'Device':d.device||'','ผู้แจ้ง':d.reporter||'',
+    'ช่างซ่อม':d.tech||'','Priority':PR[d.priority]||d.priority||'',
+    'Status':ST[d.status]||d.status||'',
+    'Description':d.description||'',
+    'วันที่แจ้ง':d.created_at?d.created_at.substring(0,10):''
+  };});
+  xlExport(rows,'Repair-Tickets.xlsx','🔧 Repair Tickets — DeviceHub','รายงาน Ticket แจ้งซ่อม');
+  showToast('📥 Export Excel สวยๆ แล้ว ('+rows.length+' tickets)');
+}
+function setDB(s,t){document.getElementById('dbDot').className='db-dot '+s;document.getElementById('dbTxt').textContent=t;}
+document.getElementById('ov').addEventListener('click',function(e){if(e.target===e.currentTarget)closeModal();});
+document.getElementById('ov2').addEventListener('click',function(e){if(e.target===e.currentTarget)closeDetail();});
+loadData();
+</script>
+</body>
+</html>
