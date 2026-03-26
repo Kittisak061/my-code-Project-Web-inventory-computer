@@ -9,14 +9,25 @@
     timer: null
   };
 
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function text(id, value) {
     var el = document.getElementById(id);
     if (el) el.textContent = value;
   }
 
   function setDB(kind, textValue) {
-    document.getElementById('dbDot').className = 'db-dot ' + kind;
-    document.getElementById('dbTxt').textContent = textValue;
+    var dot = document.getElementById('dbDot');
+    var txt = document.getElementById('dbTxt');
+    if (dot) dot.className = 'db-dot ' + kind;
+    if (txt) txt.textContent = textValue;
   }
 
   function updateClock() {
@@ -42,7 +53,7 @@
     el.setAttribute('data-value', String(target));
     clearInterval(el._animTimer);
     el._animTimer = setInterval(function() {
-      tick++;
+      tick += 1;
       var value = Math.round(current + (delta * tick / steps));
       el.textContent = String(value);
       if (tick >= steps) {
@@ -82,6 +93,26 @@
     });
   }
 
+  function getRepairNoteStats() {
+    var stats = { total: 0, active: 0, pinned: 0 };
+
+    try {
+      var store = JSON.parse(localStorage.getItem('dh_repair_notes_v1') || '{}');
+      Object.keys(store || {}).forEach(function(key) {
+        var item = store[key] || {};
+        var note = String(item.note || '').trim();
+        if (!note) return;
+        stats.total += 1;
+        if (item.done !== true) stats.active += 1;
+        if (item.pinned) stats.pinned += 1;
+      });
+    } catch (err) {
+      return stats;
+    }
+
+    return stats;
+  }
+
   function renderTrack(id, on, maint, off, unknown, total) {
     var el = document.getElementById(id);
     if (!el) return;
@@ -98,10 +129,10 @@
 
   function rankRows(items, maxCount, warn) {
     if (!items || !items.length) {
-      return '<div class="empty">ไม่มีข้อมูลสำหรับแสดง</div>';
+      return '<div class="empty">ยังไม่มีข้อมูลสำหรับแสดง</div>';
     }
     return items.map(function(item, idx) {
-      var name = xss(item.label || '-');
+      var name = escapeHtml(item.label || '-');
       var count = Number(item.count || 0);
       var width = pct(count, maxCount || 1);
       return '<div class="rank-row" style="animation:rowIn .22s ease ' + (idx * 0.03) + 's both">'
@@ -139,7 +170,7 @@
     var devices = summary.devices || { total: 0, maintenance: 0, with_remark: 0 };
     var emails = summary.emails || { total: 0, active: 0 };
     var users = summary.users || { total: 0, active: 0, admins: 0 };
-    var tickets = summary.tickets || { total: 0, open: 0, in_progress: 0, resolved: 0, high: 0, medium: 0 };
+    var noteStats = getRepairNoteStats();
     var p = power.summary || { on: 0, off: 0, unknown: 0 };
     var total = devices.total || 0;
 
@@ -149,22 +180,22 @@
     animateNumber('k3', p.off || 0);
     animateNumber('k4', emails.total || 0);
     animateNumber('k5', users.active || 0);
-    animateNumber('k6', tickets.open || 0);
-    animateNumber('k7', tickets.high || 0);
+    animateNumber('k6', noteStats.total || 0);
+    animateNumber('k7', noteStats.active || 0);
 
     text('ks0', 'Inventory ทั้งหมดในระบบ');
     text('ks1', 'ตอบกลับได้ ' + pct(p.on || 0, total) + '%');
     text('ks2', 'เครื่องที่ถูกติ๊กกำลังซ่อม');
-    text('ks3', 'ไม่ตอบกลับ ' + pct(p.off || 0, total) + '%');
+    text('ks3', 'ปิด / ไม่ตอบ ' + pct(p.off || 0, total) + '%');
     text('ks4', 'active ' + (emails.active || 0) + ' บัญชี');
     text('ks5', 'admin ' + (users.admins || 0) + ' คน');
-    text('ks6', 'in progress ' + (tickets.in_progress || 0) + ' งาน');
-    text('ks7', 'medium ' + (tickets.medium || 0) + ' งาน');
+    text('ks6', 'บันทึกทั้งหมด ' + (noteStats.total || 0) + ' รายการ');
+    text('ks7', 'ต้องติดตามต่อ ' + (noteStats.active || 0) + ' รายการ');
 
     text('heroCheckedAt', power.checked_at ? 'เช็กล่าสุด ' + fmtDateTime(power.checked_at) : 'ยังไม่เคยสแกน');
     text('heroScope', total ? 'สแกน ' + total + ' เครื่องจากฐานข้อมูล' : 'ยังไม่มีข้อมูลอุปกรณ์');
     text('liveHeadline', total ? ((p.on || 0) + ' / ' + total + ' เครื่องตอบกลับได้ตอนนี้') : 'ยังไม่มีข้อมูลอุปกรณ์');
-    text('liveSub', 'Maintenance ' + (devices.maintenance || 0) + ' · Unknown ' + (p.unknown || 0));
+    text('liveSub', 'Maintenance ' + (devices.maintenance || 0) + ' / Unknown ' + (p.unknown || 0));
 
     animateNumber('heroOn', p.on || 0);
     animateNumber('heroMaint', devices.maintenance || 0);
@@ -175,32 +206,38 @@
     text('heroUnknownPct', pct(p.unknown || 0, total) + '%');
     renderTrack('heroTrack', p.on || 0, devices.maintenance || 0, p.off || 0, p.unknown || 0, total);
 
-    text('rtHeadline', 'เปิด ' + (p.on || 0) + ' · ปิด/ไม่ตอบ ' + (p.off || 0) + ' · ไม่ทราบ ' + (p.unknown || 0));
-    text('rtSub', 'Remark ในระบบ ' + (devices.with_remark || 0) + ' เครื่อง');
-    text('rtState', state.busy ? 'scanning' : 'ready');
+    text('rtHeadline', total ? 'สถานะเครื่องจากการเช็กครั้งล่าสุด' : 'สถานะเครื่องแบบเรียลไทม์');
+    text('rtSub', total ? ('รวม ' + total + ' เครื่องในระบบ') : 'รอข้อมูลจากระบบ');
+    text('rtState', state.busy ? 'กำลังสแกน' : 'อัปเดตแล้ว');
     animateNumber('rtOn', p.on || 0);
-    animateNumber('rtOff', (p.off || 0) + (p.unknown || 0));
+    animateNumber('rtOff', p.off || 0);
+    animateNumber('rtUnknown', p.unknown || 0);
     animateNumber('rtRemark', devices.with_remark || 0);
-    text('rtOnSub', 'คิดเป็น ' + pct(p.on || 0, total) + '% ของทั้งหมด');
-    text('rtOffSub', 'รวม off + unknown');
+    text('rtOnSub', pct(p.on || 0, total) + '% ของทั้งหมด');
+    text('rtOffSub', pct(p.off || 0, total) + '% ของทั้งหมด');
+    text('rtUnknownSub', pct(p.unknown || 0, total) + '% ของทั้งหมด');
     text('rtTime', power.checked_at ? fmtTime(power.checked_at) : '-');
     text('rtTimeSub', power.checked_at ? fmtDateTime(power.checked_at) : 'ยังไม่มีผลสแกน');
     renderTrack('mainTrack', p.on || 0, devices.maintenance || 0, p.off || 0, p.unknown || 0, total);
 
-    animateNumber('bizOpen', tickets.open || 0);
-    animateNumber('bizProg', tickets.in_progress || 0);
+    animateNumber('bizOpen', noteStats.total || 0);
+    animateNumber('bizProg', noteStats.active || 0);
     animateNumber('bizMail', emails.active || 0);
     animateNumber('bizAdmin', users.admins || 0);
 
     var bizItems = [
-      { label: 'Open Tickets', count: tickets.open || 0 },
-      { label: 'In Progress', count: tickets.in_progress || 0 },
-      { label: 'Resolved', count: tickets.resolved || 0 },
-      { label: 'High Priority', count: tickets.high || 0 },
+      { label: 'Reminder Notes', count: noteStats.total || 0 },
+      { label: 'Need Follow-up', count: noteStats.active || 0 },
+      { label: 'Devices To Repair', count: devices.maintenance || 0 },
+      { label: 'With Remark', count: devices.with_remark || 0 },
       { label: 'Email Active', count: emails.active || 0 },
       { label: 'User Admins', count: users.admins || 0 }
     ];
-    document.getElementById('bizBars').innerHTML = rankRows(bizItems, Math.max(1, tickets.total || emails.total || users.total || 1), true);
+    document.getElementById('bizBars').innerHTML = rankRows(
+      bizItems,
+      Math.max(1, noteStats.total || noteStats.active || devices.maintenance || emails.total || users.total || 1),
+      true
+    );
 
     var byType = (summary.by_type || []).map(function(item) {
       return { label: item.type || 'Unknown', count: item.cnt || 0 };
@@ -220,14 +257,14 @@
       wrap.innerHTML = '<div class="empty">ยังไม่มีผลการเช็กสถานะเครื่อง</div>';
       return;
     }
-    wrap.innerHTML = '<table class="feed"><thead><tr><th>Machine</th><th>สถานะสด</th><th>Maintenance</th><th>Target</th><th>Latency</th></tr></thead><tbody>'
+    wrap.innerHTML = '<table class="feed"><thead><tr><th>Machine</th><th>Realtime</th><th>Maintenance</th><th>Target</th><th>Latency</th></tr></thead><tbody>'
       + items.map(function(item) {
-        var maint = item.status === 'maintenance' ? '<span class="badge badge-maintenance">กำลังซ่อม</span>' : '—';
+        var maint = item.status === 'maintenance' ? '<span class="badge badge-maintenance">กำลังซ่อม</span>' : '-';
         return '<tr>'
-          + '<td><div class="machine"><b>' + xss(item.computer_name || item.id || '-') + '</b><span>' + xss(item.type || '-') + ' · ' + xss(item.dept || '-') + '</span></div></td>'
+          + '<td><div class="machine"><b>' + escapeHtml(item.computer_name || item.id || '-') + '</b><span>' + escapeHtml(item.type || '-') + ' / ' + escapeHtml(item.dept || '-') + '</span></div></td>'
           + '<td>' + powerBadge(item) + '</td>'
           + '<td>' + maint + '</td>'
-          + '<td><span class="machine"><span>' + xss(item.target || '-') + '</span></span></td>'
+          + '<td><span class="machine"><span>' + escapeHtml(item.target || '-') + '</span></span></td>'
           + '<td><span class="machine"><span>' + (item.elapsed_ms || item.elapsed_ms === 0 ? item.elapsed_ms + ' ms' : '-') + '</span></span></td>'
           + '</tr>';
       }).join('')
@@ -262,11 +299,11 @@
       if (results[1].status === 'fulfilled') state.power = results[1].value;
 
       if (results[0].status !== 'fulfilled' && results[1].status !== 'fulfilled') {
-        throw new Error('โหลดทั้งข้อมูลสรุปและสถานะสดไม่สำเร็จ');
+        throw new Error('โหลดทั้งข้อมูลสรุปและข้อมูล realtime ไม่สำเร็จ');
       }
 
       renderAll();
-      setDB('ok', state.power && state.power.checked_at ? 'Realtime · ' + fmtTime(state.power.checked_at) : 'Summary พร้อมใช้งาน');
+      setDB('ok', state.power && state.power.checked_at ? 'Realtime / ' + fmtTime(state.power.checked_at) : 'Summary พร้อมใช้งาน');
 
       if (results[0].status !== 'fulfilled' || results[1].status !== 'fulfilled') {
         var parts = [];
@@ -291,6 +328,10 @@
   }
 
   window.refreshDashboard = refreshDashboard;
+  window.addEventListener('storage', function(event) {
+    if (event.key === 'dh_repair_notes_v1') renderAll();
+  });
+  window.addEventListener('focus', renderAll);
   updateClock();
   setInterval(updateClock, 1000);
   refreshDashboard(false);

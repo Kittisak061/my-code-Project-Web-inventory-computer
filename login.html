@@ -1,13 +1,37 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>DeviceHub — Login</title>
-<link rel="stylesheet" href="style.css?v=20260325b">
+<link rel="stylesheet" href="style.css?v=20260326u">
 <style>
+:root{
+  --bg:#060910;
+  --bg2:#0b1220;
+  --surface:rgba(12,18,29,.9);
+  --border:rgba(122,136,153,.16);
+  --border2:rgba(0,212,255,.24);
+  --cyan:#35d8ff;
+  --green:#19e5a2;
+  --yellow:#ffd166;
+  --red:#ff6483;
+  --violet:#a78bfa;
+  --text:#edf3fb;
+  --text2:#99a8bb;
+  --text3:#5f7188;
+  --font:'Segoe UI',Tahoma,sans-serif;
+  --mono:Consolas,monospace;
+  --display:'Segoe UI',Tahoma,sans-serif;
+  --shadow-lg:0 28px 80px rgba(0,0,0,.42);
+}
+html,body{height:100%;}
 body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:28px;}
+body{background:linear-gradient(180deg,var(--bg2),var(--bg) 60%);color:var(--text);font-family:var(--font);}
 body::after{inset:auto auto -16vh -12vw;width:40vw;height:40vw;background:radial-gradient(circle,rgba(167,139,250,.12),transparent 68%);}
-.wrap{width:min(460px,100%);max-width:100%;position:relative;animation:fadeIn .35s ease;}
+.wrap{width:min(460px,100%);max-width:100%;position:relative;z-index:1;animation:fadeIn .35s ease;}
 .wrap::before{content:'';position:absolute;inset:88px -22px -16px;z-index:-1;border-radius:32px;background:linear-gradient(135deg,rgba(53,216,255,.2),rgba(167,139,250,.12));filter:blur(34px);opacity:.65;}
 .logo{text-align:center;margin-bottom:24px;}
 .logo-ico{width:76px;height:76px;border-radius:24px;background:linear-gradient(135deg,#35d8ff,#0a67ad 74%);display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 16px;box-shadow:0 18px 34px rgba(53,216,255,.28);}
@@ -85,16 +109,18 @@ body::after{inset:auto auto -16vh -12vw;width:40vw;height:40vw;background:radial
 <script>
 // ── ถ้า login แล้ว → ไป dashboard ทันที ──────────────────────
 var _u = sessionStorage.getItem('dh_user');
-if(_u){
+var _t = sessionStorage.getItem('dh_token');
+if(_u && _t){
     try{
         var _o = JSON.parse(_u);
         if(_o && _o.username) { window.location.replace('dashboard.html'); }
     }catch(e){
         sessionStorage.removeItem('dh_user');
+        sessionStorage.removeItem('dh_token');
     }
 }
 
-var API_AUTH = 'http://localhost/devicehub/api/auth.php';
+var API_AUTH = (window.location.origin || 'http://localhost') + '/devicehub/api/auth.php';
 
 // Check DB connection (background)
 setTimeout(function(){
@@ -116,22 +142,34 @@ function doLogin(){
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({username:u,password:p})
     })
-    .then(function(r){return r.json().then(function(d){return{ok:r.ok,d:d};});})
+    .then(function(r){
+        return r.text().then(function(text){
+            var data = {};
+            if(text){
+                try { data = JSON.parse(text); } catch (e) {}
+            }
+            return { ok:r.ok, data:data };
+        });
+    })
     .then(function(res){
-        if(res.ok&&res.d.success){
+        var data = res.data || {};
+        if(res.ok && data.success && data.token){
+            sessionStorage.setItem('dh_token',data.token||'');
             sessionStorage.setItem('dh_user',JSON.stringify({
-                user_id: res.d.user_id,
-                username:res.d.username,
-                name:    res.d.name,
-                role:    res.d.role,
-                dept:    res.d.dept||''
+                user_id: data.user_id,
+                username:data.username,
+                name:    data.name,
+                role:    data.role,
+                dept:    data.dept||''
             }));
             setS('ok','Login สำเร็จ กำลังนำไป Dashboard...');
             window.location.href='dashboard.html';
         } else {
             setBusy(false);
             setS('err','ไม่สำเร็จ');
-            showErr(res.d.error||'Username หรือ Password ไม่ถูกต้อง');
+            sessionStorage.removeItem('dh_user');
+            sessionStorage.removeItem('dh_token');
+            showErr(data.error||'Username หรือ Password ไม่ถูกต้อง');
         }
     })
     .catch(function(e){
@@ -168,3 +206,6 @@ document.addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
 </script>
 </body>
 </html>
+
+
+

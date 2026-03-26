@@ -1,13 +1,13 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ส่งออกรายงาน — DeviceHub</title>
-<link rel="stylesheet" href="style.css?v=20260325b">
-<script src="config.js"></script>
-<script src="shared.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="style.css?v=20260326u">
+<script src="config.js?v=20260326u"></script>
+<script src="shared.js?v=20260326u"></script>
+<script src="vendor/xlsx.full.min.js?v=20260324"></script>
 <style>
 @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
@@ -165,7 +165,7 @@
         <div class="sp-ico" style="background:linear-gradient(135deg,rgba(255,77,109,.15),rgba(255,77,109,.05))">🔧</div>
         <div class="sp-content">
           <div class="sp-num" id="s3" style="background:linear-gradient(135deg,var(--red),var(--yellow));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">—</div>
-          <div class="sp-lbl">แจ้งซ่อม</div>
+            <div class="sp-lbl">อุปกรณ์ที่ต้องซ่อม</div>
         </div>
       </div>
     </div>
@@ -387,7 +387,7 @@
         </div>
         <button class="btn btn-ghost" onclick="closePrev()" style="font-size:12px;padding:6px 12px">✕ ปิด</button>
       </div>
-      <div class="prev-tbl" id="prevTbl"></div>
+      <div class="prev-tbl sync-scroll-x" id="prevTbl"></div>
     </div>
 
   </div>
@@ -468,7 +468,7 @@ async function loadData() {
     document.getElementById('s0').textContent = allData.devices.length;
     document.getElementById('s1').textContent = allData.emails.length;
     document.getElementById('s2').textContent = allData.users.length;
-    document.getElementById('s3').textContent = allData.repair.length;
+      document.getElementById('s3').textContent = allData.devices.filter(function(d){ return d.status === 'maintenance'; }).length;
 
     setDB('ok', 'MySQL · พร้อมใช้งาน · ' + (allData.devices.length + allData.emails.length + allData.users.length + allData.repair.length) + ' รายการ');
   } catch (e) {
@@ -670,7 +670,7 @@ function mapDevices(data) {
     return {
       'รหัส': d.id || '',
       'Fixed Asset': d.fixed_asset_no || '',
-      'สถานะ': d.status === 'online' ? 'ออนไลน์' : d.status === 'offline' ? 'ออฟไลน์' : d.status === 'maintenance' ? 'กำลังซ่อม' : '',
+      'สถานะ': d.status === 'maintenance' ? 'กำลังซ่อม' : '',
       'IP Address': d.ip || '',
       'ชื่อเครื่อง': d.computer_name || '',
       'ผู้ใช้งาน': d.username || '',
@@ -787,11 +787,12 @@ function mapRepair(data) {
 }
 
 function mapSummary(devices, emails, users, tickets) {
-  var dOnline = 0, dOffline = 0, dMaint = 0;
+  var dMaint = 0, dRemark = 0, dInternet = 0, dEmail = 0;
   devices.forEach(function(d) {
-    if (d.status === 'online') dOnline++;
-    else if (d.status === 'offline') dOffline++;
-    else if (d.status === 'maintenance') dMaint++;
+    if (d.status === 'maintenance') dMaint++;
+    if (String(d.remark || '').trim()) dRemark++;
+    if (+d.access_internet) dInternet++;
+    if (+d.access_email) dEmail++;
   });
 
   var eActive = 0, eInactive = 0, eSuspended = 0;
@@ -820,9 +821,10 @@ function mapSummary(devices, emails, users, tickets) {
 
   return [
     { 'หมวดหมู่': 'อุปกรณ์ IT', 'รายการ': 'ทั้งหมด', 'จำนวน': devices.length },
-    { 'หมวดหมู่': 'อุปกรณ์ IT', 'รายการ': 'ออนไลน์', 'จำนวน': dOnline },
-    { 'หมวดหมู่': 'อุปกรณ์ IT', 'รายการ': 'ออฟไลน์', 'จำนวน': dOffline },
     { 'หมวดหมู่': 'อุปกรณ์ IT', 'รายการ': 'กำลังซ่อม', 'จำนวน': dMaint },
+    { 'หมวดหมู่': 'อุปกรณ์ IT', 'รายการ': 'มีหมายเหตุ', 'จำนวน': dRemark },
+    { 'หมวดหมู่': 'อุปกรณ์ IT', 'รายการ': 'ใช้งานอินเทอร์เน็ต', 'จำนวน': dInternet },
+    { 'หมวดหมู่': 'อุปกรณ์ IT', 'รายการ': 'ใช้งานอีเมล', 'จำนวน': dEmail },
     { 'หมวดหมู่': 'บัญชีอีเมล', 'รายการ': 'ทั้งหมด', 'จำนวน': emails.length },
     { 'หมวดหมู่': 'บัญชีอีเมล', 'รายการ': 'Active', 'จำนวน': eActive },
     { 'หมวดหมู่': 'บัญชีอีเมล', 'รายการ': 'Inactive', 'จำนวน': eInactive },
@@ -1002,6 +1004,9 @@ async function showPreview(type) {
   document.getElementById('prevTitle').textContent = cfg.title;
   document.getElementById('prevCount').textContent = 'แสดง ' + mapped.length + ' / ' + allData[type].length + ' รายการ';
   document.getElementById('prevTbl').innerHTML = html;
+  if (typeof refreshSyncedScrollAreas === 'function') {
+    refreshSyncedScrollAreas(document.getElementById('prevTbl'));
+  }
   
   var wrap = document.getElementById('prevWrap');
   wrap.style.display = 'block';
@@ -1020,3 +1025,6 @@ loadData();
 </script>
 </body>
 </html>
+
+
+

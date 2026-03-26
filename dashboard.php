@@ -2,6 +2,7 @@
 require_once __DIR__ . '/config.php';
 
 $db = getDB();
+requireAuth();
 
 function fetchAllSafe($db, $sql, $fallback = array()) {
     try {

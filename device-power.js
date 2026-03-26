@@ -4,9 +4,20 @@
 
   var POWER_STATE_BY_ID = {};
   var POWER_SUMMARY = { on: 0, off: 0, unknown: 0 };
+  var POWER_HINT = '';
   var POWER_REQUEST_TOKEN = 0;
   var POWER_TIMER = null;
   var POWER_BOOT_TRIES = 0;
+  var POWER_HINT_SHOWN = '';
+
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
 
   function injectPowerStyles() {
     if (document.getElementById('device-power-style')) return;
@@ -24,7 +35,7 @@
       + '.power-unknown{color:var(--text3);background:rgba(122,136,153,.08);border-color:var(--border);}'
       + '.power-unknown::before{background:var(--text3);}'
       + '.power-meta{display:block;font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--mono);}'
-      + '.power-summary{font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:10px;}'
+      + '.power-diagnostic{margin-top:10px;font-size:11px;color:var(--yellow);font-family:var(--font);}'
       + '@keyframes powerPulse{0%{opacity:.45;transform:scale(.9)}50%{opacity:1;transform:scale(1.08)}100%{opacity:.45;transform:scale(.9)}}';
     document.head.appendChild(style);
   }
@@ -38,7 +49,7 @@
     var btn = document.createElement('button');
     btn.id = 'btnPowerCheck';
     btn.className = 'btn btn-ghost';
-    btn.textContent = '⚡ เช็กเครื่อง';
+    btn.textContent = '↻ เช็กเครื่อง';
     btn.onclick = function() { refreshLivePower(true); };
 
     if (refreshBtn && refreshBtn.nextSibling) topbar.insertBefore(btn, refreshBtn.nextSibling);
@@ -51,15 +62,15 @@
   }
 
   function pickCurrentTarget(device) {
-    if (!device) return '—';
+    if (!device) return '-';
     if (device.computer_name && device.workgroup) return device.computer_name + ' [' + device.workgroup + ']';
     if (device.computer_name) return device.computer_name;
-    return '—';
+    return '-';
   }
 
   function getPowerState(device) {
     if (!device || !device.id) return { power_state: 'unknown', message: 'No device id' };
-    return POWER_STATE_BY_ID[device.id] || { power_state: 'unknown', message: 'ยังไม่เช็ก' };
+    return POWER_STATE_BY_ID[device.id] || { power_state: 'unknown', message: 'ยังไม่ได้เช็ก' };
   }
 
   function isMaintenanceDevice(device) {
@@ -75,23 +86,25 @@
     if (!Array.isArray(window.data)) return 0;
     var count = 0;
     for (var i = 0; i < window.data.length; i++) {
-      if (isMaintenanceDevice(window.data[i])) count++;
+      if (isMaintenanceDevice(window.data[i])) count += 1;
     }
     return count;
   }
 
   function getPowerBadgeHtml(device) {
     var state = getPowerState(device);
+    var targetLabel = escapeHtml(state.target || pickCurrentTarget(device));
+    var sourceLabel = state.target_source ? ' | ' + escapeHtml(state.target_source) : '';
     if (state.power_state === 'on') {
-      return '<div class="power-badge power-on">เปิดอยู่</div><span class="power-meta">' + xss(state.target || pickCurrentTarget(device)) + '</span>';
+      return '<div class="power-badge power-on">เปิดอยู่</div><span class="power-meta">' + targetLabel + sourceLabel + '</span>';
     }
     if (state.power_state === 'off') {
-      return '<div class="power-badge power-off">ปิด / ไม่ตอบ</div><span class="power-meta">' + xss(state.target || pickCurrentTarget(device)) + '</span>';
+      return '<div class="power-badge power-off">ปิด / ไม่ตอบ</div><span class="power-meta">' + targetLabel + sourceLabel + '</span>';
     }
     if (state.power_state === 'checking') {
-      return '<div class="power-badge power-checking">กำลังเช็ก...</div><span class="power-meta">' + xss(state.target || pickCurrentTarget(device)) + '</span>';
+      return '<div class="power-badge power-checking">กำลังเช็ก...</div><span class="power-meta">' + targetLabel + sourceLabel + '</span>';
     }
-    return '<div class="power-badge power-unknown">ยังไม่ทราบ</div><span class="power-meta">' + xss(state.target || pickCurrentTarget(device)) + '</span>';
+    return '<div class="power-badge power-unknown">ไม่ทราบ</div><span class="power-meta">' + targetLabel + sourceLabel + '</span>';
   }
 
   function applyLivePowerToTable() {
@@ -105,12 +118,7 @@
 
       var statusCell = rows[i].children[20];
       if (statusCell) {
-        statusCell.innerHTML = ''
-          + '<div><span class="badge badge-' + device.status + '">' + (STH[device.status] || device.status || '—') + '</span></div>'
-          + getPowerBadgeHtml(device);
-        statusCell.innerHTML = ''
-          + getPowerBadgeHtml(device)
-          + getMaintenanceBadgeHtml(device);
+        statusCell.innerHTML = getPowerBadgeHtml(device) + getMaintenanceBadgeHtml(device);
       }
     }
   }
@@ -123,15 +131,20 @@
     var existing = detailBody.querySelector('.dv-live-power');
     if (existing) existing.remove();
 
+    var hintHtml = POWER_HINT
+      ? '<div class="power-diagnostic">' + escapeHtml(POWER_HINT) + '</div>'
+      : '';
+
     var wrapper = document.createElement('div');
     wrapper.className = 'dv-section dv-live-power';
     wrapper.innerHTML = ''
-      + '<div class="dv-sec-title">⚡ สถานะเครื่องตอนนี้</div>'
+      + '<div class="dv-sec-title">↻ สถานะเครื่องตอนนี้</div>'
       + '<div class="dv-grid">'
       + '<div class="dv-row"><div class="dv-lbl">Power State</div><div class="dv-val">' + getPowerBadgeHtml(device) + '</div></div>'
-      + '<div class="dv-row"><div class="dv-lbl">Target</div><div class="dv-val mono">' + xss(pickCurrentTarget(device)) + '</div></div>'
-      + '<div class="dv-row"><div class="dv-lbl">Maintenance</div><div class="dv-val">' + (isMaintenanceDevice(device) ? '<span class="badge badge-maintenance">กำลังซ่อม</span>' : '—') + '</div></div>'
-      + '</div>';
+      + '<div class="dv-row"><div class="dv-lbl">Target</div><div class="dv-val mono">' + escapeHtml(pickCurrentTarget(device)) + '</div></div>'
+      + '<div class="dv-row"><div class="dv-lbl">Maintenance</div><div class="dv-val">' + (isMaintenanceDevice(device) ? '<span class="badge badge-maintenance">กำลังซ่อม</span>' : '-') + '</div></div>'
+      + '</div>'
+      + hintHtml;
 
     detailBody.insertBefore(wrapper, detailBody.firstChild);
   }
@@ -148,13 +161,13 @@
 
     if (s1) {
       if (checking) s1.textContent = '...';
-      else if (errorMessage) s1.textContent = '—';
+      else if (errorMessage) s1.textContent = '-';
       else s1.textContent = POWER_SUMMARY.on;
     }
 
     if (s3) {
       if (checking) s3.textContent = '...';
-      else if (errorMessage) s3.textContent = '—';
+      else if (errorMessage) s3.textContent = '-';
       else s3.textContent = POWER_SUMMARY.off;
     }
   }
@@ -165,17 +178,17 @@
     var btn = getPowerButton();
     if (btn) {
       btn.disabled = !!checking;
-      btn.textContent = checking ? '⚡ กำลังเช็ก...' : '⚡ เช็กเครื่อง';
+      btn.textContent = checking ? '↻ กำลังเช็ก...' : '↻ เช็กเครื่อง';
     }
 
     var dbTxt = document.getElementById('dbTxt');
     if (dbTxt && Array.isArray(window.data)) {
       if (checking) {
-        dbTxt.textContent = 'MySQL · ' + window.data.length + ' เครื่อง · กำลังเช็กสถานะเครื่อง';
+        dbTxt.textContent = 'MySQL / ' + window.data.length + ' เครื่อง / กำลังเช็กสถานะเครื่อง';
       } else if (errorMessage) {
-        dbTxt.textContent = 'MySQL · ' + window.data.length + ' เครื่อง · เช็กสถานะเครื่องไม่ได้';
+        dbTxt.textContent = 'MySQL / ' + window.data.length + ' เครื่อง / เช็กสถานะเครื่องไม่ได้';
       } else {
-        dbTxt.textContent = 'MySQL · ' + window.data.length + ' เครื่อง · เปิด ' + POWER_SUMMARY.on + ' · ปิด ' + POWER_SUMMARY.off + ' · ไม่ทราบ ' + POWER_SUMMARY.unknown;
+        dbTxt.textContent = 'MySQL / ' + window.data.length + ' เครื่อง / เปิด ' + POWER_SUMMARY.on + ' / ปิด ' + POWER_SUMMARY.off + ' / ไม่ทราบ ' + POWER_SUMMARY.unknown;
       }
     }
 
@@ -183,11 +196,11 @@
     if (pager && Array.isArray(window.data) && window.data.length) {
       var base = 'แสดง ' + window.data.length + ' รายการ';
       if (checking) {
-        pager.textContent = base + ' · กำลังเช็กสถานะเครื่อง';
+        pager.textContent = base + ' / กำลังเช็กสถานะเครื่อง';
       } else if (!errorMessage) {
-        pager.textContent = base + ' · เปิด ' + POWER_SUMMARY.on + ' · ปิด ' + POWER_SUMMARY.off + ' · ไม่ทราบ ' + POWER_SUMMARY.unknown;
+        pager.textContent = base + ' / เปิด ' + POWER_SUMMARY.on + ' / ปิด ' + POWER_SUMMARY.off + ' / ไม่ทราบ ' + POWER_SUMMARY.unknown;
       } else {
-        pager.textContent = base + ' · เช็กสถานะเครื่องไม่ได้';
+        pager.textContent = base + ' / เช็กสถานะเครื่องไม่ได้';
       }
     }
   }
@@ -217,17 +230,27 @@
     });
   }
 
-  function normalizePowerResponse(items) {
+  function normalizePowerResponse(response) {
+    var items = response && response.items ? response.items : [];
     var map = {};
     POWER_SUMMARY = { on: 0, off: 0, unknown: 0 };
+    POWER_HINT = response && response.hint ? String(response.hint) : '';
 
-    (items || []).forEach(function(item) {
+    items.forEach(function(item) {
       map[item.id] = item;
       if (!POWER_SUMMARY[item.power_state]) POWER_SUMMARY[item.power_state] = 0;
-      POWER_SUMMARY[item.power_state]++;
+      POWER_SUMMARY[item.power_state] += 1;
     });
 
     POWER_STATE_BY_ID = map;
+  }
+
+  function maybeShowHint(showToastMessage) {
+    if (!POWER_HINT) return;
+    if (showToastMessage || POWER_HINT_SHOWN !== POWER_HINT) {
+      POWER_HINT_SHOWN = POWER_HINT;
+      showToast(POWER_HINT, 'info');
+    }
   }
 
   function refreshOpenDetailIfNeeded() {
@@ -260,17 +283,19 @@
       });
 
       if (token !== POWER_REQUEST_TOKEN) return;
-      normalizePowerResponse(response.items);
+      normalizePowerResponse(response);
       applyLivePowerToTable();
       refreshOpenDetailIfNeeded();
       updatePowerSummaryUi(false);
+      maybeShowHint(showToastMessage);
 
       if (showToastMessage) {
-        showToast('เช็กสถานะเครื่องแล้ว: เปิด ' + POWER_SUMMARY.on + ' · ปิด ' + POWER_SUMMARY.off + ' · ไม่ทราบ ' + POWER_SUMMARY.unknown, 'success');
+        showToast('เช็กสถานะเครื่องแล้ว: เปิด ' + POWER_SUMMARY.on + ' / ปิด ' + POWER_SUMMARY.off + ' / ไม่ทราบ ' + POWER_SUMMARY.unknown, 'success');
       }
     } catch (e) {
       if (token !== POWER_REQUEST_TOKEN) return;
 
+      POWER_HINT = '';
       POWER_SUMMARY = { on: 0, off: 0, unknown: Array.isArray(window.data) ? window.data.length : 0 };
       for (var i = 0; i < window.data.length; i++) {
         var device = window.data[i];
@@ -345,9 +370,8 @@
         return;
       }
 
-      POWER_BOOT_TRIES++;
+      POWER_BOOT_TRIES += 1;
       if (POWER_BOOT_TRIES >= 40) return;
-
       POWER_TIMER = setTimeout(waitForData, 300);
     }
 
@@ -360,11 +384,10 @@
     patchRender();
     patchLoadData();
     patchShowDetail();
-
+    window.getPowerState = getPowerState;
     scheduleInitialPowerBoot();
   }
 
   window.refreshLivePower = refreshLivePower;
-  window.getPowerState = getPowerState;
   initDevicePowerCheck();
 })();

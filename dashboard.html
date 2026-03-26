@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="UTF-8">
@@ -7,9 +7,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Dashboard - DeviceHub</title>
-<link rel="stylesheet" href="style.css?v=20260325b">
-<script src="config.js"></script>
-<script src="shared.js"></script>
+<link rel="stylesheet" href="style.css?v=20260326u">
+<script src="config.js?v=20260326u"></script>
+<script src="shared.js?v=20260326u"></script>
 <style>
 .dash{display:flex;flex-direction:column;gap:18px;}
 .hero-grid,.panel-grid{display:grid;grid-template-columns:1.35fr .95fr;gap:16px;}
@@ -74,8 +74,206 @@
 .rt.unknown{color:var(--text2);background:rgba(122,136,153,.08);border-color:var(--border);}.rt.unknown::before{background:var(--text2);}
 .empty{padding:24px;text-align:center;color:var(--text3);border:1px dashed var(--border);border-radius:14px;background:rgba(255,255,255,.02);}
 .clock{font-family:var(--mono);font-size:11px;color:var(--text3);}
+
+/* Minimal dashboard refresh */
+.dash{gap:20px;}
+.hero-grid,.panel-grid{gap:18px;}
+.hero,.panel,.metric{
+  background:linear-gradient(180deg,rgba(10,14,22,.94),rgba(7,10,16,.98));
+  border-color:rgba(122,136,153,.14);
+  box-shadow:0 14px 34px rgba(0,0,0,.18);
+}
+.hero::before,.panel::before,.metric::before{
+  width:120px;
+  height:120px;
+  opacity:.26;
+}
+.hero{padding:28px 30px;}
+.eyebrow{
+  padding:5px 10px;
+  border-color:rgba(122,136,153,.16);
+  background:rgba(255,255,255,.02);
+  color:var(--text2);
+  font-size:10px;
+  letter-spacing:1.3px;
+}
+.eyebrow::before{
+  background:var(--cyan);
+  box-shadow:0 0 0 4px rgba(53,216,255,.08);
+  animation:pulse 1.6s ease infinite;
+}
+.hero h2{
+  font-family:var(--font);
+  font-size:clamp(26px,3vw,38px);
+  font-weight:600;
+  letter-spacing:-.04em;
+  line-height:1.02;
+  max-width:13ch;
+  margin:18px 0 10px;
+}
+.hero p{
+  font-size:13px;
+  color:rgba(237,243,251,.66);
+  max-width:56ch;
+}
+.hero-meta,.hero-actions{margin-top:18px;}
+.hero-actions .btn{min-height:40px;padding:9px 14px;}
+.chip{
+  background:rgba(255,255,255,.025);
+  border-color:rgba(122,136,153,.14);
+  font-size:10.5px;
+  letter-spacing:.8px;
+}
+.live-board{padding:28px 28px 24px;gap:18px;}
+.live-title,.panel-title,.metric small,.pulse small,.mini small{
+  font-size:9.5px;
+  letter-spacing:1.5px;
+  color:rgba(153,168,187,.68);
+}
+.live-head{
+  font-family:var(--font);
+  font-size:clamp(24px,2.3vw,31px);
+  font-weight:600;
+  letter-spacing:-.04em;
+  line-height:1.02;
+  max-width:12ch;
+}
+.live-sub{
+  font-size:12px;
+  color:rgba(237,243,251,.56);
+}
+.pulse-grid,.mini-grid,.metric-grid{gap:10px;}
+.pulse,.mini{
+  padding:12px 0 0;
+  background:transparent;
+  border:none;
+}
+.pulse strong,.mini strong,.metric b{
+  font-family:var(--mono);
+  font-variant-numeric:tabular-nums lining-nums;
+  letter-spacing:-.08em;
+}
+.pulse strong{
+  font-size:36px;
+  line-height:.92;
+  margin-top:10px;
+}
+.mini strong{
+  font-size:32px;
+  line-height:.94;
+  margin-top:12px;
+}
+.track{
+  height:10px;
+  background:rgba(255,255,255,.03);
+  border-color:rgba(122,136,153,.12);
+}
+.metric{
+  min-height:152px;
+  padding:18px 20px 18px;
+  background:linear-gradient(180deg,rgba(9,12,18,.9),rgba(9,12,18,.98));
+}
+.metric::after{
+  left:18px;
+  right:18px;
+  height:2px;
+}
+.metric-top{align-items:center;}
+.metric-ico{display:none;}
+.metric b{
+  font-size:54px;
+  line-height:.88;
+  font-weight:600;
+  margin-top:24px;
+}
+.metric .ttl{
+  font-size:14px;
+  font-weight:600;
+  letter-spacing:-.01em;
+}
+.metric .sub{
+  font-size:11px;
+  color:rgba(237,243,251,.54);
+  max-width:18ch;
+}
+.panel{padding:20px 22px;}
+.panel-head{margin-bottom:16px;}
+.panel-head.panel-head-compact{align-items:end;}
+.panel-head b{
+  font-family:var(--font);
+  font-size:clamp(22px,2vw,30px);
+  font-weight:600;
+  letter-spacing:-.04em;
+  line-height:1.02;
+  max-width:18ch;
+}
+.panel-head p{
+  font-size:12px;
+  color:rgba(237,243,251,.56);
+  max-width:48ch;
+}
+.status-triplet{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  margin:14px 0 14px;
+}
+.status-block{
+  padding:14px 16px 13px;
+  border-radius:16px;
+  border:1px solid rgba(122,136,153,.14);
+  background:rgba(255,255,255,.02);
+}
+.status-block .eyelabel{
+  display:block;
+  font-size:10px;
+  font-family:var(--mono);
+  letter-spacing:1.4px;
+  color:rgba(153,168,187,.66);
+  text-transform:uppercase;
+}
+.status-block .count{
+  display:block;
+  margin-top:10px;
+  font-family:var(--mono);
+  font-size:44px;
+  line-height:.9;
+  letter-spacing:-.08em;
+  font-variant-numeric:tabular-nums lining-nums;
+}
+.status-block .note{
+  display:block;
+  margin-top:8px;
+  font-size:11px;
+  color:rgba(237,243,251,.56);
+}
+.status-block.on{border-color:rgba(25,229,162,.18);}
+.status-block.on .count{color:var(--green);}
+.status-block.off{border-color:rgba(255,100,131,.16);}
+.status-block.off .count{color:var(--red);}
+.status-block.unknown{border-color:rgba(122,136,153,.18);}
+.status-block.unknown .count{color:#d7e0ea;}
+.rt-meta-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.rt-meta-grid .mini{
+  padding-top:4px;
+}
+.rt-meta-grid .mini strong{
+  font-size:34px;
+}
+.rank{gap:12px;}
+.rank-row{grid-template-columns:minmax(96px,150px) 1fr auto;gap:12px;}
+.rank-name{font-size:11.5px;color:var(--text2);}
+.rank-count{font-size:10px;letter-spacing:.2px;}
+.feed th{font-size:9.5px;letter-spacing:1.2px;color:rgba(153,168,187,.7);}
+.feed td{padding:12px 12px;font-size:11.5px;}
+.machine b{font-size:12px;letter-spacing:-.01em;}
+.machine span{font-size:10px;}
+.rt{font-size:10px;padding:4px 9px;}
 @media (max-width:1400px){.hero-grid,.panel-grid,.metric-grid,.mini-grid{grid-template-columns:1fr 1fr;}.pulse-grid{grid-template-columns:1fr;}}
-@media (max-width:900px){.content{padding:18px 18px 28px;}.hero-grid,.panel-grid,.metric-grid,.mini-grid{grid-template-columns:1fr;}.hero h2{font-size:28px;}.rank-row{grid-template-columns:1fr;}.feed{display:block;overflow-x:auto;}}
+@media (max-width:900px){.content{padding:18px 18px 28px;}.hero-grid,.panel-grid,.metric-grid,.mini-grid,.status-triplet,.rt-meta-grid{grid-template-columns:1fr;}.hero h2{font-size:28px;max-width:none;}.live-head{max-width:none;}.metric b{font-size:44px;}.mini strong,.pulse strong,.status-block .count{font-size:28px;}.rank-row{grid-template-columns:1fr;}.feed{display:block;overflow-x:auto;}}
 </style>
 </head>
 <body>
@@ -93,21 +291,21 @@
     <div class="dash">
       <div class="hero-grid">
         <section class="hero">
-          <div class="eyebrow">Realtime Command Center</div>
-          <h2>เห็นสถานะเครื่องจริงทั้งระบบในมุมมองเดียว พร้อมรู้ทันทีว่าเครื่องไหนกำลังซ่อม</h2>
-          <p>Dashboard นี้เช็กสถานะจาก <strong>Computer Name</strong> แบบเดียวกับหน้าอุปกรณ์ แล้วสรุปผลเป็น real-time ให้ดูง่ายขึ้นสำหรับงาน support, onsite และการติดตาม ticket</p>
+          <div class="eyebrow">Realtime Overview</div>
+          <h2>สถานะเครื่องทั้งหมดแบบเรียลไทม์ ในมุมมองที่อ่านเร็วและตัดสินใจง่าย</h2>
+          <p>ดูตัวเลขหลักของอุปกรณ์, งานซ่อม, และสิ่งที่ต้องติดตามต่อจากหน้าเดียว โดยยังใช้ข้อมูลจริงจากระบบเดิมทั้งหมด</p>
           <div class="hero-meta">
             <div class="chip" id="heroCheckedAt">กำลังเตรียมสแกน...</div>
             <div class="chip">Auto refresh ทุก 90 วินาที</div>
             <div class="chip" id="heroScope">รอข้อมูลจากระบบ</div>
           </div>
           <div class="hero-actions">
-            <a class="btn btn-primary" href="device-list.html">เปิดรายการอุปกรณ์</a>
-            <a class="btn btn-ghost" href="repair.html">ดูงานซ่อม</a>
+            <a class="btn btn-primary" href="device-list.html">รายการอุปกรณ์</a>
+            <a class="btn btn-ghost" href="repair.html">งานซ่อม</a>
           </div>
         </section>
         <section class="hero live-board">
-          <div class="live-title">Fleet Pulse</div>
+          <div class="live-title">Live Status</div>
           <div class="live-head" id="liveHeadline">กำลังวิเคราะห์สถานะเครื่อง...</div>
           <div class="live-sub" id="liveSub">รอผลจากการเช็กสด</div>
           <div class="pulse-grid">
@@ -132,20 +330,35 @@
         <div class="metric r"><div class="metric-top"><small>Realtime</small><div class="metric-ico">🔴</div></div><b class="r" id="k3">—</b><div class="ttl">ปิด / ไม่ตอบ</div><div class="sub" id="ks3">ไม่ตอบจากการเช็กสด</div></div>
         <div class="metric v"><div class="metric-top"><small>Email</small><div class="metric-ico">✉️</div></div><b class="v" id="k4">—</b><div class="ttl">บัญชีอีเมล</div><div class="sub" id="ks4">บัญชีทั้งหมด</div></div>
         <div class="metric"><div class="metric-top"><small>Users</small><div class="metric-ico">👥</div></div><b class="c" id="k5">—</b><div class="ttl">ผู้ใช้ Active</div><div class="sub" id="ks5">พร้อมใช้งานในระบบ</div></div>
-        <div class="metric r"><div class="metric-top"><small>Tickets</small><div class="metric-ico">🎫</div></div><b class="r" id="k6">—</b><div class="ttl">Open Tickets</div><div class="sub" id="ks6">งานซ่อมที่ยังเปิดอยู่</div></div>
-        <div class="metric o"><div class="metric-top"><small>Urgent</small><div class="metric-ico">🚨</div></div><b class="o" id="k7">—</b><div class="ttl">High Priority</div><div class="sub" id="ks7">งานเร่งด่วน</div></div>
+        <div class="metric r"><div class="metric-top"><small>Reminder</small><div class="metric-ico">📝</div></div><b class="r" id="k6">—</b><div class="ttl">โน้ตเตือนความจำ</div><div class="sub" id="ks6">รายการติดตามที่บันทึกไว้</div></div>
+        <div class="metric o"><div class="metric-top"><small>Follow Up</small><div class="metric-ico">🔔</div></div><b class="o" id="k7">—</b><div class="ttl">ติดตามต่อ</div><div class="sub" id="ks7">เรื่องที่ควรกลับมาดูอีกครั้ง</div></div>
       </section>
 
       <div class="panel-grid">
         <section class="panel">
-          <div class="panel-head">
-            <div><div class="panel-title">Realtime Device Health</div><b id="rtHeadline">กำลังรอข้อมูล...</b><p id="rtSub">ระบบจะสรุปจากการเช็กชื่อเครื่องจริง</p></div>
+          <div class="panel-head panel-head-compact">
+            <div><div class="panel-title">Realtime Device Health</div><b id="rtHeadline">สถานะเครื่องแบบเรียลไทม์</b><p id="rtSub">แยกสถานะให้อ่านง่ายขึ้นจากการเช็กเครื่องจริง</p></div>
             <div class="chip" id="rtState">scanning</div>
           </div>
+          <div class="status-triplet">
+            <div class="status-block on">
+              <span class="eyelabel">เปิดอยู่</span>
+              <span class="count" id="rtOn">—</span>
+              <span class="note" id="rtOnSub">—</span>
+            </div>
+            <div class="status-block off">
+              <span class="eyelabel">ปิดไม่ตอบ</span>
+              <span class="count" id="rtOff">—</span>
+              <span class="note" id="rtOffSub">—</span>
+            </div>
+            <div class="status-block unknown">
+              <span class="eyelabel">ไม่ทราบ</span>
+              <span class="count" id="rtUnknown">—</span>
+              <span class="note" id="rtUnknownSub">—</span>
+            </div>
+          </div>
           <div class="track" id="mainTrack"></div>
-          <div class="mini-grid" style="margin-top:14px">
-            <div class="mini"><small>เปิดอยู่</small><strong id="rtOn">—</strong><p class="sub" id="rtOnSub"></p></div>
-            <div class="mini"><small>ปิด / ไม่ตอบ</small><strong id="rtOff">—</strong><p class="sub" id="rtOffSub"></p></div>
+          <div class="mini-grid rt-meta-grid" style="margin-top:14px">
             <div class="mini"><small>หมายเหตุในระบบ</small><strong id="rtRemark">—</strong><p class="sub">เครื่องที่มี remark</p></div>
             <div class="mini"><small>สแกนล่าสุด</small><strong id="rtTime">—</strong><p class="sub" id="rtTimeSub"></p></div>
           </div>
@@ -153,11 +366,11 @@
 
         <section class="panel">
           <div class="panel-head">
-            <div><div class="panel-title">Business Pulse</div><b>ซ่อม, เมล และผู้ใช้</b><p>ดูภาพรวมงาน support ที่เกี่ยวกับระบบทั้งหมด</p></div>
+            <div><div class="panel-title">Reminder Pulse</div><b>อุปกรณ์ที่ต้องซ่อม, เมล และผู้ใช้</b><p>ดูภาพรวมเรื่องที่ต้องติดตามต่อในระบบทั้งหมด</p></div>
           </div>
           <div class="mini-grid">
-            <div class="mini"><small>Open Tickets</small><strong id="bizOpen">—</strong></div>
-            <div class="mini"><small>In Progress</small><strong id="bizProg">—</strong></div>
+            <div class="mini"><small>โน้ตทั้งหมด</small><strong id="bizOpen">—</strong></div>
+            <div class="mini"><small>กำลังติดตาม</small><strong id="bizProg">—</strong></div>
             <div class="mini"><small>Email Active</small><strong id="bizMail">—</strong></div>
             <div class="mini"><small>Admins</small><strong id="bizAdmin">—</strong></div>
           </div>
@@ -177,13 +390,16 @@
       </div>
 
       <section class="panel">
-        <div class="panel-head"><div><div class="panel-title">Live Machine Feed</div><b>รายการสถานะเครื่องจากการเช็กสด</b><p>แสดงเครื่องที่ควรสนใจก่อน เช่น ปิดอยู่ หรือกำลังซ่อม</p></div><div class="chip"><span id="feedCount">0</span> rows</div></div>
+        <div class="panel-head"><div><div class="panel-title">Live Machine Feed</div><b>รายการสถานะเครื่องจากการเช็กสด</b><p>แสดงเครื่องที่ควรสนใจก่อน เช่น ปิดอยู่, ต้องซ่อม หรือควรบันทึกโน้ตเตือนความจำ</p></div><div class="chip"><span id="feedCount">0</span> rows</div></div>
         <div id="feedWrap"><div class="empty">กำลังรอข้อมูลจากระบบ...</div></div>
       </section>
     </div>
   </div>
 </div>
 </div>
-<script src="dashboard-live.js?v=20260325a"></script>
+<script src="dashboard-live.js?v=20260326o"></script>
 </body>
 </html>
+
+
+

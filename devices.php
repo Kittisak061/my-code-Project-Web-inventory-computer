@@ -80,16 +80,19 @@ function pickProbeHost($value) {
   return preg_replace('/[^A-Za-z0-9._-]/', '', $host);
 }
 
-function pickProbeTarget($device) {
+function pickProbeCandidates($device) {
+  $candidates = array();
+
   $host = pickProbeHost(isset($device['computer_name']) ? $device['computer_name'] : '');
   if ($host !== '') {
-    return array(
+    $candidates[] = array(
       'target' => $host,
-      'source' => !empty($device['workgroup']) ? 'computer_name (workgroup)' : 'computer_name'
+      'source' => !empty($device['workgroup']) ? 'computer_name (workgroup)' : 'computer_name',
+      'priority' => 0
     );
   }
 
-  return null;
+  return $candidates;
 }
 
 function buildPingCommand($target, $timeoutMs) {
@@ -111,6 +114,29 @@ function pingOutputShowsSuccess($output) {
   return false;
 }
 
+function analyzePingOutput($output) {
+  $text = strtolower((string)$output);
+
+  if (pingOutputShowsSuccess($output)) {
+    return array('state' => 'on', 'message' => 'Ping replied');
+  }
+
+  $nameErrors = array(
+    'could not find host',
+    'name or service not known',
+    'temporary failure in name resolution',
+    'unknown host',
+    'could not resolve target system name'
+  );
+  foreach ($nameErrors as $needle) {
+    if (strpos($text, $needle) !== false) {
+      return array('state' => 'unknown', 'message' => 'Computer name not resolved');
+    }
+  }
+
+  return array('state' => 'off', 'message' => 'No reply');
+}
+
 function buildPowerResult($device, $meta, $state, $elapsedMs, $message) {
   return array(
     'id' => isset($device['id']) ? $device['id'] : null,
@@ -121,9 +147,31 @@ function buildPowerResult($device, $meta, $state, $elapsedMs, $message) {
     'power_state' => $state,
     'target' => $meta ? $meta['target'] : null,
     'target_source' => $meta ? $meta['source'] : null,
+    'candidate_priority' => $meta && isset($meta['priority']) ? (int)$meta['priority'] : 99,
     'elapsed_ms' => (int)$elapsedMs,
     'message' => $message
   );
+}
+
+function pickBestPowerResult($device, $results) {
+  if (empty($results)) {
+    return buildPowerResult($device, null, 'unknown', 0, 'No probe candidates');
+  }
+
+  usort($results, function($a, $b) {
+    $pa = isset($a['candidate_priority']) ? (int)$a['candidate_priority'] : 99;
+    $pb = isset($b['candidate_priority']) ? (int)$b['candidate_priority'] : 99;
+    if ($pa !== $pb) return $pa - $pb;
+    return ((int)$a['elapsed_ms']) - ((int)$b['elapsed_ms']);
+  });
+
+  foreach ($results as $result) {
+    if (isset($result['power_state']) && $result['power_state'] === 'on') {
+      return $result;
+    }
+  }
+
+  return $results[0];
 }
 
 function probeDevicesSequential($jobs, $timeoutMs) {
@@ -146,8 +194,8 @@ function probeDevicesSequential($jobs, $timeoutMs) {
     }
 
     $elapsedMs = round((microtime(true) - $started) * 1000);
-    $isUp = pingOutputShowsSuccess($output);
-    $results[] = buildPowerResult($device, $meta, $isUp ? 'on' : 'off', $elapsedMs, $isUp ? 'Ping replied' : 'No reply');
+    $analysis = analyzePingOutput($output);
+    $results[] = buildPowerResult($device, $meta, $analysis['state'], $elapsedMs, $analysis['message']);
   }
 
   return $results;
@@ -196,9 +244,13 @@ function finishProbeProcess($active, $timedOut) {
   $elapsedMs = round((microtime(true) - $active['started_at']) * 1000);
   @proc_close($active['process']);
 
-  $isUp = pingOutputShowsSuccess($output);
-  $state = $isUp ? 'on' : 'off';
-  $message = $isUp ? 'Ping replied' : ($timedOut ? 'Probe timed out' : 'No reply');
+  $analysis = analyzePingOutput($output);
+  $state = $analysis['state'];
+  $message = $analysis['message'];
+  if ($timedOut && $state !== 'on') {
+    $state = 'unknown';
+    $message = 'Probe timed out';
+  }
 
   return buildPowerResult($active['job']['device'], $active['job']['meta'], $state, $elapsedMs, $message);
 }
@@ -224,7 +276,7 @@ function probeDevicesConcurrent($jobs, $timeoutMs, $maxConcurrent) {
     for ($i = count($active) - 1; $i >= 0; $i--) {
       $status = @proc_get_status($active[$i]['process']);
       $elapsedMs = (microtime(true) - $active[$i]['started_at']) * 1000;
-      $timedOut = $elapsedMs > ($active[$i]['timeout_ms'] + 700);
+      $timedOut = $elapsedMs > max(($active[$i]['timeout_ms'] + 900), 1500);
       if (!$status['running'] || $timedOut) {
         $results[] = finishProbeProcess($active[$i], $timedOut);
         array_splice($active, $i, 1);
@@ -245,32 +297,106 @@ function summarizePowerResults($items) {
   return $summary;
 }
 
+function buildPowerDiagnosticHint($summary, $total) {
+  $on = isset($summary['on']) ? (int)$summary['on'] : 0;
+  $unknown = isset($summary['unknown']) ? (int)$summary['unknown'] : 0;
+  if ($total >= 20 && $unknown >= (int)floor($total * 0.7) && $on <= 1) {
+    return 'เครื่องที่รันระบบนี้ยัง resolve ชื่อเครื่องส่วนใหญ่ไม่ได้ ควรตรวจ LAN, internal DNS หรือ Network Discovery ของ Windows';
+  }
+  return '';
+}
+
+function buildPowerCacheKey($devices) {
+  $parts = array();
+  foreach ((array)$devices as $device) {
+    $parts[] = (string)(isset($device['id']) ? $device['id'] : '')
+      . '|'
+      . (string)(isset($device['computer_name']) ? $device['computer_name'] : '')
+      . '|'
+      . (string)(isset($device['status']) ? $device['status'] : '');
+  }
+  return md5(implode("\n", $parts));
+}
+
+function getPowerCachePath($cacheKey) {
+  $dir = __DIR__ . DIRECTORY_SEPARATOR . 'cache';
+  if (!is_dir($dir)) {
+    @mkdir($dir, 0777, true);
+  }
+  return $dir . DIRECTORY_SEPARATOR . 'devicehub_power_' . $cacheKey . '.json';
+}
+
+function loadPowerCache($cacheKey, $maxAgeSeconds) {
+  $path = getPowerCachePath($cacheKey);
+  if (!is_file($path)) return null;
+  if ((time() - (int)@filemtime($path)) > max(5, (int)$maxAgeSeconds)) return null;
+  $raw = @file_get_contents($path);
+  if ($raw === false || $raw === '') return null;
+  $data = json_decode($raw, true);
+  return is_array($data) ? $data : null;
+}
+
+function savePowerCache($cacheKey, $payload) {
+  $path = getPowerCachePath($cacheKey);
+  @file_put_contents($path, json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+}
+
 function handlePowerProbe($db, $srcDevices) {
   $devices = is_array($srcDevices) ? $srcDevices : array();
   $jobs = array();
   $results = array();
+  $byDevice = array();
+  $cacheKey = buildPowerCacheKey($devices);
+  $forceFresh = !empty($_GET['force']) || !empty($_POST['force']);
+
+  if (!$forceFresh) {
+    $cached = loadPowerCache($cacheKey, 75);
+    if (is_array($cached) && isset($cached['items']) && isset($cached['summary'])) {
+      ok($cached, 200);
+    }
+  }
 
   foreach ($devices as $device) {
-    $meta = pickProbeTarget($device);
-    if ($meta === null) {
+    $candidates = pickProbeCandidates($device);
+    if (empty($candidates)) {
       $results[] = buildPowerResult($device, null, 'unknown', 0, 'No computer name');
       continue;
     }
-    $jobs[] = array('device' => $device, 'meta' => $meta);
+
+    foreach ($candidates as $meta) {
+      $jobs[] = array('device' => $device, 'meta' => $meta);
+    }
   }
 
   if (!empty($jobs)) {
-    $results = array_merge($results, probeDevicesConcurrent($jobs, 700, 60));
+    $candidateResults = probeDevicesConcurrent($jobs, 650, 96);
+    foreach ($candidateResults as $item) {
+      $deviceId = isset($item['id']) ? (string)$item['id'] : '';
+      if ($deviceId === '') continue;
+      if (!isset($byDevice[$deviceId])) $byDevice[$deviceId] = array();
+      $byDevice[$deviceId][] = $item;
+    }
+
+    foreach ($devices as $device) {
+      $deviceId = isset($device['id']) ? (string)$device['id'] : '';
+      if ($deviceId === '' || empty($byDevice[$deviceId])) continue;
+      $results[] = pickBestPowerResult($device, $byDevice[$deviceId]);
+    }
   }
 
-  ok(array(
+  $summary = summarizePowerResults($results);
+  $payload = array(
     'items' => $results,
-    'summary' => summarizePowerResults($results),
+    'summary' => $summary,
+    'hint' => buildPowerDiagnosticHint($summary, count($results)),
     'checked_at' => gmdate('c')
-  ), 200);
+  );
+  savePowerCache($cacheKey, $payload);
+  ok($payload, 200);
 }
 
 if ($m === 'GET') {
+  requireAuth();
   if (!empty($_GET['action']) && $_GET['action'] === 'power') {
     handlePowerProbe($db, fetchDevices($db, $_GET));
   }
@@ -280,9 +406,12 @@ if ($m === 'GET') {
 if ($m === 'POST') {
   $b = body();
   if ((!empty($_GET['action']) && $_GET['action'] === 'power') || (!empty($b['action']) && $b['action'] === 'power')) {
+    requireAuth();
     $devices = isset($b['devices']) && is_array($b['devices']) ? $b['devices'] : fetchDevices($db, $b);
     handlePowerProbe($db, $devices);
   }
+  $auth = requireAdmin();
+  $b = normalizePayloadFields($b, $FIELDS);
   if (empty($b['computer_name']) && empty($b['name'])) err('Please provide computer_name', 400);
   $nid = nextDeviceId($db);
   // Build insert
@@ -290,8 +419,13 @@ if ($m === 'POST') {
   foreach ($FIELDS as $f) {
     if (array_key_exists($f, $b)) {
       $cols[] = "`$f`"; $vals[] = ":$f";
-      $p[":$f"] = ($b[$f] === '') ? null : $b[$f];
+      $p[":$f"] = $b[$f];
     }
+  }
+  if (!isset($p[':updated_by']) || !$p[':updated_by']) {
+    $cols[] = '`updated_by`';
+    $vals[] = ':updated_by';
+    $p[':updated_by'] = isset($auth['username']) ? $auth['username'] : 'system';
   }
   $sql = 'INSERT INTO `devices`(' . implode(',', $cols) . ') VALUES(' . implode(',', $vals) . ')';
   $db->prepare($sql)->execute($p);
@@ -300,13 +434,18 @@ if ($m === 'POST') {
 }
 
 if ($m === 'PUT') {
+  $auth = requireAdmin();
   if (!$id) err('Missing id', 400);
-  $b = body(); $sets = array(); $p = array(':id' => $id);
+  $b = normalizePayloadFields(body(), $FIELDS); $sets = array(); $p = array(':id' => $id);
   foreach ($FIELDS as $f) {
     if (array_key_exists($f, $b)) {
       $sets[] = "`$f`=:$f";
-      $p[":$f"] = ($b[$f] === '') ? null : $b[$f];
+      $p[":$f"] = $b[$f];
     }
+  }
+  if (!array_key_exists('updated_by', $b)) {
+    $sets[] = '`updated_by`=:updated_by';
+    $p[':updated_by'] = isset($auth['username']) ? $auth['username'] : 'system';
   }
   if (empty($sets)) err('No data to update', 400);
   $db->prepare('UPDATE `devices` SET ' . implode(',', $sets) . ' WHERE `id`=:id')->execute($p);
@@ -315,6 +454,7 @@ if ($m === 'PUT') {
 }
 
 if ($m === 'DELETE') {
+  requireAdmin();
   if (!$id) err('Missing id', 400);
   $st = $db->prepare('DELETE FROM `devices` WHERE `id`=?'); $st->execute(array($id));
   if (!$st->rowCount()) err('Not found', 404);

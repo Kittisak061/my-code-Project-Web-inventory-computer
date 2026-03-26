@@ -157,24 +157,6 @@ INSERT INTO `email_accounts` (`email`,`name`,`dept`,`type`,`quota`,`used`,`statu
 ('it-group@company.com','กลุ่ม IT','AD-IT','กลุ่ม',200,88,'active',NULL,0,0,'disabled',0,0,0),
 ('server@company.com','ระบบ Server','AD-IT','ระบบ',500,201,'active','SRV-MAIN-01',0,0,'disabled',0,0,0);
 
--- ── SEED: USERS (password = bcrypt ของ "password") ───────────
--- รหัสผ่าน default ทุก account = password
--- ใช้ reset_password.php เพื่อตั้งรหัส admin=2552, others=1234
-INSERT INTO `users` (`name`,`username`,`password`,`email`,`dept`,`role`,`phone`,`devices`,`status`) VALUES
-('Admin IT','admin','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','admin@company.com','AD-IT','admin','081-234-5678',3,'active'),
-('สมชาย ใจดี','somchai','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','somchai@company.com','AD-IT','user','082-111-2222',1,'active'),
-('สุดา มีสุข','suda','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','suda@company.com','BC CENTER - PURCHASE','user','083-333-4444',1,'active'),
-('วิชัย งามดี','wichai','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','wichai@company.com','AD - GA','user','084-555-6666',1,'inactive'),
-('ปนัดดา เก่งมาก','panadda','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','panadda@company.com','AD - HRD','user','085-777-8888',1,'active'),
-('อาภา รักงาน','arpa','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','arpa@company.com','MARKETING','user','086-999-0000',1,'active'),
-('นพดล ดูแลดี','nopadol','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','nopadol@company.com','AD-IT','user','081-222-3333',2,'active'),
-('กมลชนก ทำงานดี','kamonchonok','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','kamonchonok@company.com','PRODUCTION DIVISION 1','user','082-444-5555',1,'active');
-
--- ── SEED: REPAIR TICKETS ──────────────────────────────────────
-INSERT INTO `repair_tickets` (`ticket`,`title`,`device`,`reporter`,`priority`,`status`,`tech`,`description`) VALUES
-('TKT-0001','PC-MKT-007 ไม่ติด','PC-MKT-007','อาภา รักงาน','high','open','นพดล ดูแลดี','เครื่องไม่ติด กดปุ่มไม่มีอะไรเกิดขึ้น'),
-('TKT-0002','LT-ACC-005 จอกระพริบ','LT-ACC-005','สุดา มีสุข','high','open','','จอภาพกระพริบถี่มาก'),
-('TKT-0003','PC-FIN-003 เมาส์เสีย','PC-FIN-003','วิชัย งามดี','medium','in_progress','สมชาย ใจดี','เมาส์ไม่ตอบสนอง'),
-('TKT-0004','อินเทอร์เน็ตช้า','PC-MKT-007','อาภา รักงาน','medium','in_progress','นพดล ดูแลดี','อินเทอร์เน็ตช้ามาก'),
-('TKT-0005','LT-HR-002 แบตไม่ชาร์จ','LT-HR-002','ปนัดดา เก่งมาก','low','resolved','สมชาย ใจดี','แก้ไขโดยเปลี่ยน Adapter'),
-('TKT-0006','Windows อัปเดตค้าง','PC-IT-001','สมชาย ใจดี','low','resolved','นพดล ดูแลดี','Reset Windows Update');
+/*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
+/*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

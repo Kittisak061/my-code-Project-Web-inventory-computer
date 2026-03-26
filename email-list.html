@@ -1,12 +1,27 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>KF Email Address List — DeviceHub</title>
-<link rel="stylesheet" href="style.css?v=20260325b">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="config.js"></script>
-<script src="shared.js"></script>
+<link rel="stylesheet" href="style.css?v=20260326ae">
+<script src="vendor/xlsx.full.min.js?v=20260324"></script>
+<script>
+(function() {
+  var want = '20260326ae';
+  try {
+    var url = new URL(window.location.href);
+    if (url.searchParams.get('v') !== want) {
+      url.searchParams.set('v', want);
+      window.location.replace(url.toString());
+    }
+  } catch (e) {}
+})();
+</script>
+<script src="config.js?v=20260326u"></script>
+<script src="shared.js?v=20260326u"></script>
 <style>
 /* Tabs */
 .tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:18px;}
@@ -14,6 +29,12 @@
 .tab:hover{color:var(--text);}
 .tab.active{color:var(--cyan);border-bottom-color:var(--cyan);font-weight:600;}
 .tabpane{display:none;}.tabpane.active{display:block;}
+#manOv[hidden]{display:none !important;}
+#manOv{display:none;}
+#manOv.open{display:flex !important;}
+#manDetailOv[hidden]{display:none !important;}
+#manDetailOv{display:none;}
+#manDetailOv.open{display:flex !important;}
 
 /* Upload zone */
 .upload-zone{border:2px dashed var(--border2);border-radius:12px;padding:40px 24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface);}
@@ -52,6 +73,51 @@
 .tag-new{background:rgba(0,232,150,.1);color:var(--green);border:1px solid rgba(0,232,150,.2);padding:2px 8px;border-radius:4px;font-size:11px;}
 .tag-upd{background:rgba(255,204,68,.08);color:var(--yellow);border:1px solid rgba(255,204,68,.2);padding:2px 8px;border-radius:4px;font-size:11px;}
 .tag-skip{background:rgba(122,136,153,.08);color:var(--text3);border:1px solid var(--border);padding:2px 8px;border-radius:4px;font-size:11px;}
+.dv-sec-title{font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.dv-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.dv-row{display:flex;flex-direction:column;gap:3px;}
+.dv-lbl{font-size:10.5px;color:var(--text3);font-family:var(--mono);}
+.dv-val{font-size:13px;color:var(--text);}
+.detail-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid rgba(0,212,255,.18);background:rgba(0,212,255,.08);color:var(--cyan);font-size:11px;font-family:var(--mono);}
+.preview-shell{display:flex;flex-direction:column;gap:14px;}
+.preview-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:16px 18px;border:1px solid var(--border);border-radius:18px;background:linear-gradient(180deg,rgba(14,20,31,.96),rgba(9,14,22,.99));}
+.preview-copy{display:flex;flex-direction:column;gap:6px;}
+.preview-copy span{font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1.2px;text-transform:uppercase;}
+.preview-copy strong{font-size:20px;line-height:1.1;color:var(--text);}
+.preview-copy small{font-size:12px;color:var(--text2);line-height:1.6;max-width:62ch;}
+.preview-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+.preview-stat{padding:14px 16px;border-radius:16px;border:1px solid var(--border);background:linear-gradient(180deg,rgba(18,26,39,.9),rgba(10,15,23,.95));}
+.preview-stat-num{font-size:24px;font-weight:700;font-family:var(--mono);line-height:1;color:var(--cyan);}
+.preview-stat-lbl{font-size:11px;color:var(--text2);margin-top:4px;}
+.preview-stat-sub{font-size:10px;color:var(--text3);margin-top:2px;}
+.preview-dept-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+.preview-dept-card{padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.02);}
+.preview-dept-card strong{display:block;color:var(--cyan);font-size:13px;margin-bottom:3px;}
+.preview-dept-card span{font-size:11px;color:var(--text2);}
+.preview-table-wrap{border:1px solid var(--border);border-radius:18px;overflow:auto;background:linear-gradient(180deg,rgba(13,19,30,.95),rgba(9,13,21,.98));}
+.preview-table{width:100%;border-collapse:collapse;min-width:960px;}
+.preview-table th{padding:11px 12px;background:var(--s2);font-size:11px;font-family:var(--mono);color:var(--text3);text-align:left;border-bottom:1px solid var(--border);}
+.preview-table td{padding:12px;border-bottom:1px solid var(--border);font-size:12.5px;vertical-align:top;line-height:1.55;}
+.preview-table tr:hover td{background:rgba(255,255,255,.02);}
+.preview-table .num{width:48px;text-align:center;font-family:var(--mono);color:var(--text3);}
+.preview-email{font-family:var(--mono);color:var(--cyan);}
+.preview-sub{display:block;font-size:10px;color:var(--text3);margin-top:3px;}
+.group-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;border:1px solid rgba(0,212,255,.18);background:rgba(0,212,255,.08);color:var(--cyan);font-size:10px;font-family:var(--mono);}
+.group-chip.none{border-color:var(--border);background:rgba(255,255,255,.03);color:var(--text3);}
+.preview-chip-wrap{display:flex;flex-wrap:wrap;gap:6px;}
+.preview-mail-list{display:flex;flex-direction:column;gap:4px;}
+.preview-mail-list span{font-size:11px;color:var(--text2);font-family:var(--mono);}
+.preview-table .row-actions{justify-content:flex-start;}
+.preview-table .sticky-actions-head{position:sticky;right:0;z-index:4;background:var(--s2);min-width:210px;box-shadow:-14px 0 18px rgba(5,10,18,.45);}
+.preview-table .sticky-actions-cell{position:sticky;right:0;z-index:3;background:linear-gradient(180deg,rgba(13,19,30,.98),rgba(9,13,21,.99));min-width:210px;box-shadow:-14px 0 18px rgba(5,10,18,.45);}
+.preview-table tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
+.matrix-panel{border:1px solid var(--border);border-radius:16px;background:rgba(255,255,255,.02);overflow:hidden;}
+.matrix-panel summary{cursor:pointer;list-style:none;padding:14px 16px;font-size:12px;font-family:var(--mono);color:var(--cyan);background:rgba(255,255,255,.02);}
+.matrix-panel summary::-webkit-details-marker{display:none;}
+.matrix-panel-body{padding:0 0 2px;}
+.matrix-note{padding:0 16px 12px;font-size:12px;color:var(--text2);}
+@media (max-width:900px){.preview-head{flex-direction:column;}.preview-table{min-width:820px;}}
+@media (max-width:760px){.dv-grid{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -59,21 +125,31 @@
 <div id="sidebar-slot"></div>
 <div class="main">
   <div class="topbar">
-    <div style="flex:1"><h1>📋 KF Email Address List</h1><p>Import จาก Excel / กรอกข้อมูล / Export</p></div>
+    <div style="flex:1"><h1>📋 KF Email Address List</h1><p>Import จาก Excel / ตั้งค่า Group / Export</p></div>
     <div class="db-pill"><div class="db-dot wait" id="dbDot"></div><span id="dbTxt">—</span></div>
-    <button class="btn btn-ghost" id="btnLoad" onclick="loadFromDB()">📂 Load จาก DB</button>
-    <button class="btn btn-success" id="btnSave" onclick="saveToDb()" style="display:none">💾 บันทึกลง MySQL</button>
-    <button class="btn btn-primary" id="btnExport" onclick="exportKF()" style="display:none">📥 Export Excel</button>
     <button class="btn btn-logout" onclick="logout()">⏻</button>
   </div>
   <div class="content">
 
+    <div class="page-actions">
+      <div class="page-actions-head">
+        <span class="page-actions-kicker">KF Email Actions</span>
+        <div class="page-actions-title">เพิ่ม แก้ไข บันทึก และ export จากแถบนี้</div>
+        <div class="page-actions-note">ดึงข้อมูลจากฐาน เพิ่มรายการใหม่ บันทึกกลับ และ export ได้จากจุดเดียว ไม่ต้องสลับไปหาปุ่มตามหัวข้อของหน้า</div>
+      </div>
+      <div class="page-actions-group">
+        <button class="btn btn-ghost" id="btnLoad" onclick="loadFromDB()">🔄 รีเฟรชข้อมูล</button>
+        <button class="btn btn-success" id="btnSave" onclick="saveToDb()" style="display:none">💾 บันทึกลง MySQL</button>
+        <button class="btn btn-primary" id="btnExport" onclick="exportKF()" style="display:none">📥 Export Excel</button>
+        <button class="btn btn-primary" onclick="openManualCreate()">+ เพิ่มคนใหม่</button>
+      </div>
+    </div>
+
     <!-- TABS -->
     <div class="tabs">
-      <button class="tab active" onclick="showTab('t1',this)">📤 Import จาก Excel</button>
-      <button class="tab" onclick="showTab('t4',this)">✏️ กรอกเอง</button>
-      <button class="tab" onclick="showTab('t2',this)">⚙️ ตั้งค่า Group</button>
-      <button class="tab" onclick="showTab('t3',this)">👁 Preview / Export</button>
+      <button class="tab active" id="tabImport" onclick="showTab('t1',this)">📤 Import จาก Excel</button>
+      <button class="tab" id="tabGroup" onclick="showTab('t2',this)">⚙️ ตั้งค่า Group</button>
+      <button class="tab" id="tabPreview" onclick="showTab('t3',this)">👁 Preview / Export</button>
     </div>
 
     <!-- TAB 1: IMPORT -->
@@ -95,7 +171,7 @@
             • Row 1: Title (KF Email Address List Y20XX)<br>
             • Row 2: Column headers: <code style="color:var(--cyan)">Department | No. | E-Mail address (Active) | Person in chart | &lt;group cols...&gt;</code><br>
             • Row 3: Group names (KF All Member, KF_BCC All Member, ...)<br>
-            • Row 4: Group emails (<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3c575a5d50507c52554c125f53124854">[email&#160;protected]</a>, <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8ae1ece8e9e9ebe6e6cae4e3faa4e9e5a4fee2">[email&#160;protected]</a>, ...)<br>
+            • Row 4: Group emails (<code style="color:var(--cyan)">kfall@nip.co.th</code>, <code style="color:var(--cyan)">kfthaiall@nip.co.th</code>, ...)<br>
             • Row 5+: ข้อมูลพนักงาน — <code style="color:var(--yellow)">"MD 2 Email"</code> = label แผนก, <code>email@domain | FIRSTNAME | LASTNAME | email_or_dash...</code><br>
             • Last row: Total Group Email
           </div>
@@ -115,7 +191,7 @@
           <div class="card-hdr">
             <span class="card-title">✅ Parse สำเร็จ — ตรวจสอบข้อมูลก่อนนำเข้า</span>
             <div style="display:flex;gap:8px">
-              <button class="btn btn-ghost" onclick="showTab('t3',document.querySelectorAll('.tab')[3])" style="font-size:12px">👁 Preview</button>
+              <button class="btn btn-ghost" onclick="openPreviewTab()" style="font-size:12px">👁 Preview</button>
               <button class="btn btn-success" onclick="saveToDb()" style="font-size:12px">💾 บันทึกลง MySQL</button>
             </div>
           </div>
@@ -131,7 +207,7 @@
 
 
     <!-- TAB 4: MANUAL ENTRY -->
-    <div class="tabpane" id="t4">
+    <div class="tabpane" id="t4" hidden>
       <!-- Add form -->
       <div class="card" style="margin-bottom:14px">
         <div class="card-hdr">
@@ -149,7 +225,7 @@
                 <th style="padding:9px 12px;font-size:10.5px;font-family:var(--mono);color:var(--text3);text-align:left;border-bottom:1px solid var(--border)">ชื่อ</th>
                 <th style="padding:9px 12px;font-size:10.5px;font-family:var(--mono);color:var(--text3);text-align:left;border-bottom:1px solid var(--border)">แผนก (Label)</th>
                 <th style="padding:9px 12px;font-size:10.5px;font-family:var(--mono);color:var(--text3);text-align:left;border-bottom:1px solid var(--border)">Groups</th>
-                <th style="padding:9px 12px;font-size:10.5px;font-family:var(--mono);color:var(--text3);text-align:center;border-bottom:1px solid var(--border);width:80px">จัดการ</th>
+                <th style="padding:9px 12px;font-size:10.5px;font-family:var(--mono);color:var(--text3);text-align:center;border-bottom:1px solid var(--border);width:190px">จัดการ</th>
               </tr></thead>
               <tbody id="manBody"></tbody>
             </table>
@@ -157,7 +233,7 @@
           <div style="padding:10px 16px;border-top:1px solid var(--border);background:var(--s2);display:flex;align-items:center;justify-content:space-between">
             <span style="font-size:12px;color:var(--text3)" id="manCount">0 รายการ</span>
             <div style="display:flex;gap:8px">
-              <button class="btn btn-ghost" onclick="showTab('t3',document.querySelectorAll('.tab')[3])" style="font-size:12px">👁 Preview</button>
+              <button class="btn btn-ghost" onclick="openPreviewTab()" style="font-size:12px">👁 Preview</button>
               <button class="btn btn-success" onclick="saveToDb()" style="font-size:12px">💾 บันทึกลง MySQL</button>
             </div>
           </div>
@@ -166,7 +242,7 @@
     </div>
 
     <!-- MODAL: Add/Edit person -->
-    <div class="overlay" id="manOv">
+    <div class="overlay" id="manOv" hidden aria-hidden="true">
     <div class="modal" style="width:620px">
       <div class="modal-hdr">
         <div class="modal-title" id="manOvTitle">➕ เพิ่มคนใหม่</div>
@@ -190,17 +266,6 @@
             <label class="form-lbl">ฝ่าย (Division) *</label>
             <select class="form-sel" id="mMainDept" onchange="onMainDeptChange(this)">
               <option value="">— เลือกฝ่าย —</option>
-              <option value="Meeting">Meeting</option>
-              <option value="MARKETING">MARKETING</option>
-              <option value="EC DIVISION">EC DIVISION</option>
-              <option value="ADMINISTRATION">ADMINISTRATION</option>
-              <option value="MEDICAL">MEDICAL</option>
-              <option value="PDI">PDI</option>
-              <option value="PRECISION">PRECISION</option>
-              <option value="SLIT">SLIT</option>
-              <option value="QA CENTER">QA CENTER</option>
-              <option value="AUTOMOBILE">AUTOMOBILE</option>
-              <option value="BC CENTER">BC CENTER</option>
             </select>
           </div>
           <div class="form-grp">
@@ -225,10 +290,21 @@
           </div>
         </div>
       </div>
-      <div class="modal-foot">
+    <div class="modal-foot">
         <button class="btn btn-ghost" onclick="closeManModal()">ยกเลิก</button>
         <button class="btn btn-primary" onclick="saveManPerson()" id="manSaveBtn">💾 บันทึก</button>
       </div>
+    </div>
+    </div>
+
+    <div class="overlay" id="manDetailOv" hidden aria-hidden="true">
+    <div class="modal" style="width:700px;max-height:90vh">
+      <div class="modal-hdr">
+        <div class="modal-title" id="manDetailTitle">รายละเอียดรายชื่อ</div>
+        <button class="modal-x" onclick="closeManDetail()">✕</button>
+      </div>
+      <div class="modal-body" id="manDetailBody" style="overflow-y:auto;max-height:calc(90vh - 120px)"></div>
+      <div class="modal-foot" id="manDetailFoot"></div>
     </div>
     </div>
 
@@ -270,12 +346,41 @@
 </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 buildSidebar('email-list');
 
 // ── PARSED DATA ────────────────────────────────────────────────
 var parsedData = []; // [{email, name, dept, deptLabel, groups:[gemail,...], isNew}]
 var parsedGroups = []; // [{name, email}]
+var GROUP_CHIP_BASE_STYLE = 'padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;transition:all .15s;border:1px solid;';
+var GROUP_CHIP_OFF_STYLE = GROUP_CHIP_BASE_STYLE + 'background:var(--s2);color:var(--text3);border-color:var(--border);';
+var GROUP_CHIP_ON_STYLE = GROUP_CHIP_BASE_STYLE + 'background:rgba(0,212,255,.15);color:var(--cyan);border-color:rgba(0,212,255,.3);';
+
+function xe(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function normalizeDeptName(value) {
+  var text = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+  if (!text) return '';
+  if (/^total group email$/i.test(text)) return '';
+  return text.replace(/\s+\d+\s*Email.*$/i, '').trim();
+}
+
+function getDeptDisplayName(value) {
+  return normalizeDeptName(value) || 'ไม่ระบุ';
+}
+
+function setGroupChipState(btn, selected) {
+  if (!btn) return;
+  btn.style.cssText = selected ? GROUP_CHIP_ON_STYLE : GROUP_CHIP_OFF_STYLE;
+  btn.dataset.sel = selected ? '1' : '0';
+}
 
 // ── DEFAULT GROUPS ─────────────────────────────────────────────
 var DEF_GROUPS = [
@@ -394,16 +499,20 @@ function parseKFFormat(rows) {
     if (col3.toLowerCase().indexOf('total')!==-1 || col0.toLowerCase().indexOf('total')!==-1) continue;
     if (col2.toLowerCase()==='e-mail' || col2.toLowerCase()==='e-mail address') continue;
 
-    // Dept label row: col0 มีค่า และ col1 ว่าง (no column empty)
-    // หรือ col0 มีค่า แต่ col2 ไม่มี @ แสดงว่าไม่ใช่ data row
-    if (col0 && (!col2 || col2.indexOf('@')===-1)) {
-      currentDeptLabel = col0;
-      // แปลง "MD 2 Email" → "MD", "AD 22 Email" → "AD", "BCC 42 Email" → "BCC"
-      var match = col0.match(/^([A-Za-zก-ฮ\s\-\/]+?)(?:\s+\d+\s*Email.*)?$/i);
-      currentDept = match ? match[1].trim() : col0.replace(/\s*\d+\s*Email.*/i,'').trim();
-      deptFoundCount++;
-      console.log('✓ Found dept: col0="'+col0+'" → dept="'+currentDept+'"');
-      continue;
+    // บางไฟล์มีชื่อแผนก + คนแรกของแผนกอยู่ในแถวเดียวกัน เช่น "AD 22 Email" + email
+    // ถ้า col0 ดูเป็น label แผนก ให้จำแผนกไว้ก่อน แล้วค่อย parse แถวนั้นต่อได้
+    if (col0) {
+      var nextDept = normalizeDeptName(col0);
+      var looksLikeDeptLabel = nextDept && (/\bemail\b/i.test(col0) || col0 !== nextDept);
+      if (looksLikeDeptLabel) {
+        currentDept = nextDept;
+        currentDeptLabel = nextDept;
+        deptFoundCount++;
+        console.log('✓ Found dept: col0="'+col0+'" → dept="'+currentDept+'"');
+        if (!col2 || col2.indexOf('@')===-1) {
+          continue;
+        }
+      }
     }
 
     // Data row: ต้องมี @ ใน col2
@@ -508,7 +617,7 @@ function parseKFFormat(rows) {
       +'<td style="font-family:var(--mono);text-align:center;color:var(--text3)">'+(i+1)+'</td>'
       +'<td style="font-family:var(--mono);color:var(--cyan)">'+xe(p.email)+'</td>'
       +'<td>'+xe(p.name)+'</td>'
-      +'<td><span style="color:var(--text2);font-size:12px">'+xe(p.deptLabel||p.dept)+'</span></td>'
+      +'<td><span style="color:var(--text2);font-size:12px">'+xe(getDeptDisplayName(p.dept||p.deptLabel))+'</span></td>'
       +'<td>'+(gc||'<span style="color:var(--text3);font-size:11px">ไม่มี Group</span>')+'</td>'
       +'<td><span class="tag-new">นำเข้า</span></td>'
       +'</tr>';
@@ -522,10 +631,20 @@ function parseKFFormat(rows) {
 }
 
 // ── LOAD FROM DB ───────────────────────────────────────────────
-async function loadFromDB() {
-  setDB('wait','โหลด...');
+async function loadFromDB(options) {
+  options = options || {};
+  var btnLoad = document.getElementById('btnLoad');
+  var btnText = btnLoad ? btnLoad.textContent : '';
+  setDB('wait','กำลังโหลดข้อมูล...');
+  if (btnLoad) {
+    btnLoad.disabled = true;
+    btnLoad.textContent = '⏳ กำลังโหลด...';
+  }
   try {
     var dbData = await apiGet(API.emails);
+    if (!Array.isArray(dbData)) {
+      throw new Error('รูปแบบข้อมูลจาก API ไม่ถูกต้อง');
+    }
     // Load all records (active + inactive + suspended) แต่ mark status ไว้
     var groups = parsedGroups.length ? parsedGroups : getGroups();
 
@@ -557,16 +676,23 @@ async function loadFromDB() {
     }
 
     var act = dbData.filter(function(d){ return (d.status_user_email||d.status)==='active'; }).length;
-    setDB('ok','DB · '+dbData.length+' บัญชี (active: '+act+')');
+    setDB('ok','DB | '+dbData.length+' บัญชี (active: '+act+')');
     document.getElementById('btnExport').style.display='inline-flex';
     document.getElementById('btnSave').style.display='inline-flex';
     renderPreview();
     renderManual();
-    showTab('t3', document.querySelectorAll('.tab')[3]);
-    showToast('✅ โหลด '+dbData.length+' บัญชีจาก DB (active: '+act+')');
+    openPreviewTab();
+    if (!options.silent) {
+      showToast('✅ โหลด '+dbData.length+' บัญชีจาก DB (active: '+act+')');
+    }
   } catch(e) {
     setDB('err','error');
     showToast('❌ '+e.message,'error');
+  } finally {
+    if (btnLoad) {
+      btnLoad.disabled = false;
+      btnLoad.textContent = btnText || '🔄 รีเฟรชข้อมูล';
+    }
   }
 }
 
@@ -606,15 +732,23 @@ async function saveToDb() {
     try {
       // groups เก็บเป็น comma-separated group emails ใน onedrive_list
       var odl = (p.groups&&p.groups.length) ? p.groups.join(',') : null;
+      var cleanEmail = normalizeInputValue(p.email);
+      var cleanName = normalizeInputValue(p.name);
+      var cleanDept = normalizeInputValue(p.dept);
+      if (!cleanEmail || !cleanName) {
+        fail++;
+        failList.push((p.email || '(ไม่มีอีเมล)') + ': ข้อมูลไม่ครบ');
+        continue;
+      }
 
       // Find existing by email
-      var existing = allEmails.find(function(e){ return e.email.toLowerCase()===p.email.toLowerCase(); });
+      var existing = allEmails.find(function(e){ return e.email.toLowerCase()===cleanEmail.toLowerCase(); });
 
       if (existing) {
         // อัปเดตเฉพาะ fields ที่เกี่ยวกับ KF list
         await apiPut(API.emails, existing.id, {
-          name:             p.name,
-          dept:             p.dept||null,
+          name:             cleanName,
+          dept:             cleanDept,
           onedrive_list:    odl,
           status_user_email: p.dbStatus||'active'
         });
@@ -622,9 +756,9 @@ async function saveToDb() {
       } else {
         // สร้างใหม่
         await apiPost(API.emails, {
-          email:             p.email,
-          name:              p.name,
-          dept:              p.dept||null,
+          email:             cleanEmail,
+          name:              cleanName,
+          dept:              cleanDept,
           status_user_email: 'active',
           onedrive_list:     odl,
           type:              'บุคคล',
@@ -649,14 +783,8 @@ async function saveToDb() {
 
   // แจ้งเตือน Email ใหม่
   if (created > 0) {
-    var msg = '<div style="text-align:left; line-height:1.6">';
-    msg += '<strong>📧 เพิ่ม Email ใหม่ ' + created + ' รายการ:</strong><br>';
-    for (var j=0; j<createdList.length && j<10; j++) {
-      msg += '• ' + createdList[j] + '<br>';
-    }
-    if (createdList.length > 10) msg += '... และอีก ' + (createdList.length-10) + ' รายการ<br>';
-    msg += '</div>';
-    alert(msg);
+    showToast('📧 เพิ่ม Email ใหม่ ' + created + ' รายการแล้ว', 'success');
+    console.info('DeviceHub KF Email created:', createdList);
   }
 }
 
@@ -668,39 +796,105 @@ function renderPreview() {
     return;
   }
 
-  // Sort by dept label
+  // Sort by cleaned department name
   var sorted = parsedData.slice().sort(function(a,b){
-    return (a.deptLabel||a.dept).localeCompare(b.deptLabel||b.dept,'th');
+    return getDeptDisplayName(a.dept||a.deptLabel).localeCompare(getDeptDisplayName(b.dept||b.deptLabel),'th');
   });
 
-  // Group by deptLabel
+  // Group by cleaned department name
   var dm={},dorder=[];
   sorted.forEach(function(p){
-    var dep=p.deptLabel||p.dept||'ไม่ระบุ';
+    var dep=getDeptDisplayName(p.dept||p.deptLabel);
     if(!dm[dep]){dm[dep]=[];dorder.push(dep);}
     dm[dep].push(p);
   });
 
   var year=document.getElementById('fYear').value||'2026';
   var coName=document.getElementById('fCo').value||'KF';
-
-  // Build table
-  var html='<div style="padding:10px 16px;font-size:14px;font-weight:700;color:var(--text);border-bottom:1px solid var(--border);background:var(--s2)">'
-    +coName+' Email Address List Y'+year
-    +'<button onclick="exportKF()" class="btn btn-excel" style="margin-left:16px;font-size:12px">📥 Export Excel</button>'
+  var deptStats = dorder.map(function(d){ return {name:d, count:dm[d].length}; });
+  var noGroupCount = sorted.filter(function(p){ return !(p.groups && p.groups.length); }).length;
+  var html='<div class="preview-shell">'
+    +'<div class="preview-head">'
+      +'<div class="preview-copy">'
+        +'<span>Preview / Export</span>'
+        +'<strong>'+xe(coName)+' Email Address List Y'+xe(year)+'</strong>'
+        +'<small>หน้านี้แสดงข้อมูลครบในรูปแบบอ่านง่ายก่อน ส่วน matrix group แบบเต็มจะอยู่ด้านล่างสำหรับใช้ตรวจละเอียดหรือเทียบกับไฟล์ export</small>'
+      +'</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+        +'<button onclick="openManualCreate()" class="btn btn-primary" style="font-size:12px">+ เพิ่มคนใหม่</button>'
+        +'<button onclick="exportKF()" class="btn btn-excel" style="font-size:12px">📥 Export Excel</button>'
+      +'</div>'
     +'</div>';
 
-  // Department Summary
-  var deptStats = dorder.map(function(d){ return {name:d, count:dm[d].length}; });
-  html+='<div style="padding:14px 16px;background:rgba(0,212,255,.04);border-bottom:1px solid var(--border)">'
-    +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:8px">';
+  html+='<div class="preview-summary">'
+    +'<div class="preview-stat"><div class="preview-stat-num">'+sorted.length+'</div><div class="preview-stat-lbl">Email ทั้งหมด</div><div class="preview-stat-sub">พร้อมใช้งานในรายการนี้</div></div>'
+    +'<div class="preview-stat"><div class="preview-stat-num">'+dorder.length+'</div><div class="preview-stat-lbl">แผนก</div><div class="preview-stat-sub">นับจากข้อมูลปัจจุบัน</div></div>'
+    +'<div class="preview-stat"><div class="preview-stat-num">'+groups.length+'</div><div class="preview-stat-lbl">Groups</div><div class="preview-stat-sub">สำหรับใช้ส่งออกแบบ matrix</div></div>'
+    +'<div class="preview-stat"><div class="preview-stat-num">'+noGroupCount+'</div><div class="preview-stat-lbl">ยังไม่อยู่ Group</div><div class="preview-stat-sub">ควรตรวจสอบเพิ่มเติม</div></div>'
+  +'</div>';
+
+  html+='<div class="preview-dept-grid">';
   deptStats.forEach(function(ds){
-    html+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:12px">'
-      +'<div style="color:var(--cyan);font-weight:700;margin-bottom:2px">'+xe(ds.name)+'</div>'
-      +'<div style="color:var(--text2);font-size:11px">'+ds.count+' Email</div>'
-      +'</div>';
+    html+='<div class="preview-dept-card">'
+      +'<strong>'+xe(ds.name)+'</strong>'
+      +'<span>'+ds.count+' Email</span>'
+    +'</div>';
   });
-  html+='</div></div>';
+  html+='</div>';
+
+  html+='<div class="preview-table-wrap sync-scroll-x"><table class="preview-table"><thead><tr>'
+    +'<th class="num">No.</th>'
+    +'<th>Department</th>'
+    +'<th>E-Mail Address</th>'
+    +'<th>Person In Chart</th>'
+    +'<th>Groups</th>'
+    +'<th>Group E-Mail</th>'
+    +'<th class="sticky-actions-head">จัดการ</th>'
+  +'</tr></thead><tbody>';
+
+  var no=1;
+  var totals=groups.map(function(){return 0;});
+
+  dorder.forEach(function(dept){
+    var rows=dm[dept];
+    rows.forEach(function(p,i){
+      var list=p.groups||[];
+      var realIdx=parsedData.indexOf(p);
+      var groupNameChips = list.length
+        ? list.map(function(ge){
+            var g=groups.find(function(gg){return gg.email===ge;});
+            return '<span class="group-chip">'+xe(g?g.name:ge)+'</span>';
+          }).join('')
+        : '<span class="group-chip none">ไม่มี Group</span>';
+      var groupMailList = list.length
+        ? list.map(function(ge){
+            return '<span>'+xe(ge)+'</span>';
+          }).join('')
+        : '<span style="color:var(--text3)">—</span>';
+
+      html+='<tr>'
+        +'<td class="num">'+(no++)+'</td>'
+        +'<td><div style="font-weight:600;color:var(--cyan)">'+xe(dept)+'</div><span class="preview-sub">'+rows.length+' Email ในแผนกนี้</span></td>'
+        +'<td><div class="preview-email">'+xe(p.email)+'</div><span class="preview-sub">'+xe(p.deptLabel||dept)+'</span></td>'
+        +'<td><div style="font-weight:600">'+xe(p.name)+'</div><span class="preview-sub">'+(list.length?list.length+' Group':'ยังไม่อยู่ Group')+'</span></td>'
+        +'<td><div class="preview-chip-wrap">'+groupNameChips+'</div></td>'
+        +'<td><div class="preview-mail-list">'+groupMailList+'</div></td>';
+      groups.forEach(function(g,gi){
+        var inG=list.indexOf(g.email)!==-1;
+        if(inG)totals[gi]++;
+      });
+      html+='<td class="sticky-actions-cell"><div class="row-actions">'
+        +'<button class="act-btn view" onclick="showManDetail('+realIdx+')" title="ดูรายละเอียด"><span>🔍</span><span class="txt">ดู</span></button>'
+        +'<button class="act-btn edit" onclick="openManModal('+realIdx+')" title="แก้ไข"><span>✏️</span><span class="txt">แก้ไข</span></button>'
+        +'<button class="act-btn del" onclick="delManPerson('+realIdx+')" title="ลบ"><span>🗑️</span><span class="txt">ลบ</span></button>'
+      +'</div></td></tr>';
+    });
+  });
+
+  html+='</tbody></table></div>';
+
+  html+='<details class="matrix-panel"><summary>เปิดดู Matrix Group แบบเต็ม</summary><div class="matrix-panel-body">'
+    +'<div class="matrix-note">ใช้ตอนต้องเทียบว่าแต่ละคนอยู่ group ไหนแบบ column-by-column หรือก่อน export แบบตารางเต็ม</div>';
 
   html+='<div class="kf-outer"><table class="kf-tbl"><thead>'
     +'<tr><th class="thl" rowspan="2" style="min-width:130px">Department</th>'
@@ -708,19 +902,16 @@ function renderPreview() {
     +'<th class="thl" rowspan="2" style="min-width:180px">E-Mail address (Active)</th>'
     +'<th class="thl" rowspan="2" style="min-width:120px">Person in chart</th>';
   if(groups.length>0){
-    var s=groups[0].name.substring(0,12)+'…(+'+( groups.length-1)+')';
     html+='<th class="thg" colspan="'+groups.length+'" style="background:rgba(0,100,200,.12);color:var(--cyan)">Group Email ('+groups.length+' groups)</th>';
   }
   html+='</tr><tr>';
   groups.forEach(function(g){
-    var s=g.email.length>14?g.email.substring(0,14)+'…':g.email;
-    html+='<th class="thge" title="'+xe(g.name)+'\n'+xe(g.email)+'">'+xe(s)+'</th>';
+    var shortMail=g.email.length>14?g.email.substring(0,14)+'…':g.email;
+    html+='<th class="thge" title="'+xe(g.name)+'\n'+xe(g.email)+'">'+xe(shortMail)+'</th>';
   });
   html+='</tr></thead><tbody>';
 
-  var no=1;
-  var totals=groups.map(function(){return 0;});
-
+  no = 1;
   dorder.forEach(function(dept){
     var rows=dm[dept];
     rows.forEach(function(p,i){
@@ -733,25 +924,23 @@ function renderPreview() {
       html+='<td style="font-family:var(--mono);text-align:center;font-size:11px;color:var(--text3)">'+(no++)+'</td>';
       html+='<td style="font-family:var(--mono);font-size:11.5px;color:var(--cyan)">'+xe(p.email)+'</td>';
       html+='<td style="font-size:12.5px">'+xe(p.name)+'</td>';
-      groups.forEach(function(g,gi){
+      groups.forEach(function(g){
         var inG=list.indexOf(g.email)!==-1;
-        if(inG)totals[gi]++;
         html+='<td style="text-align:center;min-width:90px">'+(inG
           ?'<span class="val-yes">'+xe(p.email)+'</span>'
-          :'<span class="val-no">—</span>')
-        +'</td>';
+          :'<span class="val-no">—</span>')+'</td>';
       });
       html+='</tr>';
     });
   });
 
-  // Total row
   html+='<tr class="drow"><td class="total-row" colspan="4" style="text-align:right;padding:8px 12px">Total Group Email</td>';
   totals.forEach(function(t){html+='<td class="total-row" style="text-align:center">'+t+'</td>';});
-  html+='</tr>';
-
-  html+='</tbody></table></div>';
+  html+='</tr></tbody></table></div></div></details></div>';
   document.getElementById('previewArea').innerHTML=html;
+  if (typeof refreshSyncedScrollAreas === 'function') {
+    refreshSyncedScrollAreas(document.getElementById('previewArea'));
+  }
 }
 
 // ── EXPORT EXCEL ────────────────────────────────────────────────
@@ -764,11 +953,11 @@ function exportKF() {
   var sheet  = document.getElementById('fSheet').value||'List KF Email Address';
 
   var sorted = parsedData.slice().sort(function(a,b){
-    return (a.deptLabel||a.dept).localeCompare(b.deptLabel||b.dept,'th');
+    return getDeptDisplayName(a.dept||a.deptLabel).localeCompare(getDeptDisplayName(b.dept||b.deptLabel),'th');
   });
   var dm={},dorder=[];
   sorted.forEach(function(p){
-    var dep=p.deptLabel||p.dept||'ไม่ระบุ';
+    var dep=getDeptDisplayName(p.dept||p.deptLabel);
     if(!dm[dep]){dm[dep]=[];dorder.push(dep);}
     dm[dep].push(p);
   });
@@ -893,17 +1082,89 @@ function renderManual() {
     return '<tr style="border-bottom:1px solid var(--border)">'
       +'<td style="padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--cyan)">'+xe(p.email)+'</td>'
       +'<td style="padding:8px 12px;font-size:13px">'+xe(p.name)+'</td>'
-      +'<td style="padding:8px 12px;font-size:12px;color:var(--text2)">'+xe(p.deptLabel||p.dept||'—')+'</td>'
+      +'<td style="padding:8px 12px;font-size:12px;color:var(--text2)">'+xe(getDeptDisplayName(p.dept||p.deptLabel))+'</td>'
       +'<td style="padding:8px 12px">'+(gc||'<span style="color:var(--text3);font-size:11px">ไม่มี Group</span>')+'</td>'
-      +'<td style="padding:8px 12px;text-align:center"><div style="display:flex;gap:4px;justify-content:center">'
-      +'<button class="act-btn edit" onclick="openManModal('+realIdx+')" title="แก้ไข">✏️</button>'
-      +'<button class="act-btn del" onclick="delManPerson('+realIdx+')" title="ลบ">🗑️</button>'
+      +'<td style="padding:8px 12px"><div class="row-actions">'
+      +'<button class="act-btn view" onclick="showManDetail('+realIdx+')" title="ดูรายละเอียด"><span>🔍</span><span class="txt">ดู</span></button>'
+      +'<button class="act-btn edit" onclick="openManModal('+realIdx+')" title="แก้ไข"><span>✏️</span><span class="txt">แก้ไข</span></button>'
+      +'<button class="act-btn del" onclick="delManPerson('+realIdx+')" title="ลบ"><span>🗑️</span><span class="txt">ลบ</span></button>'
       +'</div></td></tr>';
   }).join('');
 }
 
+function showManDetail(idx) {
+  var p = parsedData[idx];
+  if (!p) return;
+  var groups = parsedGroups.length ? parsedGroups : getGroups();
+  var deptName = getDeptDisplayName(p.dept || p.deptLabel);
+  var groupList = (p.groups || []).map(function(ge) {
+    var g = groups.find(function(item) { return item.email === ge; });
+    return '<span class="detail-chip">' + xe(g ? g.name : ge) + '</span>';
+  }).join(' ');
+  function row(label, value, mono) {
+    var val = (value !== null && value !== undefined && value !== '') ? xe(value) : '—';
+    return '<div class="dv-row"><div class="dv-lbl">' + label + '</div><div class="dv-val' + (mono ? ' mono' : '') + '"' + (mono ? ' style="font-family:var(--mono);color:var(--cyan)"' : '') + '>' + val + '</div></div>';
+  }
+
+  document.getElementById('manDetailTitle').innerHTML =
+    '<div style="font-family:var(--mono);color:var(--cyan)">✉ ' + xe(p.email) + '</div>'
+    + '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + xe(p.name || 'ไม่ระบุชื่อ') + ' · ' + xe(deptName) + '</div>';
+  document.getElementById('manDetailBody').innerHTML = ''
+    + '<div class="dv-sec-title" style="margin-top:0">ข้อมูลผู้ใช้</div>'
+    + '<div class="dv-grid">'
+      + row('Email', p.email, true)
+      + row('ชื่อ - นามสกุล', p.name)
+      + row('แผนก', deptName)
+      + row('แผนกจากไฟล์', p.deptLabel || p.dept)
+      + row('จำนวน Group', (p.groups || []).length)
+      + row('ODL', p.odl)
+    + '</div>'
+    + '<div class="dv-sec-title">กลุ่มที่อยู่</div>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">'
+      + (groupList || '<span style="color:var(--text3);font-size:12px">ยังไม่ได้อยู่ใน Group</span>')
+    + '</div>'
+    + '<div class="dv-sec-title">Group E-Mail</div>'
+    + '<div style="display:flex;flex-direction:column;gap:8px">'
+      + ((p.groups || []).length ? (p.groups || []).map(function(ge) {
+          var g = groups.find(function(item) { return item.email === ge; });
+          return '<div style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--s2)">'
+            + '<div style="font-size:12px;color:var(--text)">' + xe(g ? g.name : ge) + '</div>'
+            + '<div style="font-size:11px;color:var(--cyan);font-family:var(--mono);margin-top:2px">' + xe(ge) + '</div>'
+          + '</div>';
+        }).join('') : '<div style="color:var(--text3);font-size:12px">ไม่มี Group ที่ผูกอยู่</div>')
+    + '</div>';
+  document.getElementById('manDetailFoot').innerHTML = ''
+    + '<button class="btn btn-ghost" onclick="closeManDetail()">ปิด</button>'
+    + '<button class="btn btn-primary" onclick="closeManDetail();openManModal(' + idx + ')">✏️ แก้ไข</button>';
+
+  var overlay = document.getElementById('manDetailOv');
+  overlay.hidden = false;
+  overlay.style.display = 'flex';
+  overlay.setAttribute('aria-hidden', 'false');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeManDetail() {
+  var overlay = document.getElementById('manDetailOv');
+  overlay.classList.remove('open');
+  overlay.setAttribute('aria-hidden', 'true');
+  overlay.hidden = true;
+  overlay.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function openPreviewTab() {
+  showTab('t3', document.getElementById('tabPreview'));
+}
+
+function openManualCreate() {
+  openManModal(null);
+}
+
 function openManModal(idx) {
   var groups = parsedGroups.length ? parsedGroups : getGroups();
+  var overlay = document.getElementById('manOv');
   manEditIdx = idx;
   var p = (idx !== null) ? parsedData[idx] : null;
 
@@ -913,14 +1174,15 @@ function openManModal(idx) {
   document.getElementById('mFirst').value = p ? (nameParts[0]||'') : '';
   document.getElementById('mLast').value  = p ? nameParts.slice(1).join(' ') : '';
   
-  var dlv = p ? (p.deptLabel||p.dept||'') : '';
+  var deptValue = p ? normalizeDeptName(p.dept||'') : '';
+  var deptDisplay = p ? getDeptDisplayName(p.dept||p.deptLabel||'') : '';
   var mainDeptSel = document.getElementById('mMainDept');
   var subDeptSel = document.getElementById('mSubDept');
   
-  // Find main division from deptLabel
+  // Find main division from the cleaned department name
   var mainDiv = '';
   for (var mainKey in DEPT_STRUCTURE) {
-    if (DEPT_STRUCTURE[mainKey].indexOf(dlv) !== -1) {
+    if (DEPT_STRUCTURE[mainKey].indexOf(deptValue) !== -1 || DEPT_STRUCTURE[mainKey].indexOf(deptDisplay) !== -1) {
       mainDiv = mainKey;
       break;
     }
@@ -932,7 +1194,7 @@ function openManModal(idx) {
   if (mainDiv) {
     onMainDeptChange(mainDeptSel);
     // Set sub dept
-    subDeptSel.value = dlv;
+    subDeptSel.value = deptValue || deptDisplay;
   }
 
   // Render group chips
@@ -952,35 +1214,35 @@ function openManModal(idx) {
       toggleChip(this, gemail);
     });
   });
-  document.getElementById('manOv').classList.add('open');
+  overlay.hidden = false;
+  overlay.style.display = 'flex';
+  overlay.setAttribute('aria-hidden', 'false');
+  overlay.classList.add('open');
+  // Prevent background from scrolling while modal is open
+  document.body.style.overflow = 'hidden';
   setTimeout(function(){ document.getElementById('mEmail').focus(); }, 100);
 }
 
 function toggleChip(btn, gemail) {
   var sel = btn.dataset.sel === '1';
-  if (!sel) {
-    btn.style.cssText = btn.style.cssText.replace('background:var(--s2);color:var(--text3);border-color:var(--border);','background:rgba(0,212,255,.15);color:var(--cyan);border-color:rgba(0,212,255,.3);');
-    btn.dataset.sel = '1';
-  } else {
-    btn.style.cssText = btn.style.cssText.replace('background:rgba(0,212,255,.15);color:var(--cyan);border-color:rgba(0,212,255,.3);','background:var(--s2);color:var(--text3);border-color:var(--border);');
-    btn.dataset.sel = '0';
-  }
+  setGroupChipState(btn, !sel);
 }
 
 // Dept → Group mapping  (key = deptLabel จาก Excel เช่น "MD 2 Email")
 // Department structure (Main Division → Sub-departments)
 var DEPT_STRUCTURE = {
-  'Meeting' : ['Meeting'],
+  'Meeting' : ['Meeting', 'Meeting Room'],
   'MARKETING': ['MARKETING'],
-  'EC DIVISION': ['EC DIVISION', 'EC - FM', 'EC - ME', 'EC - PE'],
-  'ADMINISTRATION': ['ADMINISTRATION', 'AD - AC', 'AD - GA', 'AD - HRD', 'AD - HRM', 'AD - IT', 'MD'],
-  'MEDICAL': ['MEDICAL', 'MEDICAL - PD', 'MEDICAL - PE', 'PRODUCTION DIVISION 2'],
-  'PDI': ['PDI - PE', 'PDI - PE (ME/AUTO)', 'PDI - PE (ME/INJ)', 'PDI - PE (MN/MASSY)', 'PDI - PE (PE/AUTO)', 'PDI - PE (PE/INJ)'],
-  'PRECISION': ['PRECISION', 'PRECISION - PD ASSY', 'PRECISION - PD ASSY(ASSY)', 'PRECISION - PD ASSY(PAINT)', 'PRECISION - PD INJ1', 'PRECISION - PD INJ2', 'PRODUCTION DIVISION 1'],
-  'SLIT': ['SLIT', 'SLIT - PD', 'SLIT - PE'],
-  'QA CENTER': ['QA CENTER', 'QA CENTER - QA', 'QA CENTER - QC', 'QA CENTER - QM', 'QA CENTER - QS'],
-  'AUTOMOBILE': ['AUTOMOBILE', 'AUTOMOBILE - PD'],
-  'BC CENTER': ['BC CENTER', 'BC CENTER - PC', 'BC CENTER - PURCHASE', 'BC CENTER - SALE', 'BC CENTER - STANDARD SETTING', 'BC CENTER - WAREHOUSE']
+  'EC DIVISION': ['EC', 'EC DIVISION', 'EC - FM', 'EC - ME', 'EC - PE'],
+  'ADMINISTRATION': ['AD', 'MD', 'ADMINISTRATION', 'AD - AC', 'AD - GA', 'AD - HRD', 'AD - HRM', 'AD-IT'],
+  'MEDICAL': ['Medical', 'MEDICAL', 'MEDICAL - PD', 'MEDICAL - PE', 'PRODUCTION DIVISION 2'],
+  'PD1': ['PD1 - PE', 'PD1 - PE (ME/AUTO)', 'PD1 - PE (ME/INJ)', 'PD1 - PE (MN/ASSY)', 'PD1 - PE (PE/AUTO)', 'PD1 - PE (PE/INJ)'],
+  'PRECISION': ['Precision', 'PRECISION', 'PRECISION - PD ASSY', 'PRECISION - PD ASSY(ASSY)', 'PRECISION - PD ASSY(PAINT)', 'PRECISION - PD INJ1', 'PRECISION - PD INJ2', 'PRODUCTION DIVISION 1'],
+  'SLIT': ['Slit', 'SLIT', 'SLIT - PD', 'SLIT - PE'],
+  'QA CENTER': ['QAC', 'QA CENTER', 'QA CENTER - QA', 'QA CENTER - QC', 'QA CENTER - QM', 'QA CENTER - QS'],
+  'AUTOMOTIVE': ['Automotive', 'AUTOMOTIVE', 'AUTOMOTIVE - PD'],
+  'BC CENTER': ['BCC', 'BC CENTER', 'BC CENTER - PC', 'BC CENTER - PURCHASE', 'BC CENTER - SALE', 'BC CENTER - STANDARD SETTING', 'BC CENTER - WAREHOUSE'],
+  'MRT': ['MRT']
 };
 
 var DEPT_GROUP_MAP = {
@@ -991,19 +1253,32 @@ var DEPT_GROUP_MAP = {
   'EC':           ['kfall@nip.co.th','kfthaiall@nip.co.th','kfecall@nip.co.th'],
   'Medical':      ['kfall@nip.co.th','kfthaiall@nip.co.th','kfmedall@nip.co.th'],
   'Meeting': [],
+  'Meeting Room': [],
   'MRT':           ['kfall@nip.co.th','kfthaiall@nip.co.th','kfmrtall@nip.co.th'],
   'Precision':    ['kfall@nip.co.th','kfthaiall@nip.co.th','kfpreall@nip.co.th'],
   'QAC':          ['kfall@nip.co.th','kfthaiall@nip.co.th','kfqaall@nip.co.th'],
   'Slit':          ['kfall@nip.co.th','kfthaiall@nip.co.th','kfslitall@nip.co.th'],
 };
 
-// Base dept name → deptLabel (สำหรับ lookup กลับจาก DB dept)
-// เช่น "AD" → "AD 22 Email", "BCC" → "BCC 42 Email"
-function getDeptLabel(deptName) {
-  // ใช้ชื่อแผนกจากฐานข้อมูลโดยตรง
-  if (!deptName) return 'ไม่ระบุแผนก';
-  return deptName;
+function renderMainDeptOptions() {
+  var sel = document.getElementById('mMainDept');
+  if (!sel) return;
+  var current = sel.value || '';
+  sel.innerHTML = '<option value="">— เลือกฝ่าย —</option>' + Object.keys(DEPT_STRUCTURE).map(function(mainKey){
+    return '<option value="' + xe(mainKey) + '">' + xe(mainKey) + '</option>';
+  }).join('');
+  if (current && DEPT_STRUCTURE[current]) {
+    sel.value = current;
+  }
 }
+
+// Normalize department names so labels like "AD 22 Email" become "AD"
+function getDeptLabel(deptName) {
+  if (!deptName) return 'ไม่ระบุแผนก';
+  return getDeptDisplayName(deptName);
+}
+
+renderMainDeptOptions();
 
 function onMainDeptChange(sel) {
   var mainVal = sel.value;
@@ -1087,16 +1362,40 @@ function selectGroupPreset(preset) {
 
 
 function closeManModal() {
-  document.getElementById('manOv').classList.remove('open');
+  var overlay = document.getElementById('manOv');
+  overlay.classList.remove('open');
+  overlay.setAttribute('aria-hidden', 'true');
+  overlay.hidden = true;
+  overlay.style.display = 'none';
+  // Restore body scrolling
+  document.body.style.overflow = '';
   manEditIdx = null;
 }
 
+function resetEmailListUiState() {
+  var overlay = document.getElementById('manOv');
+  if (overlay) {
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.hidden = true;
+    overlay.style.display = 'none';
+  }
+  var detailOverlay = document.getElementById('manDetailOv');
+  if (detailOverlay) {
+    detailOverlay.classList.remove('open');
+    detailOverlay.setAttribute('aria-hidden', 'true');
+    detailOverlay.hidden = true;
+    detailOverlay.style.display = 'none';
+  }
+  document.body.style.overflow = '';
+}
+
 function saveManPerson() {
-  var email  = document.getElementById('mEmail').value.trim();
-  var first  = document.getElementById('mFirst').value.trim();
-  var last   = document.getElementById('mLast').value.trim();
+  var email  = normalizeInputValue(document.getElementById('mEmail').value);
+  var first  = normalizeInputValue(document.getElementById('mFirst').value);
+  var last   = normalizeInputValue(document.getElementById('mLast').value);
   var mainDeptVal = document.getElementById('mMainDept').value;
-  var subDeptVal = document.getElementById('mSubDept').value;
+  var subDeptVal = normalizeInputValue(document.getElementById('mSubDept').value);
   
   if (!email) { showToast('กรุณากรอก Email','error'); return; }
   if (!first) { showToast('กรุณากรอกชื่อ','error'); return; }
@@ -1111,7 +1410,7 @@ function saveManPerson() {
   var name = first + (last ? ' '+last : '');
   var dept = subDeptVal; // ใช้ sub-department เป็น dept
 
-  var person = { email:email, name:name, dept:dept, deptLabel:subDeptVal, groups:selGroups, odl:selGroups.join(',') };
+  var person = { email:email, name:name, dept:dept, deptLabel:dept, groups:selGroups, odl:selGroups.join(',') };
 
   if (manEditIdx !== null) {
     // Editing: check if email is changing and conflicts with another record
@@ -1137,12 +1436,14 @@ function saveManPerson() {
   document.getElementById('btnExport').style.display='inline-flex';
   closeManModal();
   renderManual();
+  if (document.getElementById('t3').classList.contains('active')) renderPreview();
 }
 
 function delManPerson(idx) {
   if (!confirm('ยืนยันลบ '+parsedData[idx].email+' ?')) return;
   parsedData.splice(idx,1);
   renderManual();
+  if (document.getElementById('t3').classList.contains('active')) renderPreview();
   showToast('🗑️ ลบแล้ว','error');
 }
 
@@ -1163,8 +1464,24 @@ function setDB(s,t){
   document.getElementById('dbTxt').textContent=t;
 }
 
-function xe(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+document.getElementById('manOv').addEventListener('click', function(e){
+  if(e.target===e.currentTarget) closeManModal();
+});
+document.getElementById('manDetailOv').addEventListener('click', function(e){
+  if(e.target===e.currentTarget) closeManDetail();
+});
+
+
+resetEmailListUiState();
+window.addEventListener('pageshow', resetEmailListUiState);
+window.addEventListener('pagehide', resetEmailListUiState);
+
+loadFromDB({ silent: true });
 
 </script>
 </body>
 </html>
+
+
+
+

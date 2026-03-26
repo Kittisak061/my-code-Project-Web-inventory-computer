@@ -1,12 +1,17 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>ผู้ใช้งาน — DeviceHub</title>
-<link rel="stylesheet" href="style.css?v=20260325b">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="config.js"></script><script src="shared.js"></script>
+<link rel="stylesheet" href="style.css?v=20260326v">
+<script src="vendor/xlsx.full.min.js?v=20260324"></script>
+<script src="config.js?v=20260326u"></script><script src="shared.js?v=20260326u"></script>
 <style>
+.tbl-scroll{overflow-x:auto;overflow-y:hidden;}
+.tbl-scroll table{min-width:1080px;}
 .perm-bar{display:flex;align-items:center;gap:12px;border-radius:9px;padding:12px 18px;margin-bottom:16px;font-size:13px;}
 .perm-bar.admin{background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.2);color:var(--cyan);}
 .perm-bar.user{background:rgba(255,77,109,.06);border:1px solid rgba(255,77,109,.2);color:var(--red);}
@@ -16,6 +21,15 @@
 .lock-ico{font-size:52px;margin-bottom:14px;}
 .lock-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px;}
 .lock-sub{font-size:13px;color:var(--text2);line-height:1.7;}
+.dv-sec-title{font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.dv-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.dv-row{display:flex;flex-direction:column;gap:3px;}
+.dv-lbl{font-size:10.5px;color:var(--text3);font-family:var(--mono);}
+.dv-val{font-size:13px;color:var(--text);}
+.sticky-actions-head{position:sticky;right:0;background:var(--s2);z-index:6;min-width:208px;box-shadow:-14px 0 18px rgba(5,10,18,.45);}
+.sticky-actions-cell{position:sticky;right:0;background:linear-gradient(180deg,rgba(13,19,30,.98),rgba(9,13,21,.99));z-index:3;min-width:208px;box-shadow:-14px 0 18px rgba(5,10,18,.45);}
+tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
+@media (max-width:760px){.dv-grid{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -25,9 +39,6 @@
   <div class="topbar">
     <div style="flex:1"><h1>👥 ผู้ใช้งาน</h1><p>Users — MySQL</p></div>
     <div class="db-pill"><div class="db-dot wait" id="dbDot"></div><span id="dbTxt">โหลด...</span></div>
-    <button class="btn btn-ghost" onclick="loadData()">🔄</button>
-    <button class="btn btn-excel" onclick="exportXL()">📥 Excel</button>
-    <button class="btn btn-primary" id="btnAdd" style="display:none" onclick="openModal(null)">+ เพิ่มผู้ใช้</button>
     <button class="btn btn-logout" onclick="logout()">⏻</button>
   </div>
   <div class="content">
@@ -38,6 +49,19 @@
       <div>
         <div style="font-weight:600" id="permTitle"></div>
         <div style="font-size:12px;margin-top:2px;opacity:.8" id="permSub"></div>
+      </div>
+    </div>
+
+    <div class="page-actions">
+      <div class="page-actions-head">
+        <span class="page-actions-kicker">User Actions</span>
+        <div class="page-actions-title">แถบคำสั่งแยกจากหัวข้อ ช่วยให้เพิ่มและจัดการผู้ใช้ได้ง่ายขึ้น</div>
+        <div class="page-actions-note">รีเฟรชข้อมูล, export และเพิ่มผู้ใช้ใหม่ถูกย้ายมาไว้ในพื้นที่ใช้งานหลักของหน้านี้ เพื่อลดความงงเวลาเปิดหน้าแล้วต้องทำงานต่อทันที</div>
+      </div>
+      <div class="page-actions-group">
+        <button class="btn btn-ghost" onclick="loadData()">🔄 รีเฟรช</button>
+        <button class="btn btn-excel" onclick="exportXL()">📥 Export Excel</button>
+        <button class="btn btn-primary" id="btnAdd" style="display:none" onclick="openModal(null)">+ เพิ่มผู้ใช้</button>
       </div>
     </div>
 
@@ -65,7 +89,7 @@
     </div>
 
     <div style="position:relative">
-      <div class="table-wrap">
+      <div class="table-wrap tbl-scroll sync-scroll-x" id="usersTableWrap">
         <table>
           <thead><tr>
             <th style="padding-left:18px">ผู้ใช้</th>
@@ -76,7 +100,7 @@
             <th>เบอร์โทร</th>
             <th>อุปกรณ์</th>
             <th>สถานะ</th>
-            <th id="thAct">จัดการ</th>
+            <th id="thAct" class="sticky-actions-head">จัดการ</th>
           </tr></thead>
           <tbody id="tb"></tbody>
         </table>
@@ -168,6 +192,18 @@
 </div>
 </div>
 
+<!-- Detail Modal -->
+<div class="overlay" id="ov2">
+<div class="modal" style="width:700px;max-height:90vh">
+  <div class="modal-hdr">
+    <div class="modal-title" id="dT">รายละเอียดผู้ใช้</div>
+    <button class="modal-x" onclick="closeDetail()">✕</button>
+  </div>
+  <div class="modal-body" id="dB" style="overflow-y:auto;max-height:calc(90vh - 120px)"></div>
+  <div class="modal-foot" id="dF"></div>
+</div>
+</div>
+
 <script>
 buildSidebar('users');
 
@@ -176,6 +212,8 @@ var _cu = getCurrentUser() || {}; var currentUser = _cu.username || '';
 
 var data = [], editId = null;
 var RL = { admin: 'Admin', user: 'User' };
+function esc(v, fallback) { return safeText(v, arguments.length > 1 ? fallback : '—'); }
+function inlineData(v) { return encodeInlineData(v); }
 
 // ── Setup UI ตาม Role ──
 function setupUI() {
@@ -191,6 +229,7 @@ function setupUI() {
     sub.textContent   = 'สามารถเพิ่ม แก้ไข และลบผู้ใช้งานได้ทั้งหมด';
     document.getElementById('btnAdd').style.display = 'inline-flex';
     document.getElementById('lockOv').style.display = 'none';
+    document.getElementById('thAct').style.display = 'table-cell';
   } else {
     bar.className   = 'perm-bar user';
     ico.textContent = '👤';
@@ -222,6 +261,7 @@ async function loadData() {
 }
 
 function render() {
+  var showActions = isAdmin();
   var tot = data.length, act = 0, adm = 0, usr = 0;
   for (var i = 0; i < data.length; i++) {
     if (data[i].status === 'active') act++;
@@ -235,45 +275,110 @@ function render() {
   document.getElementById('pi').textContent = 'แสดง ' + tot + ' รายการ';
 
   if (!data.length) {
-    document.getElementById('tb').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--text3)">📭 ไม่พบข้อมูล</td></tr>';
+    document.getElementById('tb').innerHTML = '<tr><td colspan="' + (showActions ? '9' : '8') + '" style="text-align:center;padding:36px;color:var(--text3)">📭 ไม่พบข้อมูล</td></tr>';
+    if (typeof refreshSyncedScrollAreas === 'function') {
+      refreshSyncedScrollAreas(document.getElementById('usersTableWrap'));
+    }
     return;
   }
 
   document.getElementById('tb').innerHTML = data.map(function(d, i) {
-    var dj  = JSON.stringify(d).replace(/"/g, '&quot;');
+    var dj  = inlineData(d);
     var isMe = (d.username === currentUser);
-    var roleIcon = d.role === 'admin' ? '👑' : '👤';
+    var roleKey = d.role === 'admin' ? 'admin' : 'user';
+    var statusKey = d.status === 'active' ? 'active' : 'inactive';
+    var roleIcon = roleKey === 'admin' ? '👑' : '👤';
 
     // ปุ่มจัดการ: admin เห็น, user ไม่เห็น
-    var actCell = isAdmin()
-      ? '<td><div style="display:flex;gap:5px">'
-        + '<button class="act-btn edit" onclick=\'openModal(' + dj + ')\'>✏️</button>'
-        + '<button class="act-btn del" onclick="del(' + d.id + ')" ' + (isMe ? 'disabled title="ไม่สามารถลบตัวเองได้"' : '') + '>🗑️</button>'
+    var actCell = showActions
+      ? '<td class="sticky-actions-cell"><div class="row-actions">'
+        + '<button class="act-btn view" onclick="showDetail(decodeInlineData(\'' + dj + '\'))" title="ดูรายละเอียด"><span>🔍</span><span class="txt">ดู</span></button>'
+        + '<button class="act-btn edit" onclick="openModal(decodeInlineData(\'' + dj + '\'))" title="แก้ไข"><span>✏️</span><span class="txt">แก้ไข</span></button>'
+        + '<button class="act-btn del" onclick="del(' + d.id + ')" ' + (isMe ? 'disabled title="ไม่สามารถลบตัวเองได้"' : 'title="ลบ"') + '><span>🗑️</span><span class="txt">ลบ</span></button>'
         + '</div></td>'
-      : '<td></td>';
+      : '';
 
     return '<tr style="animation:rowIn .25s ease ' + (i * .02) + 's both">'
       + '<td style="padding-left:18px"><div style="display:flex;align-items:center;gap:10px">'
       + '<div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,'
       + (d.role === 'admin' ? '#0066cc,#00d4ff' : '#667eea,#764ba2')
       + ');display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">'
-      + (d.role === 'admin' ? '👑' : d.name.charAt(0))
+      + (d.role === 'admin' ? '👑' : esc((d.name || '?').charAt(0), '?'))
       + '</div>'
-      + '<div><div style="font-weight:500">' + d.name
+      + '<div><div style="font-weight:500">' + esc(d.name)
       + (isMe ? '&nbsp;<span style="background:rgba(0,212,255,.12);color:var(--cyan);border-radius:4px;padding:1px 7px;font-size:10px;font-family:var(--mono)">คุณ</span>' : '')
       + '</div>'
-      + '<div style="font-size:10.5px;color:var(--text3)">#' + d.id + '</div></div>'
+      + '<div style="font-size:10.5px;color:var(--text3)">#' + esc(d.id) + '</div></div>'
       + '</div></td>'
-      + '<td style="font-family:var(--mono);font-size:12.5px;color:var(--cyan)">@' + d.username + '</td>'
-      + '<td style="font-size:12.5px;color:var(--text2)">✉ ' + d.email + '</td>'
-      + '<td style="font-size:12.5px;color:var(--text2)">' + (d.dept || '—') + '</td>'
-      + '<td><span class="badge badge-' + d.role + '">' + roleIcon + ' ' + (RL[d.role] || d.role) + '</span></td>'
-      + '<td style="font-size:12.5px;color:var(--text2)">' + (d.phone || '—') + '</td>'
-      + '<td style="font-family:var(--mono);text-align:center">' + (d.devices || 0) + '</td>'
-      + '<td><span class="badge badge-' + d.status + '">' + (d.status === 'active' ? 'Active' : 'Inactive') + '</span></td>'
+      + '<td style="font-family:var(--mono);font-size:12.5px;color:var(--cyan)">@' + esc(d.username) + '</td>'
+      + '<td style="font-size:12.5px;color:var(--text2)">✉ ' + esc(d.email) + '</td>'
+      + '<td style="font-size:12.5px;color:var(--text2)">' + esc(d.dept) + '</td>'
+      + '<td><span class="badge badge-' + roleKey + '">' + roleIcon + ' ' + (RL[roleKey] || roleKey) + '</span></td>'
+      + '<td style="font-size:12.5px;color:var(--text2)">' + esc(d.phone) + '</td>'
+      + '<td style="font-family:var(--mono);text-align:center">' + esc(d.devices === 0 ? '0' : (d.devices || 0), '0') + '</td>'
+      + '<td><span class="badge badge-' + statusKey + '">' + (statusKey === 'active' ? 'Active' : 'Inactive') + '</span></td>'
       + actCell
       + '</tr>';
   }).join('');
+
+  if (typeof refreshSyncedScrollAreas === 'function') {
+    refreshSyncedScrollAreas(document.getElementById('usersTableWrap'));
+  }
+}
+
+function showDetail(d) {
+  if (!d) { showToast('❌ เปิดรายละเอียดไม่สำเร็จ', 'error'); return; }
+  function row(label, value, mono, raw) {
+    var hasValue = value !== null && value !== undefined && value !== '';
+    var val = hasValue ? value : '—';
+    if (!raw) val = esc(val);
+    return '<div class="dv-row"><div class="dv-lbl">' + esc(label, '') + '</div><div class="dv-val' + (mono ? ' mono' : '') + '"' + (mono ? ' style="font-family:var(--mono);color:var(--cyan)"' : '') + '>' + val + '</div></div>';
+  }
+  var roleKey = d.role === 'admin' ? 'admin' : 'user';
+  var statusKey = d.status === 'active' ? 'active' : 'inactive';
+  var roleText = roleKey === 'admin' ? '👑 Admin' : '👤 User';
+  var statusText = statusKey === 'active' ? 'Active' : 'Inactive';
+  var statusBadge = '<span class="badge badge-' + statusKey + '">' + statusText + '</span>';
+  var roleBadge = '<span class="badge badge-' + roleKey + '">' + roleText + '</span>';
+  var dj = inlineData(d);
+
+  document.getElementById('dT').innerHTML =
+    '<div style="font-weight:700">' + esc(d.name, 'ไม่ระบุชื่อ') + '</div>'
+    + '<div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--mono)">@' + esc(d.username) + ' · #' + esc(d.id) + '</div>';
+
+  document.getElementById('dB').innerHTML = ''
+    + '<div class="dv-sec-title" style="margin-top:0">ข้อมูลผู้ใช้</div>'
+    + '<div class="dv-grid">'
+      + row('ชื่อ-นามสกุล', d.name)
+      + row('Username', d.username, true)
+      + row('อีเมล', d.email, true)
+      + row('แผนก', d.dept)
+      + row('Role', roleBadge, false, true)
+      + row('สถานะ', statusBadge, false, true)
+    + '</div>'
+    + '<div class="dv-sec-title">การใช้งาน</div>'
+    + '<div class="dv-grid">'
+      + row('เบอร์โทร', d.phone)
+      + row('จำนวนอุปกรณ์', d.devices === 0 ? '0' : d.devices)
+      + row('เข้าใช้ล่าสุด', d.last_login)
+      + row('อัปเดตล่าสุด', d.updated_at || d.modified_at || d.updated_on)
+    + '</div>'
+    + '<div class="dv-sec-title">ข้อมูลระบบ</div>'
+    + '<div class="dv-grid">'
+      + row('User ID', d.id, true)
+      + row('สร้างเมื่อ', d.created_at || d.created_on)
+      + row('สถานะบัญชี', statusText)
+      + row('สิทธิ์ปัจจุบัน', roleText)
+    + '</div>';
+
+  document.getElementById('dF').innerHTML = ''
+    + '<button class="btn btn-ghost" onclick="closeDetail()">ปิด</button>'
+    + '<button class="btn btn-primary" onclick="closeDetail();openModal(decodeInlineData(\'' + dj + '\'))">✏️ แก้ไข</button>';
+  document.getElementById('ov2').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('ov2').classList.remove('open');
 }
 
 var _dt;
@@ -322,20 +427,22 @@ function closeModal() { document.getElementById('ov').classList.remove('open'); 
 
 async function save() {
   if (!isAdmin()) { showToast('🔒 ไม่มีสิทธิ์', 'error'); return; }
-  var name  = document.getElementById('fn').value.trim();
-  var email = document.getElementById('fe').value.trim();
+  var name  = normalizeInputValue(document.getElementById('fn').value);
+  var email = normalizeInputValue(document.getElementById('fe').value);
+  var username = normalizeInputValue(document.getElementById('fu').value);
   var pw    = document.getElementById('fpw').value;
   if (!name || !email) { showToast('กรุณากรอกชื่อและอีเมล', 'error'); return; }
   if (!editId && (!pw || pw.length < 4)) { showToast('กรุณากรอก Password อย่างน้อย 4 ตัว', 'error'); return; }
+  if (!username && email) username = email.split('@')[0];
   var btn = document.getElementById('sv');
   btn.disabled = true; btn.textContent = '⏳...';
   var body = {
     name:     name,
-    username: document.getElementById('fu').value.trim() || null,
+    username: username,
     email:    email,
-    dept:     document.getElementById('fd').value || null,
+    dept:     normalizeInputValue(document.getElementById('fd').value),
     role:     document.getElementById('fr').value,
-    phone:    document.getElementById('fp').value || null,
+    phone:    normalizeInputValue(document.getElementById('fp').value),
     status:   document.getElementById('fs').value
   };
   if (pw && pw.length >= 4) body.password = pw;
@@ -378,9 +485,13 @@ function exportXL() {
 
 function setDB(s,t) { document.getElementById('dbDot').className = 'db-dot ' + s; document.getElementById('dbTxt').textContent = t; }
 document.getElementById('ov').addEventListener('click', function(e) { if (e.target === e.currentTarget) closeModal(); });
+document.getElementById('ov2').addEventListener('click', function(e) { if (e.target === e.currentTarget) closeDetail(); });
 
 setupUI();
 loadData();
 </script>
 </body>
 </html>
+
+
+

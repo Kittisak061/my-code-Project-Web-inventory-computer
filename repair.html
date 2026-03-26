@@ -1,285 +1,873 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>แจ้งซ่อม — DeviceHub</title>
-<link rel="stylesheet" href="style.css?v=20260325b">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="config.js"></script><script src="shared.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>อุปกรณ์ที่ต้องซ่อม - DeviceHub</title>
+<link rel="stylesheet" href="style.css?v=20260326u">
+<script src="config.js?v=20260326u"></script>
+<script src="shared.js?v=20260326u"></script>
 <style>
-.tid{font-family:var(--mono);font-size:11.5px;color:var(--cyan);background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.15);padding:2px 8px;border-radius:4px;display:inline-block;}
-.kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
-.kol{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
-.kol-hdr{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;}
-.kol-body{padding:12px;display:flex;flex-direction:column;gap:8px;min-height:80px;}
-.kcard{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:all .15s;}
-.kcard:hover{border-color:var(--border2);transform:translateY(-1px);}
-.kcard-title{font-size:12.5px;font-weight:500;margin-bottom:7px;}
-.kcard-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
-.view-tabs{display:flex;gap:8px;margin-bottom:14px;}
-.vtab{padding:7px 18px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;font-size:13px;font-family:var(--font);}
-.vtab.active{background:rgba(0,212,255,.1);color:var(--cyan);border-color:rgba(0,212,255,.2);}
+.content.repair-page{display:flex;flex-direction:column;gap:20px;}
+.repair-shell{display:flex;flex-direction:column;gap:20px;}
+.repair-stage{
+  position:relative;
+  overflow:hidden;
+  padding:26px 28px;
+  border-radius:28px;
+  border:1px solid rgba(122,136,153,.18);
+  background:
+    radial-gradient(circle at top right,rgba(255,171,94,.09),transparent 28%),
+    radial-gradient(circle at 10% 0%,rgba(53,216,255,.13),transparent 34%),
+    linear-gradient(180deg,rgba(13,19,30,.97),rgba(8,13,21,.995));
+  box-shadow:0 28px 60px rgba(0,0,0,.28);
+}
+.repair-stage::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.05),transparent 24%,transparent 76%,rgba(255,171,94,.05));
+  pointer-events:none;
+}
+.repair-stage-head{
+  position:relative;
+  z-index:1;
+  display:grid;
+  grid-template-columns:minmax(0,1.22fr) minmax(320px,.88fr);
+  gap:26px;
+  align-items:stretch;
+}
+.repair-stage-copy{display:flex;flex-direction:column;gap:12px;justify-content:space-between;}
+.repair-kicker{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  align-self:flex-start;
+  padding:8px 12px;
+  border-radius:999px;
+  border:1px solid rgba(53,216,255,.18);
+  background:rgba(7,12,20,.52);
+  color:var(--cyan);
+  font-size:11px;
+  font-family:var(--mono);
+  letter-spacing:1.2px;
+  text-transform:uppercase;
+}
+.repair-stage-copy h2{
+  max-width:15ch;
+  font-family:var(--display);
+  font-size:clamp(30px,3vw,42px);
+  line-height:1.02;
+  letter-spacing:.2px;
+}
+.repair-stage-copy p{
+  max-width:60ch;
+  color:var(--text2);
+  font-size:14px;
+  line-height:1.78;
+}
+.repair-meta{display:flex;gap:10px;flex-wrap:wrap;}
+.repair-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-height:38px;
+  padding:0 14px;
+  border-radius:999px;
+  border:1px solid rgba(122,136,153,.16);
+  background:rgba(255,255,255,.03);
+  color:var(--text2);
+  font-size:12px;
+}
+.repair-chip::before{
+  content:'';
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:var(--cyan);
+  box-shadow:0 0 10px rgba(53,216,255,.55);
+}
+.repair-stage-side{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  min-width:0;
+}
+.repair-live{
+  padding:16px 18px;
+  border-radius:20px;
+  border:1px solid rgba(122,136,153,.14);
+  background:linear-gradient(180deg,rgba(18,26,39,.9),rgba(10,15,23,.96));
+}
+.repair-live span{
+  display:block;
+  color:var(--text3);
+  font-size:10px;
+  font-family:var(--mono);
+  text-transform:uppercase;
+  letter-spacing:1.1px;
+}
+.repair-live strong{
+  display:block;
+  margin:7px 0 4px;
+  font-size:17px;
+}
+.repair-live small{
+  display:block;
+  color:var(--text2);
+  font-size:12px;
+  line-height:1.6;
+}
+.repair-metrics{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.repair-metric{
+  position:relative;
+  overflow:hidden;
+  padding:16px 18px;
+  border-radius:20px;
+  border:1px solid rgba(122,136,153,.15);
+  background:linear-gradient(180deg,rgba(17,25,38,.92),rgba(10,14,22,.96));
+}
+.repair-metric::after{
+  content:'';
+  position:absolute;
+  left:18px;
+  right:18px;
+  bottom:0;
+  height:2px;
+  border-radius:999px;
+  background:linear-gradient(90deg,var(--metric-accent,rgba(53,216,255,.75)),transparent 80%);
+}
+.repair-metric-kicker{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  color:var(--text3);
+  font-size:10px;
+  font-family:var(--mono);
+  letter-spacing:1.1px;
+  text-transform:uppercase;
+}
+.repair-metric-ico{
+  width:34px;
+  height:34px;
+  border-radius:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:15px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(122,136,153,.16);
+}
+.repair-metric-num{
+  margin-top:10px;
+  font-family:var(--mono);
+  font-size:34px;
+  line-height:1;
+  color:var(--metric-color,var(--text));
+}
+.repair-metric-label{
+  margin-top:6px;
+  font-size:12px;
+  color:var(--text2);
+}
+.repair-metric-sub{
+  margin-top:3px;
+  font-size:10.5px;
+  color:var(--text3);
+}
+.repair-metric.warn{--metric-color:var(--yellow);--metric-accent:rgba(255,209,102,.86);}
+.repair-metric.info{--metric-color:var(--cyan);--metric-accent:rgba(53,216,255,.86);}
+.repair-metric.alert{--metric-color:var(--red);--metric-accent:rgba(255,100,131,.86);}
+.repair-metric.note{--metric-color:var(--orange);--metric-accent:rgba(255,171,94,.86);}
+.repair-workspace{
+  display:grid;
+  grid-template-columns:minmax(0,1.12fr) minmax(340px,.88fr);
+  gap:18px;
+  align-items:start;
+}
+.repair-panel{
+  position:relative;
+  overflow:hidden;
+  border-radius:26px;
+  border:1px solid rgba(122,136,153,.16);
+  background:linear-gradient(180deg,rgba(12,18,28,.97),rgba(8,13,21,.995));
+  box-shadow:0 20px 50px rgba(0,0,0,.22);
+}
+.repair-panel::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(180deg,rgba(255,255,255,.025),transparent 18%);
+  pointer-events:none;
+}
+.repair-panel-head{
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:14px;
+  padding:18px 18px 14px;
+  border-bottom:1px solid rgba(122,136,153,.12);
+}
+.repair-panel-copy{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.repair-panel-copy span{
+  color:var(--text3);
+  font-size:10px;
+  font-family:var(--mono);
+  letter-spacing:1.2px;
+  text-transform:uppercase;
+}
+.repair-panel-copy h3{
+  font-size:20px;
+  line-height:1.15;
+}
+.repair-panel-copy p{
+  max-width:56ch;
+  color:var(--text2);
+  font-size:12.5px;
+  line-height:1.7;
+}
+.repair-panel-body{
+  position:relative;
+  z-index:1;
+  padding:16px;
+}
+.repair-filterbar{
+  margin-bottom:14px;
+  padding:12px;
+  border-radius:18px;
+  border:1px solid rgba(122,136,153,.14);
+  background:rgba(255,255,255,.025);
+}
+.repair-filterbar.toolbar{box-shadow:none;}
+.device-stack{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  max-height:calc(100vh - 332px);
+  overflow:auto;
+  padding-right:6px;
+}
+.todo-card{
+  position:relative;
+  overflow:hidden;
+  padding:15px 16px 16px;
+  border-radius:20px;
+  border:1px solid rgba(122,136,153,.14);
+  background:
+    linear-gradient(180deg,rgba(16,23,35,.92),rgba(10,14,22,.98));
+  cursor:pointer;
+  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease;
+}
+.todo-card::before{
+  content:'';
+  position:absolute;
+  inset:auto -30px -44px auto;
+  width:120px;
+  height:120px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(53,216,255,.11),transparent 72%);
+  pointer-events:none;
+}
+.todo-card:hover{
+  transform:translateY(-2px);
+  border-color:rgba(255,255,255,.18);
+  box-shadow:0 18px 32px rgba(0,0,0,.22);
+}
+.todo-card.active{
+  border-color:rgba(53,216,255,.34);
+  background:
+    radial-gradient(circle at right top,rgba(53,216,255,.11),transparent 28%),
+    linear-gradient(180deg,rgba(18,30,44,.94),rgba(10,15,23,.99));
+  box-shadow:0 0 0 1px rgba(53,216,255,.12) inset,0 18px 34px rgba(0,0,0,.24);
+}
+.todo-head{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:12px;
+  align-items:start;
+}
+.todo-name{
+  font-size:17px;
+  font-weight:700;
+  line-height:1.15;
+}
+.todo-side{
+  text-align:right;
+  color:var(--text3);
+  font-size:10px;
+  font-family:var(--mono);
+  letter-spacing:.5px;
+}
+.todo-sub{
+  font-size:10.5px;
+  font-family:var(--mono);
+  color:var(--text3);
+  margin-top:7px;
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+}
+.todo-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.todo-remark{
+  margin-top:12px;
+  padding:12px 13px;
+  border-radius:14px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(122,136,153,.13);
+  font-size:12px;
+  color:var(--text2);
+  line-height:1.7;
+}
+.todo-note{
+  margin-top:11px;
+  padding-top:11px;
+  border-top:1px dashed rgba(122,136,153,.18);
+  font-size:12px;
+  color:var(--yellow);
+  line-height:1.65;
+}
+.todo-note strong{color:var(--text);}
+.note-card{position:sticky;top:92px;}
+.note-empty{
+  min-height:360px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap:8px;
+  text-align:center;
+  padding:32px 24px;
+}
+.note-empty strong{display:block;font-size:17px;}
+.note-empty div{max-width:30ch;color:var(--text2);line-height:1.7;}
+.note-summary{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  padding:18px;
+  border-radius:22px;
+  border:1px solid rgba(122,136,153,.14);
+  background:
+    radial-gradient(circle at top right,rgba(53,216,255,.09),transparent 30%),
+    linear-gradient(180deg,rgba(17,25,38,.92),rgba(10,14,22,.98));
+  margin-bottom:18px;
+}
+.note-title{font-size:22px;font-weight:700;line-height:1.1;}
+.note-detail{font-size:12px;color:var(--text2);line-height:1.7;}
+.note-badges{display:flex;gap:8px;flex-wrap:wrap;}
+.note-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px;}
+.note-check{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:44px;
+  padding:0 13px;
+  border-radius:14px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(122,136,153,.14);
+  font-size:13px;
+  color:var(--text2);
+}
+.note-check input{width:16px;height:16px;accent-color:var(--cyan);}
+.note-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
+.note-meta{margin-top:12px;font-size:11px;color:var(--text3);font-family:var(--mono);}
+.note-help{
+  margin-top:18px;
+  padding:15px 16px;
+  border-radius:18px;
+  background:rgba(53,216,255,.045);
+  border:1px solid rgba(53,216,255,.12);
+  font-size:12px;
+  color:var(--text2);
+  line-height:1.78;
+}
+.count-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-height:38px;
+  padding:0 13px;
+  border-radius:999px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(122,136,153,.14);
+  font-size:11px;
+  font-family:var(--mono);
+  color:var(--text2);
+}
+.count-pill::before{
+  content:'';
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:var(--cyan);
+  box-shadow:0 0 8px rgba(53,216,255,.55);
+}
+@media (max-width:1240px){
+  .repair-stage-head,
+  .repair-workspace{grid-template-columns:1fr;}
+  .note-card{position:relative;top:0;}
+}
+@media (max-width:760px){
+  .content.repair-page{gap:16px;}
+  .repair-stage{padding:20px;}
+  .repair-stage-copy h2{max-width:none;font-size:30px;}
+  .repair-metrics{grid-template-columns:1fr;}
+  .repair-panel-head{padding:16px 16px 12px;}
+  .repair-panel-body{padding:14px;}
+  .device-stack{max-height:none;}
+  .note-options{grid-template-columns:1fr;}
+  .note-actions .btn{width:100%;}
+}
 </style>
 </head>
 <body>
 <div class="layout">
-<div id="sidebar-slot"></div>
-<div class="main">
-  <div class="topbar">
-    <div style="flex:1"><h1>🔧 แจ้งซ่อม</h1><p>Repair Tickets — MySQL</p></div>
-    <div class="db-pill"><div class="db-dot wait" id="dbDot"></div><span id="dbTxt">โหลด...</span></div>
-    <button class="btn btn-ghost" onclick="loadData()">🔄</button>
-    <button class="btn btn-excel" onclick="exportXL()">📥 Excel</button>
-    <button class="btn btn-primary" onclick="openModal(null)">+ สร้าง Ticket</button>
-    <button class="btn btn-logout" onclick="logout()">⏻</button>
-  </div>
-  <div class="content">
-    <div class="stats-row">
-      <div class="stat-card"><div class="stat-icon si-c">🎫</div><div><div class="stat-num sn-c" id="s0">—</div><div class="stat-label">ทั้งหมด</div></div></div>
-      <div class="stat-card"><div class="stat-icon si-r">🔴</div><div><div class="stat-num sn-r" id="s1">—</div><div class="stat-label">เปิดค้าง</div></div></div>
-      <div class="stat-card"><div class="stat-icon si-y">⚙️</div><div><div class="stat-num sn-y" id="s2">—</div><div class="stat-label">กำลังซ่อม</div></div></div>
-      <div class="stat-card"><div class="stat-icon si-g">✅</div><div><div class="stat-num sn-g" id="s3">—</div><div class="stat-label">แก้ไขแล้ว</div></div></div>
+  <div id="sidebar-slot"></div>
+  <div class="main">
+    <div class="topbar">
+      <div style="flex:1">
+        <h1>อุปกรณ์ที่ต้องซ่อม</h1>
+        <p>โน้ตเตือนความจำสำหรับเครื่องที่ต้องติดตาม</p>
+      </div>
+      <div class="db-pill"><div class="db-dot wait" id="dbDot"></div><span id="dbTxt">กำลังโหลด...</span></div>
+      <button class="btn btn-ghost" id="btnRefresh" type="button">รีเฟรช</button>
+      <button class="btn btn-logout" onclick="logout()">ออก</button>
     </div>
 
-    <!-- VIEW TABS -->
-    <div class="view-tabs">
-      <button class="vtab active" id="tab-k" onclick="switchView('kanban')">📊 Kanban Board</button>
-      <button class="vtab" id="tab-t" onclick="switchView('table')">📋 ตาราง</button>
-    </div>
+    <div class="content repair-page">
+      <div class="repair-shell">
+        <section class="repair-stage dh-reveal is-visible">
+          <div class="repair-stage-head">
+            <div class="repair-stage-copy">
+              <div>
+                <span class="repair-kicker">Repair Workspace</span>
+                <h2>ติดตามเครื่องที่ต้องซ่อมและโน้ตสำคัญจากหน้าจอเดียว</h2>
+                <p>รวมรายการที่มีสถานะกำลังซ่อม, remark สำคัญ และโน้ตติดตามไว้ใน workflow เดียว เพื่อให้เลือกเครื่อง จดงานต่อ และกลับมาตรวจงานได้ง่ายขึ้น</p>
+              </div>
+              <div class="repair-meta">
+                <div class="repair-chip">โน้ตเก็บในเบราว์เซอร์เครื่องนี้</div>
+                <div class="repair-chip">คลิกเครื่องทางซ้ายเพื่อเปิดบันทึกทันที</div>
+              </div>
+            </div>
+            <div class="repair-stage-side">
+              <div class="repair-live">
+                <span>Live Queue</span>
+                <strong>มุมมองเดียวสำหรับเครื่องที่ต้องตามต่อ</strong>
+                <small>ดึงอุปกรณ์จริงจากฐานข้อมูล แล้วจัดกลุ่มเครื่องที่ต้องติดตามจากสถานะซ่อม, remark และโน้ตที่บันทึกไว้</small>
+              </div>
+              <div class="repair-metrics">
+                <div class="repair-metric warn">
+                  <div class="repair-metric-kicker"><span>Repair</span><div class="repair-metric-ico">🔧</div></div>
+                  <div class="repair-metric-num" id="s0">0</div>
+                  <div class="repair-metric-label">กำลังซ่อม</div>
+                  <div class="repair-metric-sub">เครื่องที่ถูก mark ซ่อมอยู่</div>
+                </div>
+                <div class="repair-metric info">
+                  <div class="repair-metric-kicker"><span>Notes</span><div class="repair-metric-ico">📝</div></div>
+                  <div class="repair-metric-num" id="s1">0</div>
+                  <div class="repair-metric-label">โน้ตทั้งหมด</div>
+                  <div class="repair-metric-sub">บันทึกที่มีอยู่ในเครื่องนี้</div>
+                </div>
+                <div class="repair-metric alert">
+                  <div class="repair-metric-kicker"><span>Follow Up</span><div class="repair-metric-ico">🔔</div></div>
+                  <div class="repair-metric-num" id="s2">0</div>
+                  <div class="repair-metric-label">ยังต้องติดตาม</div>
+                  <div class="repair-metric-sub">โน้ตที่ยังไม่ปิดงาน</div>
+                </div>
+                <div class="repair-metric note">
+                  <div class="repair-metric-kicker"><span>Remark</span><div class="repair-metric-ico">📌</div></div>
+                  <div class="repair-metric-num" id="s3">0</div>
+                  <div class="repair-metric-label">มี remark / ปักหมุด</div>
+                  <div class="repair-metric-sub">กลุ่มเครื่องที่ควรเห็นก่อน</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-    <!-- KANBAN -->
-    <div id="kView">
-      <div class="kanban">
-        <div class="kol">
-          <div class="kol-hdr"><span style="color:var(--red)">🔴</span> เปิดค้าง <span class="sb-badge badge-r" id="kc0">0</span></div>
-          <div class="kol-body" id="kO"></div>
-        </div>
-        <div class="kol">
-          <div class="kol-hdr"><span style="color:var(--yellow)">⚙️</span> กำลังซ่อม <span class="sb-badge badge-y" id="kc1">0</span></div>
-          <div class="kol-body" id="kP"></div>
-        </div>
-        <div class="kol">
-          <div class="kol-hdr"><span style="color:var(--green)">✅</span> แก้ไขแล้ว <span class="sb-badge badge-g" id="kc2">0</span></div>
-          <div class="kol-body" id="kD"></div>
+        <div class="repair-workspace">
+          <section class="repair-panel dh-reveal is-visible">
+            <div class="repair-panel-head">
+              <div class="repair-panel-copy">
+                <span>Repair Queue</span>
+                <h3>รายการที่ต้องติดตาม</h3>
+                <p>ค้นหาจากชื่อเครื่อง ผู้ใช้ แผนก หรือ remark แล้วเลือกเครื่องเพื่อเปิดโน้ตด้านขวา</p>
+              </div>
+              <div class="count-pill" id="visibleCount">0 รายการ</div>
+            </div>
+            <div class="repair-panel-body">
+              <div class="toolbar repair-filterbar" style="margin-bottom:0">
+                <div class="search-box"><span class="search-ico">🔎</span><input class="search-input" id="qS" placeholder="ค้นหาชื่อเครื่อง, ผู้ใช้, แผนก, remark"></div>
+                <select class="filter-sel" id="fMode">
+                  <option value="all">ทั้งหมดที่ควรติดตาม</option>
+                  <option value="maintenance">เฉพาะกำลังซ่อม</option>
+                  <option value="noted">เฉพาะที่มีโน้ต</option>
+                  <option value="remark">เฉพาะที่มี remark</option>
+                </select>
+                <button class="btn btn-ghost" id="btnClearSearch" type="button">ล้าง</button>
+              </div>
+              <div class="device-stack" id="deviceList"></div>
+            </div> 
+          </section>
+
+          <aside class="repair-panel note-card dh-reveal is-visible">
+            <div class="repair-panel-head">
+              <div class="repair-panel-copy">
+                <span>Note Editor</span>
+                <h3>โน้ตเตือนความจำ</h3>
+                <p>จดสิ่งที่ต้องทำต่อ ปักหมุด และติ๊กว่าติดตามเสร็จแล้วให้กับเครื่องที่เลือก</p>
+              </div>
+            </div>
+            <div class="repair-panel-body">
+              <div class="note-empty" id="noteEmpty">
+                <strong>เลือกอุปกรณ์จากรายการทางซ้าย</strong>
+                <div style="color:var(--text2)">เมื่อเลือกแล้ว คุณจะสามารถเขียนโน้ต, ปักหมุด และติ๊กว่าติดตามเสร็จแล้วได้ทันที</div>
+              </div>
+
+              <div id="noteEditor" style="display:none">
+                <div class="note-summary">
+                  <div class="note-title" id="noteTitle">-</div>
+                  <div class="note-detail" id="noteSubtitle">-</div>
+                  <div class="note-badges" id="noteBadges"></div>
+                </div>
+
+                <div class="form-grp">
+                  <label class="form-lbl" for="noteText">โน้ตเตือนความจำ</label>
+                  <textarea class="form-ta" id="noteText" placeholder="เช่น รออะไหล่, โทรตามผู้ใช้, นัด onsite, เช็กอีกครั้งวันศุกร์"></textarea>
+                </div>
+
+                <div class="note-options">
+                  <label class="note-check"><input type="checkbox" id="notePinned">ปักหมุดติดตาม</label>
+                  <label class="note-check"><input type="checkbox" id="noteDone">ติดตามเสร็จแล้ว</label>
+                </div>
+
+                <div class="note-actions">
+                  <button class="btn btn-ghost" id="btnClearNote" type="button">ล้างโน้ต</button>
+                  <button class="btn btn-primary" id="btnSaveNote" type="button">บันทึกโน้ต</button>
+                </div>
+
+                <div class="note-meta" id="noteMeta">ยังไม่มีการบันทึก</div>
+                <div class="note-help">ถ้าเครื่องนี้ยังไม่ติ๊กสถานะกำลังซ่อม แต่คุณอยากใช้เป็นรายการติดตามชั่วคราว ก็สามารถจดโน้ตไว้ก่อนได้ ระบบจะยังแสดงเครื่องนี้อยู่ในหน้านี้ตราบใดที่มีโน้ตหรือมี remark</div>
+              </div>
+            </div>
+          </aside>
         </div>
       </div>
     </div>
-
-    <!-- TABLE -->
-    <div id="tView" style="display:none">
-      <div class="toolbar">
-        <div class="search-box"><span class="search-ico">🔍</span><input class="search-input" id="qS" placeholder="ค้นหา Ticket, อุปกรณ์, ผู้แจ้ง..."></div>
-        <select class="filter-sel" id="fS"><option value="">ทุกสถานะ</option><option value="open">เปิดค้าง</option><option value="in_progress">กำลังซ่อม</option><option value="resolved">แก้ไขแล้ว</option></select>
-        <select class="filter-sel" id="fP"><option value="">ทุก Priority</option><option value="high">สูง</option><option value="medium">กลาง</option><option value="low">ต่ำ</option></select>
-        <button class="btn btn-ghost" onclick="clearF()">✕ ล้าง</button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th style="padding-left:18px">Ticket</th><th>หัวข้อ</th><th>อุปกรณ์</th><th>ผู้แจ้ง</th><th>ช่างซ่อม</th><th>Priority</th><th>สถานะ</th><th>วันที่</th><th>จัดการ</th></tr></thead>
-          <tbody id="tb"></tbody>
-        </table>
-        <div class="pager"><div class="pager-info" id="pi">—</div></div>
-      </div>
-    </div>
   </div>
-</div>
-</div>
-
-<!-- FORM MODAL -->
-<div class="overlay" id="ov">
-<div class="modal">
-  <div class="modal-hdr"><div class="modal-title" id="mT">➕ สร้าง Ticket</div><button class="modal-x" onclick="closeModal()">✕</button></div>
-  <div class="modal-body">
-    <div class="form-grid">
-      <div class="form-grp form-full"><label class="form-lbl">หัวข้อปัญหา *</label><input class="form-inp" id="ftit" placeholder="อธิบายปัญหาโดยย่อ"></div>
-      <div class="form-grp"><label class="form-lbl">อุปกรณ์</label><input class="form-inp" id="fdev" placeholder="PC-IT-001"></div>
-      <div class="form-grp"><label class="form-lbl">ผู้แจ้ง</label><input class="form-inp" id="frep" placeholder="ชื่อผู้แจ้ง"></div>
-      <div class="form-grp"><label class="form-lbl">Priority</label><select class="form-sel" id="fpri"><option value="high">🔴 สูง</option><option value="medium" selected>🟡 กลาง</option><option value="low">🔵 ต่ำ</option></select></div>
-      <div class="form-grp"><label class="form-lbl">สถานะ</label><select class="form-sel" id="fstat"><option value="open">เปิดค้าง</option><option value="in_progress">กำลังซ่อม</option><option value="resolved">แก้ไขแล้ว</option></select></div>
-      <div class="form-grp form-full"><label class="form-lbl">ช่างซ่อม</label><input class="form-inp" id="ftech" placeholder="ชื่อช่าง"></div>
-      <div class="form-grp form-full"><label class="form-lbl">รายละเอียด</label><textarea class="form-ta" id="fdesc" placeholder="รายละเอียดปัญหา..."></textarea></div>
-    </div>
-  </div>
-  <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button><button class="btn btn-primary" id="sv" onclick="save()">💾 บันทึก</button></div>
-</div>
-</div>
-
-<!-- DETAIL MODAL -->
-<div class="overlay" id="ov2">
-<div class="modal">
-  <div class="modal-hdr"><div class="modal-title" id="dT">—</div><button class="modal-x" onclick="closeDetail()">✕</button></div>
-  <div class="modal-body" id="dB"></div>
-  <div class="modal-foot" id="dF"></div>
-</div>
 </div>
 
 <script>
 buildSidebar('repair');
-var data=[],editId=null,curView='kanban';
-var STH={open:'เปิดค้าง',in_progress:'กำลังซ่อม',resolved:'แก้ไขแล้ว'};
-var PRH={high:'สูง',medium:'กลาง',low:'ต่ำ'};
 
-var _up=new URLSearchParams(location.search);
-if(_up.get('priority'))document.getElementById('fP').value=_up.get('priority');
+var NOTE_KEY = 'dh_repair_notes_v1';
+var state = {
+  devices: [],
+  visible: [],
+  selectedId: null
+};
 
-function switchView(v){
-  curView=v;
-  document.getElementById('kView').style.display=v==='kanban'?'block':'none';
-  document.getElementById('tView').style.display=v==='table'?'block':'none';
-  document.getElementById('tab-k').className='vtab'+(v==='kanban'?' active':'');
-  document.getElementById('tab-t').className='vtab'+(v==='table'?' active':'');
-  if(v==='table')renderTable();
+function setDB(kind, message) {
+  document.getElementById('dbDot').className = 'db-dot ' + kind;
+  document.getElementById('dbTxt').textContent = message;
 }
 
-async function loadData(){
-  setDB('wait','โหลด...');
-  try{
-    var p={};
-    if(curView==='table'){
-      var q=document.getElementById('qS').value.trim();var s=document.getElementById('fS').value;var pr=document.getElementById('fP').value;
-      if(q)p.q=q;if(s)p.status=s;if(pr)p.priority=pr;
-    }
-    data=await apiGet(API.repair,p);
-    renderKanban();renderTable();
-    setDB('ok','MySQL · '+data.length+' tickets');
-  }catch(e){setDB('err','error');showToast('❌ '+e.message,'error');}
-}
-
-function renderKanban(){
-  var op=[],pr=[],dn=[];
-  for(var i=0;i<data.length;i++){
-    if(data[i].status==='open')op.push(data[i]);
-    else if(data[i].status==='in_progress')pr.push(data[i]);
-    else dn.push(data[i]);
+function getNoteStore() {
+  try {
+    return JSON.parse(localStorage.getItem(NOTE_KEY) || '{}');
+  } catch (err) {
+    return {};
   }
-  document.getElementById('s0').textContent=data.length;
-  document.getElementById('s1').textContent=op.length;
-  document.getElementById('s2').textContent=pr.length;
-  document.getElementById('s3').textContent=dn.length;
-  document.getElementById('kc0').textContent=op.length;
-  document.getElementById('kc1').textContent=pr.length;
-  document.getElementById('kc2').textContent=dn.length;
-  function mkCard(d){
-    var dj=JSON.stringify(d).replace(/"/g,'&quot;');
-    return '<div class="kcard" onclick=\'showDetail('+dj+')\''+'>'
-      +'<div class="kcard-title">'+d.title+'</div>'
-      +'<div class="kcard-meta">'
-      +'<span class="tid">'+(d.ticket||'—')+'</span>'
-      +'<span class="badge badge-'+d.priority+'">'+(PRH[d.priority]||d.priority)+'</span>'
-      +(d.device?'<span style="font-size:11px;color:var(--text3)">📟 '+d.device+'</span>':'')
-      +'</div>'
-      +(d.tech?'<div style="font-size:11px;color:var(--text3);margin-top:6px">🔧 '+d.tech+'</div>':'')
-      +'</div>';
-  }
-  var empty='<div style="text-align:center;padding:16px;color:var(--text3);font-size:12px">ไม่มี Ticket</div>';
-  document.getElementById('kO').innerHTML=op.map(mkCard).join('')||empty;
-  document.getElementById('kP').innerHTML=pr.map(mkCard).join('')||empty;
-  document.getElementById('kD').innerHTML=dn.map(mkCard).join('')||empty;
 }
 
-function renderTable(){
-  document.getElementById('pi').textContent='แสดง '+data.length+' รายการ';
-  if(!data.length){document.getElementById('tb').innerHTML='<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text3)">📭 ไม่พบข้อมูล</td></tr>';return;}
-  document.getElementById('tb').innerHTML=data.map(function(d,i){
-    var dj=JSON.stringify(d).replace(/"/g,'&quot;');
-    return '<tr style="animation:rowIn .25s ease '+(i*.02)+'s both">'
-      +'<td style="padding-left:18px"><span class="tid">'+(d.ticket||'—')+'</span></td>'
-      +'<td style="max-width:200px"><div style="font-weight:500;font-size:13px">'+d.title+'</div>'
-      +(d.description?'<div style="font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">'+d.description+'</div>':'')
-      +'</td>'
-      +'<td style="font-size:12.5px;color:var(--text2)">'+(d.device||'—')+'</td>'
-      +'<td style="font-size:12.5px">'+(d.reporter||'—')+'</td>'
-      +'<td style="font-size:12.5px;color:var(--text2)">'+(d.tech||'—')+'</td>'
-      +'<td><span class="badge badge-'+(d.priority||'low')+'">'+(PRH[d.priority]||'—')+'</span></td>'
-      +'<td><span class="badge badge-'+d.status+'">'+(STH[d.status]||d.status)+'</span></td>'
-      +'<td style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+(d.created_at?d.created_at.substring(0,10):'—')+'</td>'
-      +'<td><div style="display:flex;gap:5px">'
-      +'<button class="act-btn edit" onclick=\'openModal('+dj+')\'>✏️</button>'
-      +'<button class="act-btn del" onclick="del('+d.id+')">🗑️</button>'
-      +'</div></td></tr>';
+function saveNoteStore(store) {
+  localStorage.setItem(NOTE_KEY, JSON.stringify(store));
+}
+
+function getNote(deviceId) {
+  var store = getNoteStore();
+  return store[String(deviceId)] || { note: '', pinned: false, done: false, updated_at: '' };
+}
+
+function formatDateTime(value) {
+  if (!value) return 'ยังไม่มีการบันทึก';
+  var date = new Date(value);
+  if (isNaN(date.getTime())) return 'ยังไม่มีการบันทึก';
+  return date.toLocaleString('th-TH', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function hasRemark(device) {
+  return !!String((device && device.remark) || '').trim();
+}
+
+function hasUsefulNote(deviceId) {
+  var note = getNote(deviceId);
+  return !!(String(note.note || '').trim() || note.pinned || note.done);
+}
+
+function isRelevant(device) {
+  return !!device && (device.status === 'maintenance' || hasRemark(device) || hasUsefulNote(device.id));
+}
+
+function getStats() {
+  var store = getNoteStore();
+  var stats = { totalNotes: 0, activeNotes: 0, pinnedNotes: 0 };
+  Object.keys(store).forEach(function(key) {
+    var item = store[key] || {};
+    var noteText = String(item.note || '').trim();
+    if (!noteText && !item.pinned && !item.done) return;
+    stats.totalNotes++;
+    if (item.done !== true) stats.activeNotes++;
+    if (item.pinned) stats.pinnedNotes++;
+  });
+  return stats;
+}
+
+function getDeviceById(deviceId) {
+  for (var i = 0; i < state.devices.length; i++) {
+    if (String(state.devices[i].id) === String(deviceId)) return state.devices[i];
+  }
+  return null;
+}
+
+function getPriorityScore(device) {
+  var score = 0;
+  var note = getNote(device.id);
+  if (device.status === 'maintenance') score += 100;
+  if (note.pinned) score += 40;
+  if (String(note.note || '').trim()) score += 25;
+  if (note.done !== true && String(note.note || '').trim()) score += 10;
+  if (hasRemark(device)) score += 8;
+  return score;
+}
+
+function sortDevices(rows) {
+  return rows.sort(function(a, b) {
+    var diff = getPriorityScore(b) - getPriorityScore(a);
+    if (diff) return diff;
+    return String(a.computer_name || '').localeCompare(String(b.computer_name || ''));
+  });
+}
+
+function updateStats() {
+  var stats = getStats();
+  var maintenanceCount = state.devices.filter(function(device) { return device.status === 'maintenance'; }).length;
+  var remarkOrPinned = state.devices.filter(function(device) { return hasRemark(device) || getNote(device.id).pinned; }).length;
+  document.getElementById('s0').textContent = String(maintenanceCount);
+  document.getElementById('s1').textContent = String(stats.totalNotes);
+  document.getElementById('s2').textContent = String(stats.activeNotes);
+  document.getElementById('s3').textContent = String(remarkOrPinned);
+}
+
+function getFilteredDevices() {
+  var query = document.getElementById('qS').value.trim().toLowerCase();
+  var mode = document.getElementById('fMode').value;
+
+  return sortDevices(state.devices.filter(function(device) {
+    if (!isRelevant(device)) return false;
+
+    if (mode === 'maintenance' && device.status !== 'maintenance') return false;
+    if (mode === 'noted' && !hasUsefulNote(device.id)) return false;
+    if (mode === 'remark' && !hasRemark(device)) return false;
+
+    if (!query) return true;
+    var haystack = [
+      device.computer_name,
+      device.username,
+      device.dept,
+      device.type,
+      device.location,
+      device.remark
+    ].join(' ').toLowerCase();
+    return haystack.indexOf(query) !== -1;
+  }));
+}
+
+function renderList() {
+  var container = document.getElementById('deviceList');
+  state.visible = getFilteredDevices();
+  document.getElementById('visibleCount').textContent = state.visible.length + ' รายการ';
+
+  if (!state.visible.length) {
+    state.selectedId = null;
+    container.innerHTML = '<div class="empty">ยังไม่พบอุปกรณ์ที่ตรงกับเงื่อนไขที่เลือก</div>';
+    renderEditor();
+    return;
+  }
+
+  var stillVisible = state.visible.some(function(device) {
+    return String(device.id) === String(state.selectedId);
+  });
+  if (!stillVisible) state.selectedId = state.visible[0].id;
+
+  container.innerHTML = state.visible.map(function(device) {
+    var note = getNote(device.id);
+    var noteText = String(note.note || '').trim();
+    var active = String(device.id) === String(state.selectedId) ? ' active' : '';
+    var tags = [];
+    if (device.status === 'maintenance') tags.push('<span class="badge badge-maintenance">กำลังซ่อม</span>');
+    if (note.pinned) tags.push('<span class="badge badge-high">ปักหมุด</span>');
+    if (note.done) tags.push('<span class="badge badge-resolved">ติดตามเสร็จ</span>');
+    if (!note.done && noteText) tags.push('<span class="badge badge-open">มีโน้ต</span>');
+
+    return ''
+      + '<article class="todo-card' + active + '" data-id="' + device.id + '">'
+      + '  <div class="todo-head">'
+      + '    <div>'
+      + '      <div class="todo-name">' + xss(device.computer_name || '-') + '</div>'
+      + '      <div class="todo-sub"><span>' + xss(device.type || '-') + '</span><span>' + xss(device.dept || '-') + '</span><span>' + xss(device.username || '-') + '</span></div>'
+      + '    </div>'
+      + '    <div class="todo-side">' + xss(device.location || '-') + '</div>'
+      + '  </div>'
+      + '  <div class="todo-tags">' + (tags.join('') || '<span class="badge badge-user">ติดตามทั่วไป</span>') + '</div>'
+      + (hasRemark(device) ? '<div class="todo-remark">' + xss(device.remark) + '</div>' : '')
+      + (noteText ? '<div class="todo-note"><strong>โน้ต:</strong> ' + xss(noteText) + '</div>' : '')
+      + '</article>';
   }).join('');
+
+  Array.prototype.forEach.call(container.querySelectorAll('.todo-card'), function(card) {
+    card.addEventListener('click', function() {
+      state.selectedId = card.getAttribute('data-id');
+      renderList();
+      renderEditor();
+    });
+  });
+
+  renderEditor();
 }
 
-function showDetail(d){
-  document.getElementById('dT').innerHTML='<span class="tid">'+(d.ticket||'—')+'</span>&nbsp;&nbsp;'+d.title;
-  document.getElementById('dB').innerHTML=''
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">'
-    +'<div><div style="font-size:10.5px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">PRIORITY</div><span class="badge badge-'+(d.priority||'low')+'">'+(PRH[d.priority]||'—')+'</span></div>'
-    +'<div><div style="font-size:10.5px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">STATUS</div><span class="badge badge-'+d.status+'">'+(STH[d.status]||d.status)+'</span></div>'
-    +'<div><div style="font-size:10.5px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">อุปกรณ์</div><span style="font-family:var(--mono);font-size:13px;color:var(--cyan)">'+(d.device||'—')+'</span></div>'
-    +'<div><div style="font-size:10.5px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">ผู้แจ้ง</div>'+(d.reporter||'—')+'</div>'
-    +'<div><div style="font-size:10.5px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">ช่างซ่อม</div>'+(d.tech||'—')+'</div>'
-    +'<div><div style="font-size:10.5px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">วันที่</div>'+(d.created_at?d.created_at.substring(0,10):'—')+'</div>'
-    +'</div>'
-    +(d.description?'<div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;color:var(--text2);line-height:1.7">'+d.description+'</div>':'');
-  var dj=JSON.stringify(d).replace(/"/g,'&quot;');
-  document.getElementById('dF').innerHTML=''
-    +'<button class="btn btn-ghost" onclick="closeDetail()">ปิด</button>'
-    +'<button class="btn btn-primary" onclick=\'closeDetail();openModal('+dj+')\'>✏️ แก้ไข</button>';
-  document.getElementById('ov2').classList.add('open');
-}
-function closeDetail(){document.getElementById('ov2').classList.remove('open');}
+function renderEditor() {
+  var empty = document.getElementById('noteEmpty');
+  var editor = document.getElementById('noteEditor');
+  var device = getDeviceById(state.selectedId);
 
-var _dt;
-document.getElementById('qS').addEventListener('input',function(){clearTimeout(_dt);_dt=setTimeout(loadData,380);});
-document.getElementById('fS').addEventListener('change',loadData);
-document.getElementById('fP').addEventListener('change',loadData);
-function clearF(){document.getElementById('qS').value='';document.getElementById('fS').value='';document.getElementById('fP').value='';loadData();}
-
-function openModal(d){
-  editId=null;
-  if(d&&typeof d==='object'){
-    editId=d.id;document.getElementById('mT').textContent='✏️ แก้ไข Ticket';
-    document.getElementById('ftit').value=d.title||'';document.getElementById('fdev').value=d.device||'';
-    document.getElementById('frep').value=d.reporter||'';document.getElementById('fpri').value=d.priority||'medium';
-    document.getElementById('fstat').value=d.status||'open';document.getElementById('ftech').value=d.tech||'';
-    document.getElementById('fdesc').value=d.description||'';
-  }else{
-    document.getElementById('mT').textContent='➕ สร้าง Ticket ใหม่';
-    ['ftit','fdev','ftech','fdesc'].forEach(function(x){document.getElementById(x).value='';});
-    document.getElementById('fpri').value='medium';document.getElementById('fstat').value='open';
-    // Auto-fill reporter จาก current user
-    var _cu=getCurrentUser();
-    document.getElementById('frep').value=_cu?(_cu.name||_cu.username):'';
+  if (!device) {
+    empty.style.display = 'block';
+    editor.style.display = 'none';
+    return;
   }
-  document.getElementById('ov').classList.add('open');
-}
-function closeModal(){document.getElementById('ov').classList.remove('open');editId=null;}
 
-async function save(){
-  var title=document.getElementById('ftit').value.trim();
-  if(!title){showToast('กรุณากรอกหัวข้อปัญหา','error');return;}
-  var btn=document.getElementById('sv');btn.disabled=true;btn.textContent='⏳...';
-  var body={title:title,device:document.getElementById('fdev').value||null,reporter:document.getElementById('frep').value||null,priority:document.getElementById('fpri').value,status:document.getElementById('fstat').value,tech:document.getElementById('ftech').value||null,description:document.getElementById('fdesc').value||null};
-  try{
-    if(editId)await apiPut(API.repair,editId,body);else await apiPost(API.repair,body);
-    showToast(editId?'✅ แก้ไขแล้ว':'✅ สร้าง Ticket แล้ว','success');closeModal();await loadData();
-  }catch(e){showToast('❌ '+e.message,'error');}
-  finally{btn.disabled=false;btn.textContent='💾 บันทึก';}
+  var note = getNote(device.id);
+  empty.style.display = 'none';
+  editor.style.display = 'block';
+
+  document.getElementById('noteTitle').textContent = device.computer_name || '-';
+  document.getElementById('noteSubtitle').textContent = [device.type || '-', device.dept || '-', device.username || '-', device.location || '-'].join(' | ');
+  document.getElementById('noteText').value = note.note || '';
+  document.getElementById('notePinned').checked = !!note.pinned;
+  document.getElementById('noteDone').checked = !!note.done;
+  document.getElementById('noteMeta').textContent = note.updated_at ? 'บันทึกล่าสุด: ' + formatDateTime(note.updated_at) : 'ยังไม่มีการบันทึก';
+
+  var badges = [];
+  if (device.status === 'maintenance') badges.push('<span class="badge badge-maintenance">กำลังซ่อม</span>');
+  if (hasRemark(device)) badges.push('<span class="badge badge-low">มี remark</span>');
+  if (note.pinned) badges.push('<span class="badge badge-high">ปักหมุด</span>');
+  if (note.done) badges.push('<span class="badge badge-resolved">ติดตามเสร็จแล้ว</span>');
+  document.getElementById('noteBadges').innerHTML = badges.join('') || '<span class="badge badge-user">ยังไม่มี flag พิเศษ</span>';
 }
-async function del(id){
-  if(!confirm('ยืนยันลบ Ticket?'))return;
-  try{await apiDelete(API.repair,id);showToast('🗑️ ลบแล้ว','error');await loadData();}
-  catch(e){showToast('❌ '+e.message,'error');}
+
+function saveCurrentNote() {
+  var device = getDeviceById(state.selectedId);
+  if (!device) return;
+
+  var store = getNoteStore();
+  var noteText = document.getElementById('noteText').value.trim();
+  var pinned = document.getElementById('notePinned').checked;
+  var done = document.getElementById('noteDone').checked;
+
+  if (!noteText && !pinned && !done) {
+    delete store[String(device.id)];
+  } else {
+    store[String(device.id)] = {
+      device_id: device.id,
+      computer_name: device.computer_name || '',
+      note: noteText,
+      pinned: pinned,
+      done: done,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  saveNoteStore(store);
+  updateStats();
+  renderList();
+  showToast('บันทึกโน้ตเตือนความจำแล้ว', 'success');
 }
-function exportXL(){
-  var PR={high:'สูง',medium:'กลาง',low:'ต่ำ'};
-  var ST={open:'เปิดค้าง',in_progress:'กำลังซ่อม',resolved:'แก้ไขแล้ว'};
-  var rows=data.map(function(d){return{
-    'Ticket No':d.ticket||'','หัวข้อปัญหา':d.title||'',
-    'Device':d.device||'','ผู้แจ้ง':d.reporter||'',
-    'ช่างซ่อม':d.tech||'','Priority':PR[d.priority]||d.priority||'',
-    'Status':ST[d.status]||d.status||'',
-    'Description':d.description||'',
-    'วันที่แจ้ง':d.created_at?d.created_at.substring(0,10):''
-  };});
-  xlExport(rows,'Repair-Tickets.xlsx','🔧 Repair Tickets — DeviceHub','รายงาน Ticket แจ้งซ่อม');
-  showToast('📥 Export Excel สวยๆ แล้ว ('+rows.length+' tickets)');
+
+function clearCurrentNote() {
+  var device = getDeviceById(state.selectedId);
+  if (!device) return;
+
+  var store = getNoteStore();
+  delete store[String(device.id)];
+  saveNoteStore(store);
+
+  document.getElementById('noteText').value = '';
+  document.getElementById('notePinned').checked = false;
+  document.getElementById('noteDone').checked = false;
+
+  updateStats();
+  renderList();
+  showToast('ล้างโน้ตของเครื่องนี้แล้ว', 'success');
 }
-function setDB(s,t){document.getElementById('dbDot').className='db-dot '+s;document.getElementById('dbTxt').textContent=t;}
-document.getElementById('ov').addEventListener('click',function(e){if(e.target===e.currentTarget)closeModal();});
-document.getElementById('ov2').addEventListener('click',function(e){if(e.target===e.currentTarget)closeDetail();});
+
+async function loadData() {
+  setDB('wait', 'กำลังโหลดอุปกรณ์ที่ต้องติดตาม...');
+  try {
+    var rows = await apiGet(API.devices);
+    state.devices = Array.isArray(rows) ? rows : [];
+    updateStats();
+    renderList();
+    setDB('ok', 'MySQL • พร้อมใช้งาน ' + state.devices.length + ' เครื่อง');
+  } catch (err) {
+    setDB('err', 'โหลดข้อมูลไม่สำเร็จ');
+    document.getElementById('deviceList').innerHTML = '<div class="empty">โหลดข้อมูลอุปกรณ์ไม่สำเร็จ: ' + xss(err.message || '-') + '</div>';
+    showToast('โหลดอุปกรณ์ที่ต้องซ่อมไม่สำเร็จ', 'error');
+  }
+}
+
+document.getElementById('btnRefresh').addEventListener('click', loadData);
+document.getElementById('btnClearSearch').addEventListener('click', function() {
+  document.getElementById('qS').value = '';
+  document.getElementById('fMode').value = 'all';
+  renderList();
+});
+document.getElementById('qS').addEventListener('input', renderList);
+document.getElementById('fMode').addEventListener('change', renderList);
+document.getElementById('btnSaveNote').addEventListener('click', saveCurrentNote);
+document.getElementById('btnClearNote').addEventListener('click', clearCurrentNote);
+
+window.addEventListener('storage', function(event) {
+  if (event.key === NOTE_KEY) {
+    updateStats();
+    renderList();
+  }
+});
+
 loadData();
 </script>
 </body>
 </html>
+
+
+
