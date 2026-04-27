@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="UTF-8">
@@ -7,399 +7,835 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Dashboard - DeviceHub</title>
-<link rel="stylesheet" href="style.css?v=20260326u">
-<script src="config.js?v=20260326u"></script>
-<script src="shared.js?v=20260326u"></script>
+<link rel="stylesheet" href="assets/css/theme.css?v=20260427c">
+<script src="assets/js/config.js?v=20260427c"></script>
+<script src="assets/js/shared.js?v=20260427c"></script>
 <style>
-.dash{display:flex;flex-direction:column;gap:18px;}
-.hero-grid,.panel-grid{display:grid;grid-template-columns:1.35fr .95fr;gap:16px;}
-.hero,.panel,.metric{position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(17,22,31,.98),rgba(10,14,20,.98));border:1px solid var(--border);border-radius:18px;}
-.hero::before,.panel::before,.metric::before{content:'';position:absolute;inset:auto auto -40px -40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(0,212,255,.14),transparent 72%);pointer-events:none;}
-.hero{padding:24px;}
-.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.18);font-size:11px;font-family:var(--mono);color:var(--cyan);text-transform:uppercase;letter-spacing:.8px;}
-.eyebrow::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px rgba(0,232,150,.55);animation:pulse 1.3s ease infinite;}
-.hero h2{font-family:var(--display);font-size:34px;line-height:1.05;margin:14px 0 10px;}
-.hero p{color:var(--text2);max-width:680px;}
-.hero-meta,.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
-.chip{display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.03);border:1px solid var(--border);font-size:11px;font-family:var(--mono);color:var(--text2);}
-.live-board{padding:22px;display:flex;flex-direction:column;gap:14px;}
-.live-title{font-size:12px;font-family:var(--mono);color:var(--text3);letter-spacing:1px;text-transform:uppercase;}
-.live-head{font-family:var(--display);font-size:28px;line-height:1.06;}
-.live-sub{font-size:12px;color:var(--text2);}
-.pulse-grid,.mini-grid,.metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
-.pulse-grid{grid-template-columns:repeat(3,1fr);}
-.pulse,.mini,.metric{padding:16px;}
-.pulse small,.mini small,.metric small{display:block;font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.9px;}
-.pulse strong,.mini strong{display:block;font-family:var(--display);font-size:28px;line-height:1.04;margin-top:7px;}
-.pulse.on strong{color:var(--green);}.pulse.maint strong{color:var(--yellow);}.pulse.off strong{color:var(--red);}
-.track{display:flex;height:14px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid var(--border);}
-.track span{display:block;height:100%;}
-.seg-on{background:linear-gradient(90deg,rgba(0,232,150,.9),rgba(0,232,150,.55));}
-.seg-maint{background:linear-gradient(90deg,rgba(255,204,68,.88),rgba(255,204,68,.56));}
-.seg-off{background:linear-gradient(90deg,rgba(255,77,109,.92),rgba(255,77,109,.55));}
-.seg-unknown{background:linear-gradient(90deg,rgba(122,136,153,.82),rgba(61,78,96,.72));}
-.metric-grid{grid-template-columns:repeat(4,1fr);}
-.metric{min-height:132px;}
-.metric::after{content:'';position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--cyan);}
-.metric.g::after{background:var(--green);}.metric.y::after{background:var(--yellow);}.metric.r::after{background:var(--red);}.metric.v::after{background:var(--violet);}.metric.o::after{background:var(--orange);}
-.metric-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
-.metric-ico{font-size:24px;opacity:.28;}
-.metric b{display:block;font-family:var(--display);font-size:33px;line-height:1.02;margin-top:12px;}
-.metric .c{color:var(--cyan);}.metric .g{color:var(--green);}.metric .y{color:var(--yellow);}.metric .r{color:var(--red);}.metric .v{color:var(--violet);}.metric .o{color:var(--orange);}
-.metric .ttl{font-size:13px;font-weight:600;margin-top:6px;}
-.metric .sub{font-size:11px;color:var(--text2);margin-top:6px;}
-.panel{padding:18px;}
-.panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
-.panel-title{font-size:12px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
-.panel-head b{display:block;font-family:var(--display);font-size:28px;line-height:1.06;margin-top:6px;}
-.panel-head p{font-size:12px;color:var(--text2);margin-top:4px;}
-.rank{display:flex;flex-direction:column;gap:10px;}
-.rank-row{display:grid;grid-template-columns:170px 1fr auto;gap:10px;align-items:center;}
-.rank-name{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.rank-bar{height:10px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid var(--border);}
-.rank-fill{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,rgba(0,212,255,.86),rgba(0,232,150,.76));transition:width .9s ease;}
-.rank-fill.warn{background:linear-gradient(90deg,rgba(255,204,68,.86),rgba(255,159,67,.78));}
-.rank-count{font-size:11px;font-family:var(--mono);color:var(--text2);}
-.feed{width:100%;border-collapse:collapse;}
-.feed th{padding:10px 12px;font-size:10px;}
-.feed td{padding:11px 12px;font-size:12px;}
-.feed td:last-child,.feed th:last-child{text-align:right;}
-.machine{display:flex;flex-direction:column;gap:3px;}
-.machine b{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.machine span{font-size:10.5px;font-family:var(--mono);color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.rt{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:10.5px;font-family:var(--mono);border:1px solid var(--border);}
-.rt::before{content:'';width:7px;height:7px;border-radius:50%;}
-.rt.on{color:var(--green);background:rgba(0,232,150,.1);border-color:rgba(0,232,150,.22);}.rt.on::before{background:var(--green);box-shadow:0 0 9px rgba(0,232,150,.55);}
-.rt.off{color:var(--red);background:rgba(255,77,109,.08);border-color:rgba(255,77,109,.22);}.rt.off::before{background:var(--red);}
-.rt.unknown{color:var(--text2);background:rgba(122,136,153,.08);border-color:var(--border);}.rt.unknown::before{background:var(--text2);}
-.empty{padding:24px;text-align:center;color:var(--text3);border:1px dashed var(--border);border-radius:14px;background:rgba(255,255,255,.02);}
-.clock{font-family:var(--mono);font-size:11px;color:var(--text3);}
-
-/* Minimal dashboard refresh */
-.dash{gap:20px;}
-.hero-grid,.panel-grid{gap:18px;}
-.hero,.panel,.metric{
-  background:linear-gradient(180deg,rgba(10,14,22,.94),rgba(7,10,16,.98));
-  border-color:rgba(122,136,153,.14);
-  box-shadow:0 14px 34px rgba(0,0,0,.18);
+.asset-page{
+  padding:28px 32px 44px !important;
+  background:linear-gradient(180deg,#f8fbff 0,#f4f7fb 42%,#f6f8fc 100%);
 }
-.hero::before,.panel::before,.metric::before{
-  width:120px;
-  height:120px;
-  opacity:.26;
+.dash-topbar h1{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:26px !important;
+  color:#10213f !important;
 }
-.hero{padding:28px 30px;}
-.eyebrow{
-  padding:5px 10px;
-  border-color:rgba(122,136,153,.16);
-  background:rgba(255,255,255,.02);
-  color:var(--text2);
-  font-size:10px;
-  letter-spacing:1.3px;
+.dash-topbar h1 i{
+  width:38px;
+  height:38px;
+  margin:0;
 }
-.eyebrow::before{
-  background:var(--cyan);
-  box-shadow:0 0 0 4px rgba(53,216,255,.08);
-  animation:pulse 1.6s ease infinite;
+.dash-tools{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
 }
-.hero h2{
-  font-family:var(--font);
-  font-size:clamp(26px,3vw,38px);
+.date-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  min-height:42px;
+  padding:9px 14px;
+  border:1px solid rgba(20,50,92,.14);
+  border-radius:8px;
+  background:#fff;
+  color:#10213f;
   font-weight:600;
-  letter-spacing:-.04em;
-  line-height:1.02;
-  max-width:13ch;
-  margin:18px 0 10px;
+  box-shadow:0 10px 20px rgba(17,42,80,.06);
 }
-.hero p{
-  font-size:13px;
-  color:rgba(237,243,251,.66);
-  max-width:56ch;
+.date-pill i{color:#2563eb;}
+.icon-btn{
+  width:42px;
+  height:42px;
+  display:inline-grid;
+  place-items:center;
+  border:1px solid rgba(20,50,92,.14);
+  border-radius:8px;
+  background:#fff;
+  color:#10213f;
+  cursor:pointer;
+  position:relative;
+  box-shadow:0 10px 20px rgba(17,42,80,.06);
 }
-.hero-meta,.hero-actions{margin-top:18px;}
-.hero-actions .btn{min-height:40px;padding:9px 14px;}
-.chip{
-  background:rgba(255,255,255,.025);
-  border-color:rgba(122,136,153,.14);
-  font-size:10.5px;
-  letter-spacing:.8px;
-}
-.live-board{padding:28px 28px 24px;gap:18px;}
-.live-title,.panel-title,.metric small,.pulse small,.mini small{
-  font-size:9.5px;
-  letter-spacing:1.5px;
-  color:rgba(153,168,187,.68);
-}
-.live-head{
-  font-family:var(--font);
-  font-size:clamp(24px,2.3vw,31px);
-  font-weight:600;
-  letter-spacing:-.04em;
-  line-height:1.02;
-  max-width:12ch;
-}
-.live-sub{
-  font-size:12px;
-  color:rgba(237,243,251,.56);
-}
-.pulse-grid,.mini-grid,.metric-grid{gap:10px;}
-.pulse,.mini{
-  padding:12px 0 0;
-  background:transparent;
-  border:none;
-}
-.pulse strong,.mini strong,.metric b{
-  font-family:var(--mono);
-  font-variant-numeric:tabular-nums lining-nums;
-  letter-spacing:-.08em;
-}
-.pulse strong{
-  font-size:36px;
-  line-height:.92;
-  margin-top:10px;
-}
-.mini strong{
-  font-size:32px;
-  line-height:.94;
-  margin-top:12px;
-}
-.track{
-  height:10px;
-  background:rgba(255,255,255,.03);
-  border-color:rgba(122,136,153,.12);
-}
-.metric{
-  min-height:152px;
-  padding:18px 20px 18px;
-  background:linear-gradient(180deg,rgba(9,12,18,.9),rgba(9,12,18,.98));
-}
-.metric::after{
-  left:18px;
-  right:18px;
-  height:2px;
-}
-.metric-top{align-items:center;}
-.metric-ico{display:none;}
-.metric b{
-  font-size:54px;
-  line-height:.88;
-  font-weight:600;
-  margin-top:24px;
-}
-.metric .ttl{
-  font-size:14px;
-  font-weight:600;
-  letter-spacing:-.01em;
-}
-.metric .sub{
+.icon-btn i{font-size:18px;color:#334155;}
+.notify-dot{
+  position:absolute;
+  top:-6px;
+  right:-6px;
+  min-width:20px;
+  height:20px;
+  padding:0 5px;
+  display:grid;
+  place-items:center;
+  border-radius:999px;
+  background:#ef4444;
+  color:#fff;
   font-size:11px;
-  color:rgba(237,243,251,.54);
-  max-width:18ch;
+  font-weight:800;
+  border:2px solid #fff;
 }
-.panel{padding:20px 22px;}
-.panel-head{margin-bottom:16px;}
-.panel-head.panel-head-compact{align-items:end;}
-.panel-head b{
-  font-family:var(--font);
-  font-size:clamp(22px,2vw,30px);
-  font-weight:600;
-  letter-spacing:-.04em;
-  line-height:1.02;
-  max-width:18ch;
+.asset-dashboard{
+  display:flex;
+  flex-direction:column;
+  gap:18px;
 }
-.panel-head p{
+.dash-intro{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:16px;
+}
+.dash-title h2{
+  margin:0;
+  font-size:26px;
+  line-height:1.15;
+  color:#10213f;
+  letter-spacing:-.02em;
+}
+.dash-title p{
+  margin-top:5px;
+  color:#53657f;
+  font-size:14px;
+}
+.sync-row{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.sync-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  min-height:34px;
+  padding:7px 12px;
+  border-radius:999px;
+  border:1px solid rgba(20,50,92,.12);
+  background:#fff;
+  color:#53657f;
   font-size:12px;
-  color:rgba(237,243,251,.56);
-  max-width:48ch;
+  box-shadow:0 8px 18px rgba(17,42,80,.05);
 }
-.status-triplet{
+.sync-chip i{color:#2563eb;}
+.kpi-grid{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:14px;
+}
+.kpi-card{
+  min-height:124px;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  padding:20px;
+  border:1px solid rgba(20,50,92,.1);
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 16px 34px rgba(17,42,80,.07);
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+}
+.kpi-card:hover{
+  transform:translateY(-2px);
+  border-color:rgba(37,99,235,.22);
+  box-shadow:0 22px 42px rgba(17,42,80,.11);
+}
+.kpi-icon{
+  width:58px;
+  height:58px;
+  display:grid;
+  place-items:center;
+  border-radius:12px;
+  flex-shrink:0;
+}
+.kpi-icon i{font-size:29px;}
+.kpi-icon.blue{background:#eaf2ff;color:#2563eb;}
+.kpi-icon.purple{background:#f0e9ff;color:#7c3aed;}
+.kpi-icon.green{background:#dcfce7;color:#16a34a;}
+.kpi-icon.orange{background:#fff4df;color:#f59e0b;}
+.kpi-icon.red{background:#fee2e2;color:#ef4444;}
+.kpi-copy small{
+  display:block;
+  color:#53657f;
+  font-size:13px;
+  line-height:1.35;
+}
+.kpi-copy strong{
+  display:block;
+  margin-top:2px;
+  color:#10213f;
+  font-size:27px;
+  line-height:1;
+  font-weight:800;
+}
+.kpi-copy span{
+  display:block;
+  margin-top:8px;
+  color:#64748b;
+  font-size:12px;
+}
+.kpi-copy span::before{
+  content:'';
+  display:inline-block;
+  width:7px;
+  height:7px;
+  margin-right:7px;
+  border-radius:50%;
+  background:#16a34a;
+  vertical-align:1px;
+}
+.kpi-card.warning .kpi-copy span::before{background:#f59e0b;}
+.kpi-card.danger .kpi-copy span::before{background:#ef4444;}
+.dashboard-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.2fr) minmax(0,1.15fr) minmax(300px,.95fr);
+  gap:16px;
+  align-items:stretch;
+}
+.panel-card{
+  position:relative;
+  overflow:hidden;
+  padding:20px;
+  border:1px solid rgba(20,50,92,.1);
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 16px 34px rgba(17,42,80,.07);
+}
+.panel-card h3{
+  margin:0;
+  color:#10213f;
+  font-size:17px;
+  line-height:1.25;
+}
+.panel-card p{
+  margin:5px 0 0;
+  color:#64748b;
+  font-size:12.5px;
+}
+.panel-headline{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:18px;
+}
+.panel-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:7px 11px;
+  border:1px solid rgba(20,50,92,.12);
+  border-radius:999px;
+  background:#f8fbff;
+  color:#53657f;
+  font-size:12px;
+  white-space:nowrap;
+}
+.panel-chip i{color:#2563eb;}
+.donut-layout{
+  display:grid;
+  grid-template-columns:190px minmax(0,1fr);
+  gap:18px;
+  align-items:center;
+}
+.donut-ring{
+  width:188px;
+  height:188px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:conic-gradient(#2563eb 0 220deg,#60a5fa 220deg 292deg,#f59e0b 292deg 330deg,#ef4444 330deg 360deg);
+  box-shadow:inset 0 0 0 1px rgba(20,50,92,.08);
+}
+.donut-center{
+  width:108px;
+  height:108px;
+  display:grid;
+  place-items:center;
+  text-align:center;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:0 10px 20px rgba(17,42,80,.08);
+}
+.donut-center strong{
+  display:block;
+  color:#10213f;
+  font-size:30px;
+  line-height:1;
+}
+.donut-center span{
+  display:block;
+  margin-top:4px;
+  color:#64748b;
+  font-size:12px;
+}
+.legend-list{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.legend-item{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  gap:10px;
+  align-items:center;
+  color:#334155;
+  font-size:13px;
+}
+.legend-dot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+}
+.legend-dot.blue{background:#2563eb;}
+.legend-dot.sky{background:#60a5fa;}
+.legend-dot.orange{background:#f59e0b;}
+.legend-dot.red{background:#ef4444;}
+.legend-item strong{
+  color:#10213f;
+  font-size:13px;
+}
+.chart-bars{
+  display:flex;
+  align-items:end;
+  justify-content:space-between;
+  gap:14px;
+  height:190px;
+  padding:12px 8px 0;
+  border-bottom:1px solid #dbe4f0;
+}
+.chart-bar{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  height:100%;
+  flex:1;
+  min-width:42px;
+}
+.bar-fill{
+  width:min(42px,70%);
+  height:var(--h,45%);
+  min-height:18px;
+  border-radius:6px 6px 0 0;
+  background:linear-gradient(180deg,#3b82f6,#2563eb);
+  box-shadow:0 12px 22px rgba(37,99,235,.18);
+}
+.chart-bar span{
+  color:#64748b;
+  font-size:11px;
+  max-width:64px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.side-stack{
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+.software-list{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.soft-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 150px 42px;
+  gap:12px;
+  align-items:center;
+  color:#334155;
+  font-size:12.5px;
+}
+.soft-row span:first-child{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.soft-bar{
+  height:5px;
+  border-radius:999px;
+  background:#dbe7f6;
+  overflow:hidden;
+}
+.soft-bar i{
+  display:block;
+  height:100%;
+  width:var(--w,50%);
+  border-radius:999px;
+  background:#2563eb;
+}
+.soft-row strong{
+  text-align:right;
+  color:#53657f;
+  font-size:12px;
+  font-weight:600;
+}
+.status-donut{
+  display:grid;
+  grid-template-columns:128px 1fr;
+  gap:16px;
+  align-items:center;
+}
+.status-donut .donut-ring{
+  width:128px;
+  height:128px;
+}
+.status-donut .donut-center{
+  width:74px;
+  height:74px;
+}
+.status-donut .donut-center strong{font-size:22px;}
+.mini-stat-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin-top:16px;
+}
+.mini-stat{
+  padding:12px;
+  border:1px solid rgba(20,50,92,.1);
+  border-radius:10px;
+  background:#f8fbff;
+}
+.mini-stat small{
+  display:block;
+  color:#64748b;
+  font-size:11px;
+}
+.mini-stat strong{
+  display:block;
+  margin-top:5px;
+  color:#10213f;
+  font-size:22px;
+}
+.table-section{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(300px,.42fr);
+  gap:16px;
+}
+.table-toolbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+}
+.table-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.dash-search{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-width:min(360px,100%);
+  min-height:40px;
+  padding:8px 12px;
+  border:1px solid rgba(20,50,92,.12);
+  border-radius:8px;
+  background:#fff;
+  color:#94a3b8;
+}
+.dash-search i{color:#2563eb;}
+.feed-wrap{
+  border:1px solid rgba(20,50,92,.1);
+  border-radius:10px;
+  overflow:hidden;
+}
+.feed{
+  width:100%;
+  border-collapse:collapse;
+}
+.feed th{
+  background:#f8fbff !important;
+  color:#64748b !important;
+  padding:12px 14px;
+  font-size:11px;
+  text-transform:none;
+  letter-spacing:0;
+}
+.feed td{
+  padding:13px 14px;
+  color:#10213f !important;
+  font-size:12.5px;
+}
+.machine b{color:#0f4fbf !important;}
+.machine span{color:#64748b !important;}
+.rt{font-family:var(--font) !important;}
+.quick-report-grid{
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
   gap:12px;
-  margin:14px 0 14px;
 }
-.status-block{
-  padding:14px 16px 13px;
-  border-radius:16px;
-  border:1px solid rgba(122,136,153,.14);
-  background:rgba(255,255,255,.02);
-}
-.status-block .eyelabel{
-  display:block;
-  font-size:10px;
-  font-family:var(--mono);
-  letter-spacing:1.4px;
-  color:rgba(153,168,187,.66);
-  text-transform:uppercase;
-}
-.status-block .count{
-  display:block;
-  margin-top:10px;
-  font-family:var(--mono);
-  font-size:44px;
-  line-height:.9;
-  letter-spacing:-.08em;
-  font-variant-numeric:tabular-nums lining-nums;
-}
-.status-block .note{
-  display:block;
-  margin-top:8px;
-  font-size:11px;
-  color:rgba(237,243,251,.56);
-}
-.status-block.on{border-color:rgba(25,229,162,.18);}
-.status-block.on .count{color:var(--green);}
-.status-block.off{border-color:rgba(255,100,131,.16);}
-.status-block.off .count{color:var(--red);}
-.status-block.unknown{border-color:rgba(122,136,153,.18);}
-.status-block.unknown .count{color:#d7e0ea;}
-.rt-meta-grid{
-  grid-template-columns:repeat(2,minmax(0,1fr));
+.report-card{
+  display:flex;
+  align-items:center;
   gap:12px;
+  min-height:76px;
+  padding:14px;
+  border:1px solid rgba(20,50,92,.1);
+  border-radius:10px;
+  background:#fff;
+  color:#10213f;
+  transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease;
 }
-.rt-meta-grid .mini{
-  padding-top:4px;
+.report-card:hover{
+  transform:translateY(-2px);
+  border-color:rgba(37,99,235,.22);
+  box-shadow:0 16px 30px rgba(17,42,80,.08);
 }
-.rt-meta-grid .mini strong{
-  font-size:34px;
+.report-icon{
+  width:42px;
+  height:42px;
+  display:grid;
+  place-items:center;
+  border-radius:10px;
+  flex-shrink:0;
 }
-.rank{gap:12px;}
-.rank-row{grid-template-columns:minmax(96px,150px) 1fr auto;gap:12px;}
-.rank-name{font-size:11.5px;color:var(--text2);}
-.rank-count{font-size:10px;letter-spacing:.2px;}
-.feed th{font-size:9.5px;letter-spacing:1.2px;color:rgba(153,168,187,.7);}
-.feed td{padding:12px 12px;font-size:11.5px;}
-.machine b{font-size:12px;letter-spacing:-.01em;}
-.machine span{font-size:10px;}
-.rt{font-size:10px;padding:4px 9px;}
-@media (max-width:1400px){.hero-grid,.panel-grid,.metric-grid,.mini-grid{grid-template-columns:1fr 1fr;}.pulse-grid{grid-template-columns:1fr;}}
-@media (max-width:900px){.content{padding:18px 18px 28px;}.hero-grid,.panel-grid,.metric-grid,.mini-grid,.status-triplet,.rt-meta-grid{grid-template-columns:1fr;}.hero h2{font-size:28px;max-width:none;}.live-head{max-width:none;}.metric b{font-size:44px;}.mini strong,.pulse strong,.status-block .count{font-size:28px;}.rank-row{grid-template-columns:1fr;}.feed{display:block;overflow-x:auto;}}
+.report-icon i{font-size:22px;}
+.report-icon.blue{background:#eaf2ff;color:#2563eb;}
+.report-icon.purple{background:#f0e9ff;color:#7c3aed;}
+.report-icon.green{background:#dcfce7;color:#16a34a;}
+.report-icon.orange{background:#fff4df;color:#f59e0b;}
+.report-icon.red{background:#fee2e2;color:#ef4444;}
+.report-icon.slate{background:#eef2f7;color:#64748b;}
+.report-card strong{
+  display:block;
+  color:#10213f;
+  font-size:13px;
+}
+.report-card span{
+  display:block;
+  margin-top:3px;
+  color:#64748b;
+  font-size:11.5px;
+}
+.export-row{
+  display:flex;
+  justify-content:center;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
+.export-row .btn{
+  min-width:210px;
+}
+.rank{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.rank-row{
+  display:grid;
+  grid-template-columns:minmax(110px,160px) 1fr auto;
+  gap:10px;
+  align-items:center;
+}
+.rank-name{
+  color:#334155;
+  font-size:12px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.rank-bar{
+  height:7px;
+  border-radius:999px;
+  background:#e3ebf6;
+  overflow:hidden;
+}
+.rank-fill{
+  height:100%;
+  width:0;
+  border-radius:999px;
+  background:#2563eb;
+  transition:width .6s ease;
+}
+.rank-fill.warn{background:#f59e0b;}
+.rank-count{
+  color:#53657f;
+  font-size:11px;
+  font-weight:700;
+}
+.hidden-sync{
+  position:absolute;
+  width:1px;
+  height:1px;
+  overflow:hidden;
+  clip:rect(0 0 0 0);
+}
+.empty{
+  background:#f8fbff !important;
+  border-color:#dbe8fb !important;
+  color:#64748b !important;
+}
+#errBanner{
+  background:#fff1f2 !important;
+  border:1px solid #fecdd3 !important;
+  color:#e11d48 !important;
+  border-radius:10px !important;
+}
+@media (max-width:1500px){
+  .kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .dashboard-grid{grid-template-columns:1fr 1fr;}
+  .side-stack{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;}
+  .table-section{grid-template-columns:1fr;}
+}
+@media (max-width:1000px){
+  .asset-page{padding:22px 18px 34px !important;}
+  .dash-intro,.table-toolbar{align-items:flex-start;flex-direction:column;}
+  .dashboard-grid,.side-stack,.kpi-grid,.quick-report-grid{grid-template-columns:1fr;}
+  .donut-layout,.status-donut{grid-template-columns:1fr;justify-items:center;text-align:center;}
+  .legend-list{width:100%;}
+}
+@media (max-width:640px){
+  .dash-tools{width:100%;}
+  .date-pill,.dash-tools .btn{width:100%;justify-content:center;}
+  .icon-btn{flex:1;}
+  .kpi-card{align-items:flex-start;}
+  .mini-stat-grid{grid-template-columns:1fr 1fr;}
+  .export-row .btn{width:100%;}
+}
 </style>
 </head>
 <body>
+<!--
+  Dashboard page map
+  1. App shell / topbar / date and actions
+  2. KPI cards with colored icons
+  3. Charts, status panels, and latest machine feed
+  4. Report shortcuts and live data script
+-->
 <div class="layout">
 <div id="sidebar-slot"></div>
 <div class="main">
-  <div class="topbar">
-    <div style="flex:1"><h1>Dashboard</h1><p class="clock" id="clock">-</p></div>
-    <div class="db-pill"><div class="db-dot wait" id="dbDot"></div><span id="dbTxt">กำลังโหลด...</span></div>
-    <button class="btn btn-ghost" onclick="refreshDashboard(true)">↻ รีเฟรชสด</button>
-    <button class="btn btn-logout" onclick="logout()">ออก</button>
+  <div class="topbar dash-topbar">
+    <div style="flex:1">
+      <h1><i class="ri-dashboard-3-line"></i> Dashboard</h1>
+      <p class="clock" id="clock">-</p>
+    </div>
+    <div class="dash-tools">
+      <div class="date-pill"><i class="ri-calendar-line"></i><span>01/05/2024 - 31/05/2024</span><i class="ri-arrow-down-s-line"></i></div>
+      <button class="icon-btn" type="button" onclick="refreshDashboard(true)" title="รีเฟรช"><i class="ri-refresh-line"></i></button>
+      <a class="icon-btn" href="settings.html" title="Setting"><i class="ri-settings-4-line"></i></a>
+      <button class="icon-btn" type="button" title="แจ้งเตือน"><i class="ri-notification-3-line"></i><span class="notify-dot">5</span></button>
+      <div class="db-pill"><div class="db-dot wait" id="dbDot"></div><span id="dbTxt">กำลังโหลด...</span></div>
+      <button class="btn btn-logout" onclick="logout()">ออก</button>
+    </div>
   </div>
-  <div class="content">
-    <div id="errBanner" style="background:rgba(255,77,109,.08);border:1px solid rgba(255,77,109,.2);border-radius:12px;padding:12px 16px;font-size:13px;color:var(--red);margin-bottom:16px;display:none"></div>
-    <div class="dash">
-      <div class="hero-grid">
-        <section class="hero">
-          <div class="eyebrow">Realtime Overview</div>
-          <h2>สถานะเครื่องทั้งหมดแบบเรียลไทม์ ในมุมมองที่อ่านเร็วและตัดสินใจง่าย</h2>
-          <p>ดูตัวเลขหลักของอุปกรณ์, งานซ่อม, และสิ่งที่ต้องติดตามต่อจากหน้าเดียว โดยยังใช้ข้อมูลจริงจากระบบเดิมทั้งหมด</p>
-          <div class="hero-meta">
-            <div class="chip" id="heroCheckedAt">กำลังเตรียมสแกน...</div>
-            <div class="chip">Auto refresh ทุก 90 วินาที</div>
-            <div class="chip" id="heroScope">รอข้อมูลจากระบบ</div>
-          </div>
-          <div class="hero-actions">
-            <a class="btn btn-primary" href="device-list.html">รายการอุปกรณ์</a>
-            <a class="btn btn-ghost" href="repair.html">งานซ่อม</a>
-          </div>
-        </section>
-        <section class="hero live-board">
-          <div class="live-title">Live Status</div>
-          <div class="live-head" id="liveHeadline">กำลังวิเคราะห์สถานะเครื่อง...</div>
-          <div class="live-sub" id="liveSub">รอผลจากการเช็กสด</div>
-          <div class="pulse-grid">
-            <div class="pulse on"><small>เปิดอยู่</small><strong id="heroOn">—</strong></div>
-            <div class="pulse maint"><small>กำลังซ่อม</small><strong id="heroMaint">—</strong></div>
-            <div class="pulse off"><small>ปิด / ไม่ตอบ</small><strong id="heroOff">—</strong></div>
-          </div>
-          <div class="track" id="heroTrack"></div>
-          <div class="mini-grid">
-            <div class="mini"><small>เปิดอยู่ %</small><strong id="heroOnPct">—</strong></div>
-            <div class="mini"><small>กำลังซ่อม %</small><strong id="heroMaintPct">—</strong></div>
-            <div class="mini"><small>ปิด/ไม่ตอบ %</small><strong id="heroOffPct">—</strong></div>
-            <div class="mini"><small>ไม่ทราบ %</small><strong id="heroUnknownPct">—</strong></div>
-          </div>
-        </section>
-      </div>
 
-      <section class="metric-grid">
-        <div class="metric"><div class="metric-top"><small>Devices</small><div class="metric-ico">🖥</div></div><b class="c" id="k0">—</b><div class="ttl">อุปกรณ์ทั้งหมด</div><div class="sub" id="ks0">Inventory ในระบบ</div></div>
-        <div class="metric g"><div class="metric-top"><small>Realtime</small><div class="metric-ico">🟢</div></div><b class="g" id="k1">—</b><div class="ttl">เปิดอยู่</div><div class="sub" id="ks1">ตอบกลับจากการเช็กสด</div></div>
-        <div class="metric y"><div class="metric-top"><small>Maintenance</small><div class="metric-ico">🔧</div></div><b class="y" id="k2">—</b><div class="ttl">กำลังซ่อม</div><div class="sub" id="ks2">ธงซ่อมในฐานข้อมูล</div></div>
-        <div class="metric r"><div class="metric-top"><small>Realtime</small><div class="metric-ico">🔴</div></div><b class="r" id="k3">—</b><div class="ttl">ปิด / ไม่ตอบ</div><div class="sub" id="ks3">ไม่ตอบจากการเช็กสด</div></div>
-        <div class="metric v"><div class="metric-top"><small>Email</small><div class="metric-ico">✉️</div></div><b class="v" id="k4">—</b><div class="ttl">บัญชีอีเมล</div><div class="sub" id="ks4">บัญชีทั้งหมด</div></div>
-        <div class="metric"><div class="metric-top"><small>Users</small><div class="metric-ico">👥</div></div><b class="c" id="k5">—</b><div class="ttl">ผู้ใช้ Active</div><div class="sub" id="ks5">พร้อมใช้งานในระบบ</div></div>
-        <div class="metric r"><div class="metric-top"><small>Reminder</small><div class="metric-ico">📝</div></div><b class="r" id="k6">—</b><div class="ttl">โน้ตเตือนความจำ</div><div class="sub" id="ks6">รายการติดตามที่บันทึกไว้</div></div>
-        <div class="metric o"><div class="metric-top"><small>Follow Up</small><div class="metric-ico">🔔</div></div><b class="o" id="k7">—</b><div class="ttl">ติดตามต่อ</div><div class="sub" id="ks7">เรื่องที่ควรกลับมาดูอีกครั้ง</div></div>
+  <div class="content asset-page">
+    <div id="errBanner" style="padding:12px 16px;font-size:13px;margin-bottom:16px;display:none"></div>
+
+    <div class="asset-dashboard">
+      <section class="dash-intro">
+        <div class="dash-title">
+          <h2>ภาพรวมระบบจัดการอุปกรณ์คอมพิวเตอร์ อีเมล และซอฟต์แวร์</h2>
+          <p>สรุปข้อมูลจาก MySQL และสถานะ real-time เพื่อดูภาพรวมได้ในหน้าเดียว</p>
+        </div>
+        <div class="sync-row">
+          <span class="sync-chip"><i class="ri-radar-line"></i><span id="heroCheckedAt">กำลังเตรียมสแกน...</span></span>
+          <span class="sync-chip"><i class="ri-time-line"></i> Auto refresh 90 วินาที</span>
+          <span class="sync-chip"><i class="ri-database-2-line"></i><span id="heroScope">รอข้อมูลจากระบบ</span></span>
+        </div>
       </section>
 
-      <div class="panel-grid">
-        <section class="panel">
-          <div class="panel-head panel-head-compact">
-            <div><div class="panel-title">Realtime Device Health</div><b id="rtHeadline">สถานะเครื่องแบบเรียลไทม์</b><p id="rtSub">แยกสถานะให้อ่านง่ายขึ้นจากการเช็กเครื่องจริง</p></div>
-            <div class="chip" id="rtState">scanning</div>
-          </div>
-          <div class="status-triplet">
-            <div class="status-block on">
-              <span class="eyelabel">เปิดอยู่</span>
-              <span class="count" id="rtOn">—</span>
-              <span class="note" id="rtOnSub">—</span>
-            </div>
-            <div class="status-block off">
-              <span class="eyelabel">ปิดไม่ตอบ</span>
-              <span class="count" id="rtOff">—</span>
-              <span class="note" id="rtOffSub">—</span>
-            </div>
-            <div class="status-block unknown">
-              <span class="eyelabel">ไม่ทราบ</span>
-              <span class="count" id="rtUnknown">—</span>
-              <span class="note" id="rtUnknownSub">—</span>
-            </div>
-          </div>
-          <div class="track" id="mainTrack"></div>
-          <div class="mini-grid rt-meta-grid" style="margin-top:14px">
-            <div class="mini"><small>หมายเหตุในระบบ</small><strong id="rtRemark">—</strong><p class="sub">เครื่องที่มี remark</p></div>
-            <div class="mini"><small>สแกนล่าสุด</small><strong id="rtTime">—</strong><p class="sub" id="rtTimeSub"></p></div>
-          </div>
-        </section>
+      <section class="kpi-grid">
+        <a class="kpi-card" href="device-list.html">
+          <span class="kpi-icon blue"><i class="ri-computer-line"></i></span>
+          <span class="kpi-copy"><small>คอมพิวเตอร์ทั้งหมด</small><strong id="k0">-</strong><span id="ks0">Inventory ทั้งหมดในระบบ</span></span>
+        </a>
+        <a class="kpi-card" href="email.html">
+          <span class="kpi-icon purple"><i class="ri-mail-line"></i></span>
+          <span class="kpi-copy"><small>อีเมลทั้งหมด</small><strong id="k4">-</strong><span id="ks4">บัญชีทั้งหมด</span></span>
+        </a>
+        <a class="kpi-card" href="device-list.html">
+          <span class="kpi-icon green"><i class="ri-apps-2-line"></i></span>
+          <span class="kpi-copy"><small>ประเภทอุปกรณ์</small><strong id="k7">-</strong><span id="ks7">หมวดอุปกรณ์ที่ใช้งานอยู่</span></span>
+        </a>
+        <a class="kpi-card warning" href="device-list.html">
+          <span class="kpi-icon orange"><i class="ri-sticky-note-line"></i></span>
+          <span class="kpi-copy"><small>เครื่องมีหมายเหตุ</small><strong id="k2">-</strong><span id="ks2">เครื่องที่มี remark</span></span>
+        </a>
+        <a class="kpi-card danger" href="device-list.html">
+          <span class="kpi-icon red"><i class="ri-shield-cross-line"></i></span>
+          <span class="kpi-copy"><small>เครื่องปิด / ไม่ตอบ</small><strong id="k3">-</strong><span id="ks3">ไม่ตอบจากการเช็กสด</span></span>
+        </a>
+      </section>
 
-        <section class="panel">
-          <div class="panel-head">
-            <div><div class="panel-title">Reminder Pulse</div><b>อุปกรณ์ที่ต้องซ่อม, เมล และผู้ใช้</b><p>ดูภาพรวมเรื่องที่ต้องติดตามต่อในระบบทั้งหมด</p></div>
+      <section class="dashboard-grid">
+        <div class="panel-card">
+          <div class="panel-headline">
+            <div>
+              <h3>ภาพรวมการใช้งาน</h3>
+              <p id="liveSub">รอผลจากการเช็กสด</p>
+            </div>
+            <span class="panel-chip" id="rtState"><i class="ri-loader-4-line"></i> scanning</span>
           </div>
-          <div class="mini-grid">
-            <div class="mini"><small>โน้ตทั้งหมด</small><strong id="bizOpen">—</strong></div>
-            <div class="mini"><small>กำลังติดตาม</small><strong id="bizProg">—</strong></div>
-            <div class="mini"><small>Email Active</small><strong id="bizMail">—</strong></div>
-            <div class="mini"><small>Admins</small><strong id="bizAdmin">—</strong></div>
+          <div class="donut-layout">
+            <div class="donut-ring" id="usageDonut">
+              <div class="donut-center"><div><strong id="k1">-</strong><span>Online</span></div></div>
+            </div>
+            <div class="legend-list">
+              <div class="legend-item"><span class="legend-dot blue"></span><span>เปิดอยู่</span><strong><span id="heroOn">-</span> (<span id="heroOnPct">-</span>)</strong></div>
+              <div class="legend-item"><span class="legend-dot sky"></span><span>ผู้ใช้ Active</span><strong id="k5">-</strong></div>
+              <div class="legend-item"><span class="legend-dot orange"></span><span>ปิด / ไม่ตอบ</span><strong><span id="heroOff">-</span> (<span id="heroOffPct">-</span>)</strong></div>
+              <div class="legend-item"><span class="legend-dot red"></span><span>ไม่ทราบ</span><strong><span id="heroUnknown">-</span> (<span id="heroUnknownPct">-</span>)</strong></div>
+            </div>
           </div>
-          <div class="rank" id="bizBars" style="margin-top:14px"></div>
-        </section>
-      </div>
+          <div class="hidden-sync">
+            <span id="liveHeadline"></span>
+            <span id="heroRemark"></span>
+            <span id="heroTrack"></span>
+          </div>
+        </div>
 
-      <div class="panel-grid">
-        <section class="panel">
-          <div class="panel-head"><div><div class="panel-title">Device Types</div><b>อุปกรณ์แยกตามประเภท</b><p>เห็นสัดส่วน PC, Laptop, Server และอื่น ๆ</p></div></div>
-          <div class="rank" id="typeList"></div>
-        </section>
-        <section class="panel">
-          <div class="panel-head"><div><div class="panel-title">Department Load</div><b>แผนกที่มีเครื่องมากที่สุด</b><p>ช่วยวางแผน support และ onsite</p></div></div>
-          <div class="rank" id="deptList"></div>
-        </section>
-      </div>
+        <div class="panel-card">
+          <div class="panel-headline">
+            <div>
+              <h3>คอมพิวเตอร์แยกตามแผนก</h3>
+              <p>แผนกที่มีเครื่องมากที่สุดจากฐานข้อมูลอุปกรณ์</p>
+            </div>
+            <span class="panel-chip"><i class="ri-building-4-line"></i><span id="k6">-</span> แผนก</span>
+          </div>
+          <div class="chart-bars" id="deptChart">
+            <div class="chart-bar"><i class="bar-fill" style="--h:82%"></i><span>IT</span></div>
+            <div class="chart-bar"><i class="bar-fill" style="--h:60%"></i><span>บัญชี</span></div>
+            <div class="chart-bar"><i class="bar-fill" style="--h:50%"></i><span>การตลาด</span></div>
+            <div class="chart-bar"><i class="bar-fill" style="--h:42%"></i><span>ขาย</span></div>
+            <div class="chart-bar"><i class="bar-fill" style="--h:34%"></i><span>บุคคล</span></div>
+            <div class="chart-bar"><i class="bar-fill" style="--h:26%"></i><span>อื่นๆ</span></div>
+          </div>
+        </div>
 
-      <section class="panel">
-        <div class="panel-head"><div><div class="panel-title">Live Machine Feed</div><b>รายการสถานะเครื่องจากการเช็กสด</b><p>แสดงเครื่องที่ควรสนใจก่อน เช่น ปิดอยู่, ต้องซ่อม หรือควรบันทึกโน้ตเตือนความจำ</p></div><div class="chip"><span id="feedCount">0</span> rows</div></div>
-        <div id="feedWrap"><div class="empty">กำลังรอข้อมูลจากระบบ...</div></div>
+        <div class="side-stack">
+          <div class="panel-card">
+            <div class="panel-headline">
+              <div>
+                <h3>ประเภทที่พบมากสุด</h3>
+                <p>จัดอันดับตามข้อมูลอุปกรณ์ในระบบ</p>
+              </div>
+            </div>
+            <div class="software-list" id="typeList"></div>
+          </div>
+
+          <div class="panel-card">
+            <div class="panel-headline">
+              <div>
+                <h3>สถานะอุปกรณ์</h3>
+                <p id="rtSub">แยกสถานะจากการเช็กเครื่องจริง</p>
+              </div>
+            </div>
+            <div class="status-donut">
+              <div class="donut-ring" id="licenseDonut">
+                <div class="donut-center"><div><strong id="rtOn">-</strong><span>Total</span></div></div>
+              </div>
+              <div class="legend-list">
+                <div class="legend-item"><span class="legend-dot blue"></span><span>ใช้งานปกติ</span><strong id="rtOnSub">-</strong></div>
+                <div class="legend-item"><span class="legend-dot orange"></span><span>ปิด / ไม่ตอบ</span><strong id="rtOffSub">-</strong></div>
+                <div class="legend-item"><span class="legend-dot red"></span><span>ไม่ทราบ</span><strong id="rtUnknownSub">-</strong></div>
+              </div>
+            </div>
+            <div class="hidden-sync">
+              <span id="rtHeadline"></span>
+              <span id="rtOff"></span>
+              <span id="rtUnknown"></span>
+              <span id="rtRemark"></span>
+              <span id="rtTime"></span>
+              <span id="rtTimeSub"></span>
+              <span id="mainTrack"></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="table-section">
+        <div class="panel-card">
+          <div class="table-toolbar">
+            <div>
+              <h3>รายการคอมพิวเตอร์ล่าสุด</h3>
+              <p id="snapIntro">รวมตัวเลขหลักสำหรับสรุปในทีมและติดตามงาน IT</p>
+            </div>
+            <div class="table-actions">
+              <div class="dash-search"><i class="ri-search-line"></i><span>ค้นหาชื่อเครื่อง, ผู้ใช้, อีเมล, ซอฟต์แวร์...</span></div>
+              <a class="btn btn-ghost" href="device-list.html"><i class="ri-filter-3-line"></i> ตัวกรอง</a>
+              <a class="btn btn-primary" href="device-list.html"><i class="ri-add-line"></i> เพิ่มคอมพิวเตอร์</a>
+            </div>
+          </div>
+          <div class="feed-wrap" id="feedWrap"><div class="empty">กำลังรอข้อมูลจากระบบ...</div></div>
+          <div class="pager">
+            <div class="pager-info">แสดง <span id="feedCount">0</span> รายการจากผล real-time</div>
+            <a class="btn btn-ghost" href="device-list.html">ดูทั้งหมด</a>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-headline">
+            <div>
+              <h3>การแจ้งเตือนล่าสุด</h3>
+              <p>สรุปสิ่งที่ควรตรวจในระบบ</p>
+            </div>
+          </div>
+          <div class="mini-stat-grid">
+            <div class="mini-stat"><small>Inventory</small><strong id="snapDevices">-</strong></div>
+            <div class="mini-stat"><small>Online</small><strong id="snapOnline">-</strong></div>
+            <div class="mini-stat"><small>Email</small><strong id="snapEmail">-</strong></div>
+            <div class="mini-stat"><small>Users</small><strong id="snapUsers">-</strong></div>
+          </div>
+          <div class="rank" id="deptList" style="margin-top:16px"></div>
+          <div class="hidden-sync">
+            <span id="snapChecked"></span>
+            <span id="snapDevicesSub"></span>
+            <span id="snapOnlineSub"></span>
+            <span id="snapEmailSub"></span>
+            <span id="snapUsersSub"></span>
+            <span id="snapCoverage"></span>
+            <span id="snapCoverageSub"></span>
+            <span id="snapScan"></span>
+            <span id="snapScanSub"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel-card">
+        <div class="panel-headline">
+          <div>
+            <h3>รายงานที่สามารถสร้างได้</h3>
+            <p>เข้าถึงหน้าที่ใช้งานประจำและ export ข้อมูลได้จาก Dashboard</p>
+          </div>
+          <span class="panel-chip"><i class="ri-file-chart-line"></i> Export</span>
+        </div>
+        <div class="quick-report-grid">
+          <a class="report-card" href="device-list.html"><span class="report-icon blue"><i class="ri-computer-line"></i></span><span><strong>รายงานคอมพิวเตอร์ทั้งหมด</strong><span>ข้อมูลอุปกรณ์ทั้งหมดในระบบ</span></span></a>
+          <a class="report-card" href="email.html"><span class="report-icon purple"><i class="ri-mail-line"></i></span><span><strong>รายงานอีเมลทั้งหมด</strong><span>ข้อมูลอีเมลและการใช้งาน</span></span></a>
+          <a class="report-card" href="device-list.html"><span class="report-icon green"><i class="ri-apps-2-line"></i></span><span><strong>รายงานประเภทอุปกรณ์</strong><span>หมวดอุปกรณ์ที่ติดตั้งทั้งหมด</span></span></a>
+          <a class="report-card" href="backup.html"><span class="report-icon orange"><i class="ri-history-line"></i></span><span><strong>รายงานประวัติแก้ไข</strong><span>ติดตามการเพิ่ม ลบ แก้ไขข้อมูล</span></span></a>
+          <a class="report-card" href="settings.html?panel=users"><span class="report-icon slate"><i class="ri-user-settings-line"></i></span><span><strong>รายงานผู้ใช้งาน</strong><span>สรุปผู้ใช้และสิทธิ์ในระบบ</span></span></a>
+          <a class="report-card" href="email-list.html"><span class="report-icon red"><i class="ri-contacts-book-2-line"></i></span><span><strong>KF Email List</strong><span>รายชื่ออีเมลและกลุ่มเมล</span></span></a>
+        </div>
+        <div class="export-row">
+          <a class="btn btn-primary" href="export.html"><i class="ri-file-pdf-2-line"></i> Export PDF</a>
+          <a class="btn btn-excel" href="export.html"><i class="ri-file-excel-2-line"></i> Export Excel</a>
+          <a class="btn btn-ghost" href="export.html"><i class="ri-file-download-line"></i> Export CSV</a>
+        </div>
+        <div class="hidden-sync">
+          <span id="bizOpen"></span>
+          <span id="bizProg"></span>
+          <span id="bizMail"></span>
+          <span id="bizAdmin"></span>
+          <span id="bizBars"></span>
+        </div>
       </section>
     </div>
   </div>
 </div>
 </div>
-<script src="dashboard-live.js?v=20260326o"></script>
+<script src="assets/js/dashboard.js?v=20260427c"></script>
 </body>
 </html>
-
-
-

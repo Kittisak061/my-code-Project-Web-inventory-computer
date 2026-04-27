@@ -1,0 +1,506 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Backup - DeviceHub</title>
+<link rel="stylesheet" href="assets/css/theme.css?v=20260427c">
+<script src="assets/vendor/xlsx.full.min.js?v=20260427c"></script>
+<script src="assets/js/config.js?v=20260427c"></script>
+<script src="assets/js/shared.js?v=20260427c"></script>
+<!--
+  Backup page map
+  1. Inline page styles
+  2. App shell / topbar
+  3. Summary cards
+  4. Filter toolbar
+  5. Backup table
+  6. Detail modal
+  7. Page script
+-->
+<style>
+.backup-shell{display:flex;flex-direction:column;gap:18px;}
+.backup-note{font-size:12px;color:var(--text2);line-height:1.8;max-width:760px;}
+.backup-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+.backup-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.03);font-size:11px;color:var(--text2);font-family:var(--mono);}
+.backup-table td{vertical-align:top;}
+.backup-record{display:flex;flex-direction:column;gap:4px;min-width:180px;}
+.backup-record strong{font-size:13px;color:var(--text);}
+.backup-record span{font-size:11px;color:var(--text3);font-family:var(--mono);}
+.backup-summary{font-size:12px;color:var(--text2);line-height:1.7;max-width:380px;white-space:normal;}
+.backup-actions{display:flex;gap:8px;justify-content:flex-end;}
+.backup-empty{padding:38px 18px;text-align:center;color:var(--text3);font-size:13px;}
+.backup-modal{width:min(1120px,94vw);max-height:92vh;}
+.backup-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.backup-panel{border:1px solid var(--border);border-radius:16px;background:rgba(255,255,255,.025);overflow:hidden;min-height:320px;}
+.backup-panel-hdr{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(255,255,255,.02);}
+.backup-panel-title{font-size:13px;font-weight:700;color:var(--text);}
+.backup-panel-sub{font-size:11px;color:var(--text3);font-family:var(--mono);}
+.backup-code{margin:0;padding:16px;white-space:pre-wrap;word-break:break-word;font-size:11.5px;line-height:1.75;font-family:var(--mono);color:var(--text2);max-height:50vh;overflow:auto;background:linear-gradient(180deg,rgba(7,11,18,.78),rgba(9,13,20,.96));}
+.backup-field-list{display:flex;flex-wrap:wrap;gap:8px;padding:0 0 16px;}
+.backup-field{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;border:1px solid rgba(53,216,255,.18);background:rgba(53,216,255,.08);color:var(--cyan);font-size:11px;font-family:var(--mono);}
+.backup-modal-top{display:flex;flex-direction:column;gap:14px;}
+.backup-kv{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;}
+.backup-kv-card{padding:14px;border:1px solid var(--border);border-radius:14px;background:rgba(255,255,255,.03);}
+.backup-kv-card .k{font-size:10px;font-family:var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--text4);}
+.backup-kv-card .v{margin-top:7px;font-size:13px;color:var(--text);font-weight:600;line-height:1.5;word-break:break-word;}
+.backup-filter-date{max-width:170px;min-width:150px;}
+.backup-toolbar .search-ico,
+.backup-toolbar .search-ico i{
+  color:var(--cyan) !important;
+  text-shadow:0 0 12px rgba(53,216,255,.45) !important;
+}
+.backup-toolbar .btn-ghost i{
+  color:var(--text2) !important;
+  text-shadow:none !important;
+}
+.backup-toolbar .btn-ghost:hover i{
+  color:var(--text) !important;
+}
+.backup-toolbar .backup-filter-date{
+  color:var(--text);
+  color-scheme:dark;
+}
+.backup-toolbar .backup-filter-date::-webkit-calendar-picker-indicator{
+  filter:invert(1) brightness(1.08);
+  opacity:.88;
+  cursor:pointer;
+}
+.backup-toolbar .backup-filter-date::-webkit-datetime-edit,
+.backup-toolbar .backup-filter-date::-webkit-datetime-edit-text,
+.backup-toolbar .backup-filter-date::-webkit-datetime-edit-month-field,
+.backup-toolbar .backup-filter-date::-webkit-datetime-edit-day-field,
+.backup-toolbar .backup-filter-date::-webkit-datetime-edit-year-field{
+  color:var(--text);
+}
+@media (max-width:1100px){
+  .backup-modal-grid{grid-template-columns:1fr;}
+  .backup-kv{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media (max-width:760px){
+  .backup-kv{grid-template-columns:1fr;}
+  .backup-actions{justify-content:flex-start;}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<div id="sidebar-slot"></div>
+  <div class="main">
+  <!-- 2) App shell / topbar -->
+  <div class="topbar">
+    <div style="flex:1">
+      <h1><i class="ri-history-line"></i> Backup</h1>
+      <p>Change History & Audit Trail - MySQL</p>
+    </div>
+    <div class="db-pill"><div class="db-dot wait" id="dbDot"></div><span id="dbTxt">กำลังโหลด...</span></div>
+    <button class="btn btn-ghost" onclick="loadBackups()"><i class="ri-refresh-line"></i> รีเฟรช</button>
+    <button class="btn btn-excel" onclick="exportBackups()"><i class="ri-file-excel-2-line"></i> Export Excel</button>
+    <button class="btn btn-logout" onclick="logout()"><i class="ri-power-line"></i> ออก</button>
+  </div>
+
+  <div class="content backup-shell">
+    <!-- 3) Summary cards + page intro -->
+    <div class="page-actions">
+      <div class="page-actions-kicker">Backup Timeline</div>
+      <div class="page-actions-grid">
+        <div>
+          <div class="page-actions-title">เก็บย้อนหลังทุกครั้งที่มีการเพิ่ม ลบ หรือแก้ไขข้อมูล</div>
+          <div class="backup-note">
+            หน้านี้จะแสดงข้อมูลก่อนแก้ไขและหลังแก้ไข พร้อมวันเวลาและผู้ที่เปลี่ยนข้อมูล เพื่อให้ตรวจสอบย้อนหลังได้จากหน้าเว็บเดียว
+          </div>
+          <div class="backup-meta">
+            <span class="backup-chip"><i class="ri-time-line"></i> Timestamp แบบละเอียด</span>
+            <span class="backup-chip"><i class="ri-file-copy-2-line"></i> เก็บค่าก่อน / หลังแก้ไข</span>
+            <span class="backup-chip"><i class="ri-shield-check-line"></i> Admin Only</span>
+          </div>
+        </div>
+        <div class="page-actions-group">
+<a class="btn btn-ghost" href="settings.html?panel=danger"><i class="ri-settings-3-line"></i> Setting</a>
+          <a class="btn btn-primary" href="export.html"><i class="ri-download-2-line"></i> Export</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon si-c"><i class="ri-database-2-line"></i></div>
+        <div><div class="stat-num sn-c" id="s0">—</div><div class="stat-label">รายการทั้งหมด</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon si-g"><i class="ri-calendar-check-line"></i></div>
+        <div><div class="stat-num sn-g" id="s1">—</div><div class="stat-label">วันนี้</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon si-y"><i class="ri-edit-2-line"></i></div>
+        <div><div class="stat-num sn-y" id="s2">—</div><div class="stat-label">แก้ไข</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon si-r"><i class="ri-delete-bin-6-line"></i></div>
+        <div><div class="stat-num" style="color:var(--red)" id="s3">—</div><div class="stat-label">ลบ</div></div>
+      </div>
+    </div>
+
+    <!-- 4) Filter toolbar -->
+    <div class="toolbar backup-toolbar">
+      <div class="search-box">
+        <span class="search-ico"><i class="ri-search-line"></i></span>
+        <input class="search-input" id="qS" placeholder="ค้นหาจากชื่อรายการ, summary, ผู้แก้ไข...">
+      </div>
+      <select class="filter-sel" id="fEntity">
+        <option value="">ทุกประเภท</option>
+        <option value="devices">Device</option>
+        <option value="emails">Email</option>
+        <option value="users">User</option>
+        <option value="device_custom_field">Device Field</option>
+      </select>
+      <select class="filter-sel" id="fAction">
+        <option value="">ทุกการกระทำ</option>
+        <option value="create">Create</option>
+        <option value="update">Update</option>
+        <option value="delete">Delete</option>
+      </select>
+      <select class="filter-sel" id="fBy">
+        <option value="">ทุกผู้แก้ไข</option>
+      </select>
+      <input class="form-inp backup-filter-date" id="fFrom" type="date" aria-label="จากวันที่">
+      <input class="form-inp backup-filter-date" id="fTo" type="date" aria-label="ถึงวันที่">
+      <button class="btn btn-ghost" onclick="clearFilters()"><i class="ri-close-line"></i> ล้าง</button>
+    </div>
+
+    <!-- 5) Backup table -->
+    <div class="table-wrap">
+      <div class="tbl-scroll sync-scroll-x">
+        <table class="backup-table">
+          <thead>
+            <tr>
+              <th style="padding-left:16px">วันเวลา</th>
+              <th>การกระทำ</th>
+              <th>ประเภท</th>
+              <th>รายการ</th>
+              <th>ผู้แก้ไข</th>
+              <th>สรุป</th>
+              <th style="text-align:right;padding-right:16px">รายละเอียด</th>
+            </tr>
+          </thead>
+          <tbody id="rows">
+            <tr><td colspan="7" class="backup-empty">กำลังโหลดข้อมูล...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- 6) Detail modal -->
+<div class="overlay" id="ovBackup">
+  <div class="modal backup-modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="bkTitle"><i class="ri-history-line"></i> Backup Detail</div>
+      <button class="modal-x" onclick="closeBackupModal()">✕</button>
+    </div>
+    <div class="modal-body" style="overflow-y:auto;max-height:calc(92vh - 120px)">
+      <div class="backup-modal-top">
+        <div class="backup-kv" id="bkMeta"></div>
+        <div>
+          <div class="section-sub" style="margin-bottom:10px">ฟิลด์ที่เปลี่ยน</div>
+          <div class="backup-field-list" id="bkDiff"></div>
+        </div>
+      </div>
+      <div class="backup-modal-grid">
+        <div class="backup-panel">
+          <div class="backup-panel-hdr">
+            <div>
+              <div class="backup-panel-title">ข้อมูลเดิม</div>
+              <div class="backup-panel-sub">Before</div>
+            </div>
+          </div>
+          <pre class="backup-code" id="bkBefore">—</pre>
+        </div>
+        <div class="backup-panel">
+          <div class="backup-panel-hdr">
+            <div>
+              <div class="backup-panel-title">ข้อมูลใหม่</div>
+              <div class="backup-panel-sub">After</div>
+            </div>
+          </div>
+          <pre class="backup-code" id="bkAfter">—</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 7) Page script -->
+<script>
+// ============================================================
+// Backup page script
+// A. Boot / shared state
+// B. Format helpers
+// C. Table rendering
+// D. Filtering / loading
+// E. Detail modal
+// F. Export
+// G. Event binding
+// ============================================================
+
+buildSidebar('backup');
+
+// ---------- A) Boot / shared state ----------
+var backupItems = [];
+var backupTimer = null;
+
+function setDB(state, text){
+  document.getElementById('dbDot').className = 'db-dot ' + state;
+  document.getElementById('dbTxt').textContent = text;
+}
+
+// ---------- B) Format helpers ----------
+function entityLabel(type){
+  return {
+    devices: 'Device',
+    emails: 'Email',
+    users: 'User',
+    device_custom_field: 'Device Field'
+  }[type] || type || '—';
+}
+
+function actionBadge(action){
+  if(action === 'create') return '<span class="badge badge-active">Create</span>';
+  if(action === 'update') return '<span class="badge badge-maintenance">Update</span>';
+  if(action === 'delete') return '<span class="badge badge-offline">Delete</span>';
+  return '<span class="badge badge-inactive">' + xss(action || '—') + '</span>';
+}
+
+function fmtDateTime(value){
+  if(!value) return '—';
+  var normalized = String(value).replace(' ', 'T');
+  var dt = new Date(normalized);
+  if (isNaN(dt.getTime())) return value;
+  return dt.toLocaleString('th-TH', {
+    year:'numeric',
+    month:'2-digit',
+    day:'2-digit',
+    hour:'2-digit',
+    minute:'2-digit',
+    second:'2-digit'
+  });
+}
+
+function diffKeys(beforeData, afterData){
+  var before = beforeData && typeof beforeData === 'object' ? beforeData : {};
+  var after = afterData && typeof afterData === 'object' ? afterData : {};
+  var map = Object.create(null);
+  Object.keys(before).forEach(function(key){ map[key] = true; });
+  Object.keys(after).forEach(function(key){ map[key] = true; });
+  return Object.keys(map).filter(function(key){
+    return JSON.stringify(before[key]) !== JSON.stringify(after[key]);
+  }).sort();
+}
+
+function snapshotText(value){
+  if(value == null) return '— ไม่มีข้อมูล —';
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch (e) {
+    return String(value);
+  }
+}
+
+// ---------- C) Table rendering ----------
+function rowHtml(item){
+  return '<tr>'
+    + '<td style="padding-left:16px"><div class="backup-record"><strong>' + xss(fmtDateTime(item.changed_at)) + '</strong><span>#' + xss(item.id) + '</span></div></td>'
+    + '<td>' + actionBadge(item.action_type) + '</td>'
+    + '<td><span class="backup-chip">' + xss(entityLabel(item.entity_type)) + '</span></td>'
+    + '<td><div class="backup-record"><strong>' + xss(item.entity_label || item.entity_id || '—') + '</strong><span>' + xss(item.entity_id || '') + '</span></div></td>'
+    + '<td><span class="backup-chip"><i class="ri-user-3-line"></i> ' + xss(item.changed_by || 'system') + '</span></td>'
+    + '<td><div class="backup-summary">' + xss(item.summary_text || '—') + '</div></td>'
+    + '<td style="padding-right:16px"><div class="backup-actions"><button class="act-btn view" onclick="openBackupModal(' + item.id + ')" title="ดูย้อนหลัง"><span><i class="ri-search-eye-line"></i></span><span class="txt">ดู</span></button></div></td>'
+    + '</tr>';
+}
+
+function renderRows(){
+  var tbody = document.getElementById('rows');
+  if(!backupItems.length){
+    tbody.innerHTML = '<tr><td colspan="7" class="backup-empty">ยังไม่มีประวัติการแก้ไขในเงื่อนไขที่เลือก</td></tr>';
+    return;
+  }
+  tbody.innerHTML = backupItems.map(rowHtml).join('');
+}
+
+function syncChangedByFilter(items){
+  var select = document.getElementById('fBy');
+  var current = select.value;
+  var seen = Object.create(null);
+  var names = [];
+  items.forEach(function(item){
+    var name = (item.changed_by || '').trim();
+    if(!name || seen[name]) return;
+    seen[name] = true;
+    names.push(name);
+  });
+  names.sort();
+  select.innerHTML = '<option value="">ทุกผู้แก้ไข</option>' + names.map(function(name){
+    return '<option value="' + escapeAttr(name) + '">' + xss(name) + '</option>';
+  }).join('');
+  if(current && seen[current]) select.value = current;
+}
+
+function applySummary(summary){
+  var byAction = Object.create(null);
+  (summary && summary.by_action ? summary.by_action : []).forEach(function(item){
+    byAction[item.action_type] = Number(item.cnt || 0);
+  });
+  document.getElementById('s0').textContent = Number(summary && summary.total || 0);
+  document.getElementById('s1').textContent = Number(summary && summary.today || 0);
+  document.getElementById('s2').textContent = Number(byAction.update || 0);
+  document.getElementById('s3').textContent = Number(byAction.delete || 0);
+}
+
+// ---------- D) Filtering / loading ----------
+function buildParams(){
+  var params = { limit: 500 };
+  var q = normalizeInputValue(document.getElementById('qS').value);
+  var entity = document.getElementById('fEntity').value;
+  var action = document.getElementById('fAction').value;
+  var changedBy = document.getElementById('fBy').value;
+  var from = document.getElementById('fFrom').value;
+  var to = document.getElementById('fTo').value;
+  if(q) params.q = q;
+  if(entity) params.entity_type = entity;
+  if(action) params.action_type = action;
+  if(changedBy) params.changed_by = changedBy;
+  if(from) params.date_from = from;
+  if(to) params.date_to = to;
+  return params;
+}
+
+async function loadBackups(){
+  setDB('wait', 'กำลังโหลด...');
+  try{
+    var data = await apiGet(API.backups, buildParams());
+    backupItems = Array.isArray(data.items) ? data.items : [];
+    applySummary(data.summary || {});
+    syncChangedByFilter(backupItems);
+    renderRows();
+    setDB('ok', 'MySQL · Backup Live');
+  }catch(e){
+    backupItems = [];
+    renderRows();
+    setDB('err', 'โหลดไม่สำเร็จ');
+    showToast('โหลด Backup ไม่สำเร็จ: ' + e.message, 'error');
+  }
+}
+
+function scheduleLoad(){
+  clearTimeout(backupTimer);
+  backupTimer = setTimeout(loadBackups, 260);
+}
+
+function clearFilters(){
+  document.getElementById('qS').value = '';
+  document.getElementById('fEntity').value = '';
+  document.getElementById('fAction').value = '';
+  document.getElementById('fBy').value = '';
+  document.getElementById('fFrom').value = '';
+  document.getElementById('fTo').value = '';
+  loadBackups();
+}
+
+// ---------- E) Detail modal ----------
+function openBackupModal(id){
+  var item = backupItems.find(function(entry){ return Number(entry.id) === Number(id); });
+  if(!item) return;
+
+  var changed = diffKeys(item.before_data, item.after_data);
+  document.getElementById('bkTitle').innerHTML = '<i class="ri-history-line"></i> ' + xss(item.entity_label || item.entity_id || 'Backup Detail');
+  document.getElementById('bkMeta').innerHTML = [
+    { k:'ประเภท', v:entityLabel(item.entity_type) },
+    { k:'การกระทำ', v:item.action_type || '—' },
+    { k:'วันเวลา', v:fmtDateTime(item.changed_at) },
+    { k:'ผู้แก้ไข', v:item.changed_by || 'system' }
+  ].map(function(card){
+    return '<div class="backup-kv-card"><div class="k">' + xss(card.k) + '</div><div class="v">' + xss(card.v) + '</div></div>';
+  }).join('');
+
+  document.getElementById('bkDiff').innerHTML = changed.length
+    ? changed.map(function(key){ return '<span class="backup-field">' + xss(key) + '</span>'; }).join('')
+    : '<span class="backup-chip">ไม่มีฟิลด์ที่เปลี่ยนแปลง</span>';
+
+  document.getElementById('bkBefore').textContent = snapshotText(item.before_data);
+  document.getElementById('bkAfter').textContent = snapshotText(item.after_data);
+  document.getElementById('ovBackup').classList.add('open');
+}
+
+function closeBackupModal(){
+  document.getElementById('ovBackup').classList.remove('open');
+}
+
+// ---------- F) Export ----------
+function exportBackups(){
+  ensureLocalXlsx(function(okXlsx){
+    if(!okXlsx || typeof XLSX === 'undefined'){
+      showToast('ไม่สามารถโหลด XLSX ได้', 'error');
+      return;
+    }
+    try{
+      var rows = backupItems.map(function(item){
+        var changed = diffKeys(item.before_data, item.after_data);
+        return {
+          'วันเวลา': fmtDateTime(item.changed_at),
+          'การกระทำ': item.action_type || '',
+          'ประเภท': entityLabel(item.entity_type),
+          'รายการ': item.entity_label || '',
+          'รหัสข้อมูล': item.entity_id || '',
+          'ผู้แก้ไข': item.changed_by || 'system',
+          'สรุป': item.summary_text || '',
+          'ฟิลด์ที่เปลี่ยน': changed.join(', '),
+          'ก่อนแก้ไข': snapshotText(item.before_data),
+          'หลังแก้ไข': snapshotText(item.after_data)
+        };
+      });
+      var ws = XLSX.utils.json_to_sheet(rows);
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Backup Logs');
+      XLSX.writeFile(wb, 'devicehub-backup-history.xlsx');
+      showToast('Export backup history แล้ว', 'success');
+    }catch(e){
+      showToast('Export backup history ไม่สำเร็จ: ' + e.message, 'error');
+    }
+  });
+}
+
+// ---------- G) Event binding ----------
+['qS','fEntity','fAction','fBy','fFrom','fTo'].forEach(function(id){
+  var el = document.getElementById(id);
+  if(!el) return;
+  var evt = id === 'qS' ? 'input' : 'change';
+  el.addEventListener(evt, scheduleLoad);
+});
+
+document.getElementById('qS').addEventListener('keydown', function(e){
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    loadBackups();
+  }
+});
+
+document.getElementById('ovBackup').addEventListener('click', function(e){
+  if(e.target === e.currentTarget) closeBackupModal();
+});
+
+loadBackups();
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+

@@ -6,11 +6,11 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>KF Email Address List — DeviceHub</title>
-<link rel="stylesheet" href="style.css?v=20260326ae">
-<script src="vendor/xlsx.full.min.js?v=20260324"></script>
+<link rel="stylesheet" href="assets/css/theme.css?v=20260427c">
+<script src="assets/vendor/xlsx.full.min.js?v=20260427c"></script>
 <script>
 (function() {
-  var want = '20260326ae';
+  var want = '20260427a';
   try {
     var url = new URL(window.location.href);
     if (url.searchParams.get('v') !== want) {
@@ -20,8 +20,8 @@
   } catch (e) {}
 })();
 </script>
-<script src="config.js?v=20260326u"></script>
-<script src="shared.js?v=20260326u"></script>
+<script src="assets/js/config.js?v=20260427c"></script>
+<script src="assets/js/shared.js?v=20260427c"></script>
 <style>
 /* Tabs */
 .tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:18px;}
@@ -91,9 +91,13 @@
 .preview-stat-lbl{font-size:11px;color:var(--text2);margin-top:4px;}
 .preview-stat-sub{font-size:10px;color:var(--text3);margin-top:2px;}
 .preview-dept-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
-.preview-dept-card{padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.02);}
+.preview-dept-card{width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.02);cursor:pointer;transition:transform .16s ease,border-color .16s ease,background .16s ease,box-shadow .16s ease;text-align:left;font:inherit;appearance:none;-webkit-appearance:none;}
+.preview-dept-card:hover{transform:translateY(-1px);border-color:rgba(0,212,255,.28);background:rgba(0,212,255,.06);box-shadow:0 10px 22px rgba(0,212,255,.08);}
+.preview-dept-card.active{border-color:rgba(0,212,255,.4);background:linear-gradient(180deg,rgba(0,212,255,.12),rgba(0,212,255,.05));box-shadow:0 12px 26px rgba(0,212,255,.1);}
 .preview-dept-card strong{display:block;color:var(--cyan);font-size:13px;margin-bottom:3px;}
 .preview-dept-card span{font-size:11px;color:var(--text2);}
+.preview-filter-note{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;border-radius:14px;border:1px solid rgba(0,212,255,.16);background:rgba(0,212,255,.06);font-size:12px;color:var(--text2);}
+.preview-filter-note strong{color:var(--cyan);}
 .preview-table-wrap{border:1px solid var(--border);border-radius:18px;overflow:auto;background:linear-gradient(180deg,rgba(13,19,30,.95),rgba(9,13,21,.98));}
 .preview-table{width:100%;border-collapse:collapse;min-width:960px;}
 .preview-table th{padding:11px 12px;background:var(--s2);font-size:11px;font-family:var(--mono);color:var(--text3);text-align:left;border-bottom:1px solid var(--border);}
@@ -121,13 +125,21 @@
 </style>
 </head>
 <body>
+<!--
+  KF Email Address List page map
+  1. App shell / topbar / quick actions
+  2. Import tabs and preview-export workspace
+  3. Department summary tiles
+  4. Grouped email matrix table
+  5. Modal forms and inline script
+-->
 <div class="layout">
 <div id="sidebar-slot"></div>
 <div class="main">
   <div class="topbar">
-    <div style="flex:1"><h1>📋 KF Email Address List</h1><p>Import จาก Excel / ตั้งค่า Group / Export</p></div>
+    <div style="flex:1"><h1><i class="ri-contacts-book-line"></i> KF Email Address List</h1><p>Import จาก Excel / ตั้งค่า Group / Export</p></div>
     <div class="db-pill"><div class="db-dot wait" id="dbDot"></div><span id="dbTxt">—</span></div>
-    <button class="btn btn-logout" onclick="logout()">⏻</button>
+    <button class="btn btn-logout" onclick="logout()"><i class="ri-power-line"></i></button>
   </div>
   <div class="content">
 
@@ -138,28 +150,28 @@
         <div class="page-actions-note">ดึงข้อมูลจากฐาน เพิ่มรายการใหม่ บันทึกกลับ และ export ได้จากจุดเดียว ไม่ต้องสลับไปหาปุ่มตามหัวข้อของหน้า</div>
       </div>
       <div class="page-actions-group">
-        <button class="btn btn-ghost" id="btnLoad" onclick="loadFromDB()">🔄 รีเฟรชข้อมูล</button>
-        <button class="btn btn-success" id="btnSave" onclick="saveToDb()" style="display:none">💾 บันทึกลง MySQL</button>
-        <button class="btn btn-primary" id="btnExport" onclick="exportKF()" style="display:none">📥 Export Excel</button>
-        <button class="btn btn-primary" onclick="openManualCreate()">+ เพิ่มคนใหม่</button>
+        <button class="btn btn-ghost" id="btnLoad" onclick="loadFromDB()"><i class="ri-refresh-line"></i> รีเฟรชข้อมูล</button>
+        <button class="btn btn-success" id="btnSave" onclick="saveToDb()" style="display:none"><i class="ri-save-3-line"></i> บันทึกลง MySQL</button>
+        <button class="btn btn-primary" id="btnExport" onclick="exportKF()" style="display:none"><i class="ri-download-2-line"></i> Export Excel</button>
+        <button class="btn btn-primary" onclick="openManualCreate()"><i class="ri-add-line"></i> เพิ่มคนใหม่</button>
       </div>
     </div>
 
     <!-- TABS -->
     <div class="tabs">
-      <button class="tab active" id="tabImport" onclick="showTab('t1',this)">📤 Import จาก Excel</button>
-      <button class="tab" id="tabGroup" onclick="showTab('t2',this)">⚙️ ตั้งค่า Group</button>
-      <button class="tab" id="tabPreview" onclick="showTab('t3',this)">👁 Preview / Export</button>
+      <button class="tab active" id="tabImport" onclick="showTab('t1',this)"><i class="ri-upload-2-line"></i> Import จาก Excel</button>
+      <button class="tab" id="tabGroup" onclick="showTab('t2',this)"><i class="ri-settings-3-line"></i> ตั้งค่า Group</button>
+      <button class="tab" id="tabPreview" onclick="showTab('t3',this)"><i class="ri-eye-line"></i> Preview / Export</button>
     </div>
 
     <!-- TAB 1: IMPORT -->
     <div class="tabpane active" id="t1">
       <div class="card" style="margin-bottom:16px">
-        <div class="card-hdr"><span class="card-title">📤 Import ข้อมูลจาก Excel</span></div>
+        <div class="card-hdr"><span class="card-title"><i class="ri-upload-2-line"></i> Import ข้อมูลจาก Excel</span></div>
         <div class="card-body">
           <!-- Upload zone -->
           <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileIn').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="onDrop(event)">
-            <div class="ico">📂</div>
+            <div class="ico"><i class="ri-folder-upload-line"></i></div>
             <p>คลิกหรือลาก Excel ไฟล์มาวางที่นี่</p>
             <small>รองรับ .xlsx .xls .csv &nbsp;|&nbsp; Format ตาม KF Email Address List</small>
           </div>
@@ -167,7 +179,7 @@
 
           <!-- Format guide -->
           <div style="margin-top:16px;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;font-size:12.5px;color:var(--text2);line-height:2">
-            <b style="color:var(--cyan)">📐 Format ของไฟล์ Excel ที่รองรับ:</b><br>
+            <b style="color:var(--cyan)"><i class="ri-ruler-2-line"></i> Format ของไฟล์ Excel ที่รองรับ:</b><br>
             • Row 1: Title (KF Email Address List Y20XX)<br>
             • Row 2: Column headers: <code style="color:var(--cyan)">Department | No. | E-Mail address (Active) | Person in chart | &lt;group cols...&gt;</code><br>
             • Row 3: Group names (KF All Member, KF_BCC All Member, ...)<br>
@@ -189,10 +201,10 @@
 
         <div class="card">
           <div class="card-hdr">
-            <span class="card-title">✅ Parse สำเร็จ — ตรวจสอบข้อมูลก่อนนำเข้า</span>
+            <span class="card-title"><i class="ri-check-line"></i> Parse สำเร็จ — ตรวจสอบข้อมูลก่อนนำเข้า</span>
             <div style="display:flex;gap:8px">
-              <button class="btn btn-ghost" onclick="openPreviewTab()" style="font-size:12px">👁 Preview</button>
-              <button class="btn btn-success" onclick="saveToDb()" style="font-size:12px">💾 บันทึกลง MySQL</button>
+              <button class="btn btn-ghost" onclick="openPreviewTab()" style="font-size:12px"><i class="ri-eye-line"></i> Preview</button>
+              <button class="btn btn-success" onclick="saveToDb()" style="font-size:12px"><i class="ri-save-3-line"></i> บันทึกลง MySQL</button>
             </div>
           </div>
           <div class="card-body" style="padding:0;overflow-x:auto">
@@ -211,10 +223,10 @@
       <!-- Add form -->
       <div class="card" style="margin-bottom:14px">
         <div class="card-hdr">
-          <span class="card-title">✏️ เพิ่ม / แก้ไขรายชื่อ</span>
+          <span class="card-title"><i class="ri-pencil-line"></i> เพิ่ม / แก้ไขรายชื่อ</span>
           <div style="display:flex;gap:8px;align-items:center">
-            <input class="search-input" id="manSearch" placeholder="🔍 ค้นหาชื่อ / email..." oninput="renderManual()" style="width:220px">
-            <button class="btn btn-primary" onclick="openManModal(null)" style="font-size:12px">+ เพิ่มคนใหม่</button>
+            <input class="search-input" id="manSearch" placeholder="ค้นหาชื่อ / email..." oninput="renderManual()" style="width:220px">
+            <button class="btn btn-primary" onclick="openManModal(null)" style="font-size:12px"><i class="ri-add-line"></i> เพิ่มคนใหม่</button>
           </div>
         </div>
         <div class="card-body" style="padding:0">
@@ -233,8 +245,8 @@
           <div style="padding:10px 16px;border-top:1px solid var(--border);background:var(--s2);display:flex;align-items:center;justify-content:space-between">
             <span style="font-size:12px;color:var(--text3)" id="manCount">0 รายการ</span>
             <div style="display:flex;gap:8px">
-              <button class="btn btn-ghost" onclick="openPreviewTab()" style="font-size:12px">👁 Preview</button>
-              <button class="btn btn-success" onclick="saveToDb()" style="font-size:12px">💾 บันทึกลง MySQL</button>
+              <button class="btn btn-ghost" onclick="openPreviewTab()" style="font-size:12px"><i class="ri-eye-line"></i> Preview</button>
+              <button class="btn btn-success" onclick="saveToDb()" style="font-size:12px"><i class="ri-save-3-line"></i> บันทึกลง MySQL</button>
             </div>
           </div>
         </div>
@@ -245,8 +257,8 @@
     <div class="overlay" id="manOv" hidden aria-hidden="true">
     <div class="modal" style="width:620px">
       <div class="modal-hdr">
-        <div class="modal-title" id="manOvTitle">➕ เพิ่มคนใหม่</div>
-        <button class="modal-x" onclick="closeManModal()">✕</button>
+        <div class="modal-title" id="manOvTitle"><i class="ri-add-line"></i> เพิ่มคนใหม่</div>
+        <button class="modal-x" onclick="closeManModal()"><i class="ri-close-line"></i></button>
       </div>
       <div class="modal-body">
         <div class="form-grid">
@@ -286,13 +298,13 @@
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn btn-ghost" onclick="selectGroupPreset('all')" style="font-size:11px;padding:4px 10px">✓ All Thai</button>
             <button class="btn btn-ghost" onclick="selectGroupPreset('thai_mgmt')" style="font-size:11px;padding:4px 10px">✓ Management</button>
-            <button class="btn btn-ghost" onclick="selectGroupPreset('none')" style="font-size:11px;padding:4px 10px">✕ ล้างทั้งหมด</button>
+            <button class="btn btn-ghost" onclick="selectGroupPreset('none')" style="font-size:11px;padding:4px 10px"><i class="ri-close-line"></i> ล้างทั้งหมด</button>
           </div>
         </div>
       </div>
     <div class="modal-foot">
         <button class="btn btn-ghost" onclick="closeManModal()">ยกเลิก</button>
-        <button class="btn btn-primary" onclick="saveManPerson()" id="manSaveBtn">💾 บันทึก</button>
+        <button class="btn btn-primary" onclick="saveManPerson()" id="manSaveBtn"><i class="ri-save-3-line"></i> บันทึก</button>
       </div>
     </div>
     </div>
@@ -301,7 +313,7 @@
     <div class="modal" style="width:700px;max-height:90vh">
       <div class="modal-hdr">
         <div class="modal-title" id="manDetailTitle">รายละเอียดรายชื่อ</div>
-        <button class="modal-x" onclick="closeManDetail()">✕</button>
+        <button class="modal-x" onclick="closeManDetail()"><i class="ri-close-line"></i></button>
       </div>
       <div class="modal-body" id="manDetailBody" style="overflow-y:auto;max-height:calc(90vh - 120px)"></div>
       <div class="modal-foot" id="manDetailFoot"></div>
@@ -324,7 +336,7 @@
       </div>
       <!-- Export config -->
       <div class="card">
-        <div class="card-hdr"><span class="card-title">⚙️ ตั้งค่า Export</span></div>
+        <div class="card-hdr"><span class="card-title"><i class="ri-settings-3-line"></i> ตั้งค่า Export</span></div>
         <div class="card-body">
           <div class="form-grid">
             <div class="form-grp"><label class="form-lbl">ปี (Year)</label><input class="form-inp" id="fYear" value="2026"></div>
@@ -352,6 +364,7 @@ buildSidebar('email-list');
 // ── PARSED DATA ────────────────────────────────────────────────
 var parsedData = []; // [{email, name, dept, deptLabel, groups:[gemail,...], isNew}]
 var parsedGroups = []; // [{name, email}]
+var previewDeptFilter = '';
 var GROUP_CHIP_BASE_STYLE = 'padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;transition:all .15s;border:1px solid;';
 var GROUP_CHIP_OFF_STYLE = GROUP_CHIP_BASE_STYLE + 'background:var(--s2);color:var(--text3);border-color:var(--border);';
 var GROUP_CHIP_ON_STYLE = GROUP_CHIP_BASE_STYLE + 'background:rgba(0,212,255,.15);color:var(--cyan);border-color:rgba(0,212,255,.3);';
@@ -380,6 +393,12 @@ function setGroupChipState(btn, selected) {
   if (!btn) return;
   btn.style.cssText = selected ? GROUP_CHIP_ON_STYLE : GROUP_CHIP_OFF_STYLE;
   btn.dataset.sel = selected ? '1' : '0';
+}
+
+function selectPreviewDept(dept) {
+  var next = normalizeDeptName(dept);
+  previewDeptFilter = (previewDeptFilter === next) ? '' : next;
+  renderPreview();
 }
 
 // ── DEFAULT GROUPS ─────────────────────────────────────────────
@@ -414,7 +433,7 @@ function getGroups() {
 function renderGroups(grps) {
   document.getElementById('gGrid').innerHTML=grps.map(function(g,i){
     return '<div class="gi" style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;position:relative">'
-      +'<button onclick="delGroup('+i+')" style="position:absolute;top:4px;right:5px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:11px" onmouseenter="this.style.color=\'var(--red)\'" onmouseleave="this.style.color=\'var(--text3)\'">✕</button>'
+      +'<button onclick="delGroup('+i+')" style="position:absolute;top:4px;right:5px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:11px" onmouseenter="this.style.color=\'var(--red)\'" onmouseleave="this.style.color=\'var(--text3)\'"><i class="ri-close-line"></i></button>'
       +'<input style="width:100%;background:transparent;border:none;outline:none;font-weight:700;color:var(--cyan);font-size:12px;margin-bottom:2px" value="'+xe(g.name)+'">'
       +'<hr style="border:none;border-top:1px solid var(--border);margin:3px 0">'
       +'<input style="width:100%;background:transparent;border:none;outline:none;font-family:var(--mono);font-size:10.5px;color:var(--text2)" value="'+xe(g.email)+'">'
@@ -638,7 +657,7 @@ async function loadFromDB(options) {
   setDB('wait','กำลังโหลดข้อมูล...');
   if (btnLoad) {
     btnLoad.disabled = true;
-    btnLoad.textContent = '⏳ กำลังโหลด...';
+      btnLoad.textContent = 'กำลังโหลด...';
   }
   try {
     var dbData = await apiGet(API.emails);
@@ -691,7 +710,7 @@ async function loadFromDB(options) {
   } finally {
     if (btnLoad) {
       btnLoad.disabled = false;
-      btnLoad.textContent = btnText || '🔄 รีเฟรชข้อมูล';
+        btnLoad.textContent = btnText || 'รีเฟรชข้อมูล';
     }
   }
 }
@@ -717,15 +736,30 @@ async function saveToDb() {
     console.error('Duplicates found:', internalDuplicates);
     return;
   }
+  var missingDeptCount = parsedData.filter(function(p){ return !normalizeInputValue(p.dept); }).length;
+  var missingGroupCount = parsedData.filter(function(p){ return !(p.groups && p.groups.length); }).length;
+  var missingLastNameCount = parsedData.filter(function(p){
+    var parts = String(p.name || '').trim().split(/\s+/).filter(Boolean);
+    return parts.length < 2;
+  }).length;
+  if (!confirmIncompleteSave({
+    title:'ข้อมูล KF Email บางรายการยังว่าง',
+    missing:[
+      missingDeptCount ? ('แผนก ' + missingDeptCount + ' รายการ') : '',
+      missingGroupCount ? ('Group ' + missingGroupCount + ' รายการ') : '',
+      missingLastNameCount ? ('นามสกุล ' + missingLastNameCount + ' รายการ') : ''
+    ].filter(Boolean),
+    note:'ถ้าตั้งใจให้บางรายการว่างไว้ สามารถกดตกลงเพื่อบันทึกต่อได้'
+  })) return;
   
   var btnSave = document.getElementById('btnSave');
   btnSave.disabled=true;
-  btnSave.textContent='⏳ กำลังบันทึก...';
+  btnSave.textContent='กำลังบันทึก...';
 
   var updated=0, created=0, fail=0, failList=[], createdList=[];
   var allEmails;
   try { allEmails = await apiGet(API.emails); }
-  catch(e){ showToast('❌ โหลด DB ไม่ได้: '+e.message,'error'); btnSave.disabled=false; btnSave.textContent='💾 บันทึกลง MySQL'; return; }
+  catch(e){ showToast('❌ โหลด DB ไม่ได้: '+e.message,'error'); btnSave.disabled=false; btnSave.textContent='บันทึกลง MySQL'; return; }
 
   for (var i=0; i<parsedData.length; i++) {
     var p = parsedData[i];
@@ -772,7 +806,7 @@ async function saveToDb() {
   }
 
   btnSave.disabled=false;
-  btnSave.textContent='💾 บันทึกลง MySQL';
+  btnSave.textContent='บันทึกลง MySQL';
 
   if (fail) {
     showToast('⚠️ สำเร็จ:'+(updated+created)+' | ล้มเหลว:'+fail, 'error');
@@ -808,11 +842,15 @@ function renderPreview() {
     if(!dm[dep]){dm[dep]=[];dorder.push(dep);}
     dm[dep].push(p);
   });
+  if (previewDeptFilter && !dm[previewDeptFilter]) {
+    previewDeptFilter = '';
+  }
 
   var year=document.getElementById('fYear').value||'2026';
   var coName=document.getElementById('fCo').value||'KF';
   var deptStats = dorder.map(function(d){ return {name:d, count:dm[d].length}; });
   var noGroupCount = sorted.filter(function(p){ return !(p.groups && p.groups.length); }).length;
+  var visibleOrder = previewDeptFilter ? [previewDeptFilter] : dorder.slice();
   var html='<div class="preview-shell">'
     +'<div class="preview-head">'
       +'<div class="preview-copy">'
@@ -822,7 +860,7 @@ function renderPreview() {
       +'</div>'
       +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
         +'<button onclick="openManualCreate()" class="btn btn-primary" style="font-size:12px">+ เพิ่มคนใหม่</button>'
-        +'<button onclick="exportKF()" class="btn btn-excel" style="font-size:12px">📥 Export Excel</button>'
+        +'<button onclick="exportKF()" class="btn btn-excel" style="font-size:12px"><i class="ri-download-2-line"></i> Export Excel</button>'
       +'</div>'
     +'</div>';
 
@@ -834,13 +872,20 @@ function renderPreview() {
   +'</div>';
 
   html+='<div class="preview-dept-grid">';
+  html+='<button type="button" class="preview-dept-card'+(previewDeptFilter ? '' : ' active')+'" onclick="selectPreviewDept(\'\')" aria-pressed="'+(previewDeptFilter ? 'false' : 'true')+'">'
+    +'<strong>ทั้งหมด</strong>'
+    +'<span>'+sorted.length+' Email</span>'
+  +'</button>';
   deptStats.forEach(function(ds){
-    html+='<div class="preview-dept-card">'
+    html+='<button type="button" class="preview-dept-card'+(previewDeptFilter===ds.name?' active':'')+'" onclick="selectPreviewDept('+JSON.stringify(ds.name)+')" aria-pressed="'+(previewDeptFilter===ds.name?'true':'false')+'">'
       +'<strong>'+xe(ds.name)+'</strong>'
       +'<span>'+ds.count+' Email</span>'
-    +'</div>';
+    +'</button>';
   });
   html+='</div>';
+  if (previewDeptFilter) {
+    html+='<div class="preview-filter-note"><strong>กำลังแสดงเฉพาะ:</strong><span>'+xe(previewDeptFilter)+'</span><button type="button" class="btn btn-ghost" style="font-size:11px;padding:5px 10px" onclick="selectPreviewDept(\'\')">ล้างตัวกรอง</button></div>';
+  }
 
   html+='<div class="preview-table-wrap sync-scroll-x"><table class="preview-table"><thead><tr>'
     +'<th class="num">No.</th>'
@@ -855,7 +900,7 @@ function renderPreview() {
   var no=1;
   var totals=groups.map(function(){return 0;});
 
-  dorder.forEach(function(dept){
+  visibleOrder.forEach(function(dept){
     var rows=dm[dept];
     rows.forEach(function(p,i){
       var list=p.groups||[];
@@ -884,9 +929,9 @@ function renderPreview() {
         if(inG)totals[gi]++;
       });
       html+='<td class="sticky-actions-cell"><div class="row-actions">'
-        +'<button class="act-btn view" onclick="showManDetail('+realIdx+')" title="ดูรายละเอียด"><span>🔍</span><span class="txt">ดู</span></button>'
-        +'<button class="act-btn edit" onclick="openManModal('+realIdx+')" title="แก้ไข"><span>✏️</span><span class="txt">แก้ไข</span></button>'
-        +'<button class="act-btn del" onclick="delManPerson('+realIdx+')" title="ลบ"><span>🗑️</span><span class="txt">ลบ</span></button>'
+        +'<button class="act-btn view" onclick="showManDetail('+realIdx+')" title="ดูรายละเอียด"><span><i class="ri-search-line"></i></span><span class="txt">ดู</span></button>'
+        +'<button class="act-btn edit" onclick="openManModal('+realIdx+')" title="แก้ไข"><span><i class="ri-pencil-line"></i></span><span class="txt">แก้ไข</span></button>'
+        +'<button class="act-btn del" onclick="delManPerson('+realIdx+')" title="ลบ"><span><i class="ri-delete-bin-6-line"></i></span><span class="txt">ลบ</span></button>'
       +'</div></td></tr>';
     });
   });
@@ -1085,9 +1130,9 @@ function renderManual() {
       +'<td style="padding:8px 12px;font-size:12px;color:var(--text2)">'+xe(getDeptDisplayName(p.dept||p.deptLabel))+'</td>'
       +'<td style="padding:8px 12px">'+(gc||'<span style="color:var(--text3);font-size:11px">ไม่มี Group</span>')+'</td>'
       +'<td style="padding:8px 12px"><div class="row-actions">'
-      +'<button class="act-btn view" onclick="showManDetail('+realIdx+')" title="ดูรายละเอียด"><span>🔍</span><span class="txt">ดู</span></button>'
-      +'<button class="act-btn edit" onclick="openManModal('+realIdx+')" title="แก้ไข"><span>✏️</span><span class="txt">แก้ไข</span></button>'
-      +'<button class="act-btn del" onclick="delManPerson('+realIdx+')" title="ลบ"><span>🗑️</span><span class="txt">ลบ</span></button>'
+      +'<button class="act-btn view" onclick="showManDetail('+realIdx+')" title="ดูรายละเอียด"><span><i class="ri-search-line"></i></span><span class="txt">ดู</span></button>'
+      +'<button class="act-btn edit" onclick="openManModal('+realIdx+')" title="แก้ไข"><span><i class="ri-pencil-line"></i></span><span class="txt">แก้ไข</span></button>'
+      +'<button class="act-btn del" onclick="delManPerson('+realIdx+')" title="ลบ"><span><i class="ri-delete-bin-6-line"></i></span><span class="txt">ลบ</span></button>'
       +'</div></td></tr>';
   }).join('');
 }
@@ -1135,7 +1180,7 @@ function showManDetail(idx) {
     + '</div>';
   document.getElementById('manDetailFoot').innerHTML = ''
     + '<button class="btn btn-ghost" onclick="closeManDetail()">ปิด</button>'
-    + '<button class="btn btn-primary" onclick="closeManDetail();openManModal(' + idx + ')">✏️ แก้ไข</button>';
+    + '<button class="btn btn-primary" onclick="closeManDetail();openManModal(' + idx + ')"><i class="ri-pencil-line"></i> แก้ไข</button>';
 
   var overlay = document.getElementById('manDetailOv');
   overlay.hidden = false;
@@ -1168,7 +1213,7 @@ function openManModal(idx) {
   manEditIdx = idx;
   var p = (idx !== null) ? parsedData[idx] : null;
 
-  document.getElementById('manOvTitle').textContent = p ? '✏️ แก้ไข: '+p.email : '➕ เพิ่มคนใหม่';
+  document.getElementById('manOvTitle').innerHTML = p ? '<i class="ri-pencil-line"></i> แก้ไข: '+esc(p.email,'') : '<i class="ri-add-line"></i> เพิ่มคนใหม่';
   document.getElementById('mEmail').value = p ? p.email : '';
   var nameParts = p ? (p.name||'').split(' ') : [];
   document.getElementById('mFirst').value = p ? (nameParts[0]||'') : '';
@@ -1411,6 +1456,14 @@ function saveManPerson() {
   var dept = subDeptVal; // ใช้ sub-department เป็น dept
 
   var person = { email:email, name:name, dept:dept, deptLabel:dept, groups:selGroups, odl:selGroups.join(',') };
+  if (!confirmIncompleteSave({
+    title:'ข้อมูลรายชื่อบางส่วนยังว่าง',
+    checks:[
+      {label:'นามสกุล', value:last},
+      {label:'Group', value:selGroups}
+    ],
+    note:'ถ้าไม่มีข้อมูลจริง สามารถกดตกลงเพื่อบันทึกต่อได้'
+  })) return;
 
   if (manEditIdx !== null) {
     // Editing: check if email is changing and conflicts with another record
@@ -1481,6 +1534,17 @@ loadFromDB({ silent: true });
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
 
 
 

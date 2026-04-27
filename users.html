@@ -5,10 +5,10 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>ผู้ใช้งาน — DeviceHub</title>
-<link rel="stylesheet" href="style.css?v=20260326v">
-<script src="vendor/xlsx.full.min.js?v=20260324"></script>
-<script src="config.js?v=20260326u"></script><script src="shared.js?v=20260326u"></script>
+<title>User Management — DeviceHub</title>
+<link rel="stylesheet" href="assets/css/theme.css?v=20260427c">
+<script src="assets/vendor/xlsx.full.min.js?v=20260427c"></script>
+<script src="assets/js/config.js?v=20260427c"></script><script src="assets/js/shared.js?v=20260427c"></script>
 <style>
 .tbl-scroll{overflow-x:auto;overflow-y:hidden;}
 .tbl-scroll table{min-width:1080px;}
@@ -29,15 +29,30 @@
 .sticky-actions-head{position:sticky;right:0;background:var(--s2);z-index:6;min-width:208px;box-shadow:-14px 0 18px rgba(5,10,18,.45);}
 .sticky-actions-cell{position:sticky;right:0;background:linear-gradient(180deg,rgba(13,19,30,.98),rgba(9,13,21,.99));z-index:3;min-width:208px;box-shadow:-14px 0 18px rgba(5,10,18,.45);}
 tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
+body.embedded-users{background:transparent;}
+body.embedded-users .layout{display:block;min-height:0;}
+body.embedded-users #sidebar-slot,
+body.embedded-users .topbar{display:none !important;}
+body.embedded-users .main{margin-left:0 !important;width:100%;max-width:none;background:transparent;padding:0;}
+body.embedded-users .content{padding:0;width:100%;max-width:none;}
+body.embedded-users .page-actions{margin-top:0;}
+body.embedded-users .table-wrap{border-radius:16px;width:100%;}
 @media (max-width:760px){.dv-grid{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
+<!--
+  Users page map
+  1. App shell / topbar / summary cards
+  2. Search + filters toolbar
+  3. Users table and action buttons
+  4. Add / edit modal and inline script
+-->
 <div class="layout">
 <div id="sidebar-slot"></div>
 <div class="main">
   <div class="topbar">
-    <div style="flex:1"><h1>👥 ผู้ใช้งาน</h1><p>Users — MySQL</p></div>
+  <div style="flex:1"><h1><i class="ri-user-3-line"></i> User Management</h1><p>Setting / Users — MySQL</p></div>
     <div class="db-pill"><div class="db-dot wait" id="dbDot"></div><span id="dbTxt">โหลด...</span></div>
     <button class="btn btn-logout" onclick="logout()">⏻</button>
   </div>
@@ -60,21 +75,21 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
       </div>
       <div class="page-actions-group">
         <button class="btn btn-ghost" onclick="loadData()">🔄 รีเฟรช</button>
-        <button class="btn btn-excel" onclick="exportXL()">📥 Export Excel</button>
+        <button class="btn btn-excel" onclick="exportXL()"><i class="ri-file-excel-2-line"></i> Export Excel</button>
         <button class="btn btn-primary" id="btnAdd" style="display:none" onclick="openModal(null)">+ เพิ่มผู้ใช้</button>
       </div>
     </div>
 
     <!-- Stats — เฉพาะ admin ดู count admin -->
     <div class="stats-row">
-      <div class="stat-card"><div class="stat-icon si-c">👥</div><div><div class="stat-num sn-c" id="s0">—</div><div class="stat-label">ทั้งหมด</div></div></div>
-      <div class="stat-card"><div class="stat-icon si-g">✅</div><div><div class="stat-num sn-g" id="s1">—</div><div class="stat-label">Active</div></div></div>
-      <div class="stat-card"><div class="stat-icon si-v">👑</div><div><div class="stat-num" style="color:var(--violet)" id="s2">—</div><div class="stat-label">Admin</div></div></div>
-      <div class="stat-card"><div class="stat-icon si-y">👤</div><div><div class="stat-num sn-y" id="s3">—</div><div class="stat-label">User</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-c"><i class="ri-user-3-line"></i></div><div><div class="stat-num sn-c" id="s0">—</div><div class="stat-label">ทั้งหมด</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-g"><i class="ri-check-line"></i></div><div><div class="stat-num sn-g" id="s1">—</div><div class="stat-label">Active</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-v"><i class="ri-vip-crown-line"></i></div><div><div class="stat-num" style="color:var(--violet)" id="s2">—</div><div class="stat-label">Admin</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-y"><i class="ri-user-3-line"></i></div><div><div class="stat-num sn-y" id="s3">—</div><div class="stat-label">User</div></div></div>
     </div>
 
     <div class="toolbar">
-      <div class="search-box"><span class="search-ico">🔍</span><input class="search-input" id="qS" placeholder="ค้นหาชื่อ, username, แผนก..."></div>
+      <div class="search-box"><span class="search-ico"><i class="ri-search-line"></i></span><input class="search-input" id="qS" placeholder="ค้นหาชื่อ, username, แผนก..."></div>
       <select class="filter-sel" id="fR">
         <option value="">ทุก Role</option>
         <option value="admin">Admin</option>
@@ -109,7 +124,7 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
       <!-- Lock overlay สำหรับ user role -->
       <div class="lock-overlay" id="lockOv" style="display:none">
         <div class="lock-box">
-          <div class="lock-ico">🔐</div>
+          <div class="lock-ico"><i class="ri-lock-2-line"></i></div>
           <div class="lock-title">สิทธิ์ไม่เพียงพอ</div>
           <div class="lock-sub">
             Role ของคุณคือ <b style="color:var(--cyan)">User</b><br>
@@ -128,17 +143,17 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
 <div class="overlay" id="ov">
 <div class="modal">
   <div class="modal-hdr">
-    <div class="modal-title" id="mT">➕ เพิ่มผู้ใช้ใหม่</div>
+    <div class="modal-title" id="mT"><i class="ri-add-line"></i> เพิ่มผู้ใช้ใหม่</div>
     <button class="modal-x" onclick="closeModal()">✕</button>
   </div>
   <div class="modal-body">
     <div style="display:flex;align-items:center;gap:8px;background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.15);border-radius:7px;padding:9px 14px;margin-bottom:16px;font-size:12px;color:var(--cyan)">
-      👑 &nbsp;เฉพาะ Admin เท่านั้นที่สามารถสร้าง/แก้ไขผู้ใช้งานได้
+      <i class="ri-vip-crown-line"></i> &nbsp;เฉพาะ Admin เท่านั้นที่สามารถสร้าง/แก้ไขผู้ใช้งานได้
     </div>
     <div class="form-grid">
-      <div class="form-grp"><label class="form-lbl">ชื่อ-นามสกุล *</label><input class="form-inp" id="fn" placeholder="ชื่อ นามสกุล"></div>
+      <div class="form-grp"><label class="form-lbl">ชื่อ-นามสกุล</label><input class="form-inp" id="fn" placeholder="ชื่อ นามสกุล"></div>
       <div class="form-grp"><label class="form-lbl">Username</label><input class="form-inp" id="fu" placeholder="username"></div>
-      <div class="form-grp form-full"><label class="form-lbl">อีเมล *</label><input class="form-inp" id="fe" type="email" placeholder="user@company.com"></div>
+      <div class="form-grp form-full"><label class="form-lbl">อีเมล</label><input class="form-inp" id="fe" type="email" placeholder="user@company.com"></div>
       <div class="form-grp"><label class="form-lbl">แผนก</label>
         <select class="form-sel" id="fd">
           <option value="">— เลือกแผนก —</option>
@@ -165,8 +180,8 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
       </div>
       <div class="form-grp"><label class="form-lbl">Role</label>
         <select class="form-sel" id="fr">
-          <option value="user">👤 User</option>
-          <option value="admin">👑 Admin</option>
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
         </select>
       </div>
       <div class="form-grp"><label class="form-lbl">เบอร์โทร</label><input class="form-inp" id="fp" placeholder="08x-xxx-xxxx"></div>
@@ -179,7 +194,7 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
       <div class="form-grp" id="pwGrp"><label class="form-lbl">Password <span id="pwReq" style="color:var(--red)">*</span></label>
         <div style="position:relative">
           <input class="form-inp" id="fpw" type="password" placeholder="อย่างน้อย 4 ตัวอักษร" style="padding-right:36px">
-          <button type="button" onclick="var e=document.getElementById('fpw');e.type=e.type==='password'?'text':'password'" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:13px;color:var(--text3)">👁</button>
+          <button type="button" onclick="var e=document.getElementById('fpw');e.type=e.type==='password'?'text':'password'" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:13px;color:var(--text3)"><i class="ri-eye-line"></i></button>
         </div>
         <div id="pwHint" style="font-size:11px;color:var(--text3);margin-top:3px">เว้นว่างไว้เพื่อคงรหัสผ่านเดิม (แก้ไขเท่านั้น)</div>
       </div>
@@ -205,7 +220,16 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
 </div>
 
 <script>
-buildSidebar('users');
+var _usersParams = new URLSearchParams(window.location.search);
+var _embeddedUsers = _usersParams.get('embedded') === '1';
+if (!_embeddedUsers) {
+  window.location.replace('settings.html?panel=users');
+}
+if (_embeddedUsers) {
+  document.body.classList.add('embedded-users');
+}
+
+buildSidebar('settings');
 
 // ── Role System ────────────────────────────────────────────────
 var _cu = getCurrentUser() || {}; var currentUser = _cu.username || '';
@@ -214,6 +238,16 @@ var data = [], editId = null;
 var RL = { admin: 'Admin', user: 'User' };
 function esc(v, fallback) { return safeText(v, arguments.length > 1 ? fallback : '—'); }
 function inlineData(v) { return encodeInlineData(v); }
+
+function notifyEmbeddedHeight() {
+  if (!_embeddedUsers) return;
+  var height = Math.max(
+    document.documentElement.scrollHeight || 0,
+    document.body.scrollHeight || 0,
+    960
+  );
+  window.parent.postMessage({ type: 'devicehub-users-height', height: height }, window.location.origin);
+}
 
 // ── Setup UI ตาม Role ──
 function setupUI() {
@@ -224,7 +258,7 @@ function setupUI() {
 
   if (isAdmin()) {
     bar.className   = 'perm-bar admin';
-    ico.textContent = '👑';
+    ico.innerHTML = '<i class="ri-vip-crown-line"></i>';
     title.textContent = 'คุณ Login เป็น Admin — มีสิทธิ์เต็ม';
     sub.textContent   = 'สามารถเพิ่ม แก้ไข และลบผู้ใช้งานได้ทั้งหมด';
     document.getElementById('btnAdd').style.display = 'inline-flex';
@@ -232,7 +266,7 @@ function setupUI() {
     document.getElementById('thAct').style.display = 'table-cell';
   } else {
     bar.className   = 'perm-bar user';
-    ico.textContent = '👤';
+    ico.innerHTML = '<i class="ri-user-3-line"></i>';
     title.textContent = 'คุณ Login เป็น User — ดูได้อย่างเดียว';
     sub.textContent   = 'ไม่มีสิทธิ์เพิ่ม แก้ไข หรือลบผู้ใช้งาน';
     document.getElementById('btnAdd').style.display = 'none';
@@ -287,14 +321,14 @@ function render() {
     var isMe = (d.username === currentUser);
     var roleKey = d.role === 'admin' ? 'admin' : 'user';
     var statusKey = d.status === 'active' ? 'active' : 'inactive';
-    var roleIcon = roleKey === 'admin' ? '👑' : '👤';
+    var roleIcon = roleKey === 'admin' ? '<i class="ri-vip-crown-line"></i>' : '<i class="ri-user-3-line"></i>';
 
     // ปุ่มจัดการ: admin เห็น, user ไม่เห็น
     var actCell = showActions
       ? '<td class="sticky-actions-cell"><div class="row-actions">'
-        + '<button class="act-btn view" onclick="showDetail(decodeInlineData(\'' + dj + '\'))" title="ดูรายละเอียด"><span>🔍</span><span class="txt">ดู</span></button>'
-        + '<button class="act-btn edit" onclick="openModal(decodeInlineData(\'' + dj + '\'))" title="แก้ไข"><span>✏️</span><span class="txt">แก้ไข</span></button>'
-        + '<button class="act-btn del" onclick="del(' + d.id + ')" ' + (isMe ? 'disabled title="ไม่สามารถลบตัวเองได้"' : 'title="ลบ"') + '><span>🗑️</span><span class="txt">ลบ</span></button>'
+        + '<button class="act-btn view" onclick="showDetail(decodeInlineData(\'' + dj + '\'))" title="ดูรายละเอียด"><span><i class="ri-search-line"></i></span><span class="txt">ดู</span></button>'
+        + '<button class="act-btn edit" onclick="openModal(decodeInlineData(\'' + dj + '\'))" title="แก้ไข"><span><i class="ri-pencil-line"></i></span><span class="txt">แก้ไข</span></button>'
+        + '<button class="act-btn del" onclick="del(' + d.id + ')" ' + (isMe ? 'disabled title="ไม่สามารถลบตัวเองได้"' : 'title="ลบ"') + '><span><i class="ri-delete-bin-6-line"></i></span><span class="txt">ลบ</span></button>'
         + '</div></td>'
       : '';
 
@@ -303,7 +337,7 @@ function render() {
       + '<div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,'
       + (d.role === 'admin' ? '#0066cc,#00d4ff' : '#667eea,#764ba2')
       + ');display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">'
-      + (d.role === 'admin' ? '👑' : esc((d.name || '?').charAt(0), '?'))
+      + (d.role === 'admin' ? '<i class="ri-vip-crown-line"></i>' : esc((d.name || '?').charAt(0), '?'))
       + '</div>'
       + '<div><div style="font-weight:500">' + esc(d.name)
       + (isMe ? '&nbsp;<span style="background:rgba(0,212,255,.12);color:var(--cyan);border-radius:4px;padding:1px 7px;font-size:10px;font-family:var(--mono)">คุณ</span>' : '')
@@ -324,6 +358,7 @@ function render() {
   if (typeof refreshSyncedScrollAreas === 'function') {
     refreshSyncedScrollAreas(document.getElementById('usersTableWrap'));
   }
+  notifyEmbeddedHeight();
 }
 
 function showDetail(d) {
@@ -336,7 +371,7 @@ function showDetail(d) {
   }
   var roleKey = d.role === 'admin' ? 'admin' : 'user';
   var statusKey = d.status === 'active' ? 'active' : 'inactive';
-  var roleText = roleKey === 'admin' ? '👑 Admin' : '👤 User';
+  var roleText = roleKey === 'admin' ? '<i class="ri-vip-crown-line"></i> Admin' : '<i class="ri-user-3-line"></i> User';
   var statusText = statusKey === 'active' ? 'Active' : 'Inactive';
   var statusBadge = '<span class="badge badge-' + statusKey + '">' + statusText + '</span>';
   var roleBadge = '<span class="badge badge-' + roleKey + '">' + roleText + '</span>';
@@ -373,12 +408,13 @@ function showDetail(d) {
 
   document.getElementById('dF').innerHTML = ''
     + '<button class="btn btn-ghost" onclick="closeDetail()">ปิด</button>'
-    + '<button class="btn btn-primary" onclick="closeDetail();openModal(decodeInlineData(\'' + dj + '\'))">✏️ แก้ไข</button>';
+    + '<button class="btn btn-primary" onclick="closeDetail();openModal(decodeInlineData(\'' + dj + '\'))"><i class="ri-pencil-line"></i> แก้ไข</button>';
   document.getElementById('ov2').classList.add('open');
 }
 
 function closeDetail() {
   document.getElementById('ov2').classList.remove('open');
+  notifyEmbeddedHeight();
 }
 
 var _dt;
@@ -398,7 +434,7 @@ function openModal(d) {
   document.getElementById('fpw').value = '';
   if (d && typeof d === 'object') {
     editId = d.id;
-    document.getElementById('mT').textContent = '✏️ แก้ไขผู้ใช้: ' + d.name;
+    document.getElementById('mT').innerHTML = '<i class="ri-pencil-line"></i> แก้ไขผู้ใช้: ' + esc(d.name || '', '');
     document.getElementById('fn').value = d.name     || '';
     document.getElementById('fu').value = d.username || '';
     document.getElementById('fe').value = d.email    || '';
@@ -411,7 +447,7 @@ function openModal(d) {
     document.getElementById('pwHint').style.display = 'block';
     document.getElementById('fpw').required = false;
   } else {
-    document.getElementById('mT').textContent = '➕ เพิ่มผู้ใช้ใหม่';
+    document.getElementById('mT').innerHTML = '<i class="ri-add-line"></i> เพิ่มผู้ใช้ใหม่';
     ['fn','fu','fe','fp'].forEach(function(x) { document.getElementById(x).value = ''; });
     document.getElementById('fd').value = '';
     document.getElementById('fr').value = 'user';
@@ -422,8 +458,13 @@ function openModal(d) {
     document.getElementById('fpw').required = true;
   }
   document.getElementById('ov').classList.add('open');
+  notifyEmbeddedHeight();
 }
-function closeModal() { document.getElementById('ov').classList.remove('open'); editId = null; }
+function closeModal() {
+  document.getElementById('ov').classList.remove('open');
+  editId = null;
+  notifyEmbeddedHeight();
+}
 
 async function save() {
   if (!isAdmin()) { showToast('🔒 ไม่มีสิทธิ์', 'error'); return; }
@@ -431,9 +472,9 @@ async function save() {
   var email = normalizeInputValue(document.getElementById('fe').value);
   var username = normalizeInputValue(document.getElementById('fu').value);
   var pw    = document.getElementById('fpw').value;
-  if (!name || !email) { showToast('กรุณากรอกชื่อและอีเมล', 'error'); return; }
-  if (!editId && (!pw || pw.length < 4)) { showToast('กรุณากรอก Password อย่างน้อย 4 ตัว', 'error'); return; }
   if (!username && email) username = email.split('@')[0];
+  if (!username) { showToast('กรุณากรอก Username อย่างน้อย 1 ค่า', 'error'); return; }
+  if (!editId && (!pw || pw.length < 4)) { showToast('กรุณากรอก Password อย่างน้อย 4 ตัว', 'error'); return; }
   var btn = document.getElementById('sv');
   btn.disabled = true; btn.textContent = '⏳...';
   var body = {
@@ -446,6 +487,18 @@ async function save() {
     status:   document.getElementById('fs').value
   };
   if (pw && pw.length >= 4) body.password = pw;
+  if (!confirmIncompleteSave({
+    title:'ข้อมูลผู้ใช้งานบางส่วนยังว่าง',
+    checks:[
+      {label:'ชื่อ-นามสกุล', value:body.name},
+      {label:'Username', value:body.username},
+      {label:'อีเมล', value:body.email},
+      {label:'แผนก', value:body.dept},
+      {label:'เบอร์โทร', value:body.phone},
+      {label:'Password', value:body.password}
+    ],
+    note:'ระบบจะบันทึกต่อได้ถ้าคุณตั้งใจเว้นช่องเหล่านี้'
+  })) return;
   try {
     if (editId) await apiPut(API.users, editId, body);
     else        await apiPost(API.users, body);
@@ -486,12 +539,25 @@ function exportXL() {
 function setDB(s,t) { document.getElementById('dbDot').className = 'db-dot ' + s; document.getElementById('dbTxt').textContent = t; }
 document.getElementById('ov').addEventListener('click', function(e) { if (e.target === e.currentTarget) closeModal(); });
 document.getElementById('ov2').addEventListener('click', function(e) { if (e.target === e.currentTarget) closeDetail(); });
+window.addEventListener('resize', notifyEmbeddedHeight);
 
 setupUI();
 loadData();
+notifyEmbeddedHeight();
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
 
 
 

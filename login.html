@@ -6,7 +6,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>DeviceHub — Login</title>
-<link rel="stylesheet" href="style.css?v=20260326u">
+<link rel="stylesheet" href="assets/css/theme.css?v=20260427c">
 <style>
 :root{
   --bg:#060910;
@@ -64,12 +64,96 @@ body::after{inset:auto auto -16vh -12vw;width:40vw;height:40vw;background:radial
   .card-body{padding:24px 20px 24px;}
   .logo-name{font-size:28px;}
 }
+
+/* Light login layer: keeps this page aligned with the main IT Asset theme. */
+:root{
+  --bg:#f4f7fb;
+  --bg2:#eef4fb;
+  --surface:#ffffff;
+  --border:rgba(20,50,92,.12);
+  --border2:rgba(37,99,235,.34);
+  --cyan:#2563eb;
+  --green:#16a34a;
+  --yellow:#f59e0b;
+  --red:#ef4444;
+  --violet:#7c3aed;
+  --text:#10213f;
+  --text2:#53657f;
+  --text3:#94a3b8;
+  --shadow-lg:0 28px 80px rgba(17,42,80,.16);
+}
+body{
+  background:
+    linear-gradient(180deg,#f8fbff 0,#eef4fb 52%,#f4f7fb 100%) !important;
+  color:var(--text) !important;
+}
+body::after{display:none !important;}
+.wrap::before{
+  background:linear-gradient(135deg,rgba(37,99,235,.18),rgba(22,163,74,.1)) !important;
+  opacity:.5 !important;
+}
+.logo-ico{
+  background:linear-gradient(135deg,#2563eb,#0ea5e9) !important;
+  color:#fff !important;
+  box-shadow:0 18px 34px rgba(37,99,235,.22) !important;
+}
+.logo-name{
+  color:#10213f !important;
+  text-shadow:none !important;
+}
+.logo-sub{color:#64748b !important;}
+.card{
+  background:#fff !important;
+  border-color:rgba(20,50,92,.12) !important;
+  box-shadow:var(--shadow-lg) !important;
+}
+.card::before{display:none !important;}
+.stripe{background:linear-gradient(90deg,#2563eb,#16a34a,#7c3aed) !important;}
+.field label{color:#64748b !important;}
+.inp{
+  background:#fff !important;
+  border-color:rgba(20,50,92,.14) !important;
+  color:#10213f !important;
+}
+.inp:focus{
+  border-color:#2563eb !important;
+  background:#fff !important;
+  box-shadow:0 0 0 4px rgba(37,99,235,.12) !important;
+}
+.inp::placeholder{color:#94a3b8 !important;}
+.ii,.eye{color:#64748b !important;}
+.btn-go{
+  background:linear-gradient(135deg,#2563eb,#155eef) !important;
+  color:#fff !important;
+  box-shadow:0 16px 28px rgba(37,99,235,.2) !important;
+}
+.info{
+  background:#f8fbff !important;
+  border-color:#dbe8fb !important;
+  color:#64748b !important;
+}
+.info b{color:#2563eb !important;}
+.sbar{
+  border-top-color:#e2e8f0 !important;
+  color:#64748b !important;
+}
+.errmsg{
+  background:#fff1f2 !important;
+  border-color:#fecdd3 !important;
+  color:#e11d48 !important;
+}
 </style>
 </head>
 <body>
+<!--
+  Login page map
+  1. Branding / intro block
+  2. Login form and helper note
+  3. Inline auth script and transitions
+-->
 <div class="wrap">
     <div class="logo">
-        <div class="logo-ico">🖥</div>
+        <div class="logo-ico"><i class="ri-cpu-line"></i></div>
         <div class="logo-name">DeviceHub</div>
         <div class="logo-sub">IT MANAGEMENT SYSTEM</div>
     </div>
@@ -80,7 +164,7 @@ body::after{inset:auto auto -16vh -12vw;width:40vw;height:40vw;background:radial
             <div class="field">
                 <label>Username</label>
                 <div class="iw">
-                    <span class="ii">👤</span>
+                    <span class="ii"><i class="ri-user-3-line"></i></span>
                     <input class="inp" id="fU" type="text" placeholder="กรอก Username" autocomplete="username" autofocus>
                 </div>
             </div>
@@ -89,11 +173,11 @@ body::after{inset:auto auto -16vh -12vw;width:40vw;height:40vw;background:radial
                 <div class="iw">
                     <span class="ii">🔒</span>
                     <input class="inp" id="fP" type="password" placeholder="กรอก Password" autocomplete="current-password">
-                    <button class="eye" type="button" onclick="toggleEye()">👁</button>
+                    <button class="eye" type="button" onclick="toggleEye()"><i class="ri-eye-line"></i></button>
                 </div>
             </div>
             <button class="btn-go" id="btn" onclick="doLogin()">
-                <span id="bico">🔑</span><span id="btxt">เข้าสู่ระบบ</span>
+                <span id="bico"><i class="ri-key-2-line"></i></span><span id="btxt">เข้าสู่ระบบ</span>
             </button>
             <div class="info">
                 🔒 ต้องได้รับ <b>Username &amp; Password</b> จาก <b>Admin</b><br>
@@ -175,19 +259,24 @@ function doLogin(){
     .catch(function(e){
         setBusy(false);
         setS('err','เชื่อมต่อไม่ได้');
-        showErr('ไม่สามารถเชื่อมต่อ API ได้<br>ตรวจสอบว่า AppServ เปิดอยู่<br><small>'+e.message+'</small>');
+        showErr('ไม่สามารถเชื่อมต่อ API ได้\nตรวจสอบว่า AppServ เปิดอยู่\n' + (e && e.message ? e.message : 'Unknown error'));
     });
 }
 
+function escapeHtml(value){
+    return String(value==null?'':value).replace(/[&<>"']/g,function(ch){
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+    });
+}
 function showErr(m){
-    document.getElementById('errTxt').innerHTML=m;
+    document.getElementById('errTxt').innerHTML=escapeHtml(m).replace(/\n/g,'<br>');
     document.getElementById('err').style.display='flex';
     var c=document.getElementById('card');
     c.classList.remove('shake');void c.offsetWidth;c.classList.add('shake');
 }
 function setBusy(on){
     document.getElementById('btn').disabled=on;
-    document.getElementById('bico').textContent=on?'⏳':'🔑';
+    document.getElementById('bico').innerHTML=on?'<i class="ri-time-line"></i>':'<i class="ri-key-2-line"></i>';
     document.getElementById('btxt').textContent=on?'กำลังตรวจสอบ...':'เข้าสู่ระบบ';
 }
 function setS(t,m){
@@ -206,6 +295,18 @@ document.addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

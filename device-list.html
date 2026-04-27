@@ -5,13 +5,14 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>อุปกรณ์ — DeviceHub</title>
-<link rel="stylesheet" href="style.css?v=20260326x">
-<script src="vendor/xlsx.full.min.js?v=20260324"></script>
-<script src="config.js?v=20260326u"></script><script src="shared.js?v=20260326u"></script>
+<title>Device List — DeviceHub</title>
+<link rel="stylesheet" href="assets/css/theme.css?v=20260427c">
+<script src="assets/vendor/xlsx.full.min.js?v=20260427c"></script>
+<script src="assets/js/config.js?v=20260427c"></script><script src="assets/js/shared.js?v=20260427c"></script>
 <style>
 /* Table scrollable */
-.tbl-scroll{overflow-x:auto;}.tbl-scroll table{min-width:1200px;}
+.tbl-scroll{overflow-x:auto;}
+.tbl-scroll table{min-width:1040px;}
 th,td{white-space:nowrap;}
 /* Tabs in modal */
 .ftabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:8px;flex-wrap:wrap;}
@@ -36,50 +37,156 @@ th,td{white-space:nowrap;}
 .dv-val.mono{font-family:var(--mono);color:var(--cyan);}
 .tag-yes{background:rgba(0,232,150,.1);color:var(--green);border:1px solid rgba(0,232,150,.2);padding:2px 8px;border-radius:4px;font-size:11px;font-family:var(--mono);}
 .tag-no{background:rgba(122,136,153,.08);color:var(--text3);border:1px solid var(--border);padding:2px 8px;border-radius:4px;font-size:11px;font-family:var(--mono);}
-/* Column groups header */
-.col-group{background:var(--s3);font-size:9px;letter-spacing:1.5px;color:var(--text3);text-align:center;padding:4px 8px;border-bottom:1px solid var(--border);}
+/* Simplified device table */
 .sticky-key{position:sticky;left:0;background:var(--s2);z-index:5;}
-.sticky-actions-head{position:sticky;right:0;background:var(--s2);z-index:6;min-width:210px;box-shadow:-14px 0 18px rgba(5,10,18,.45);}
-.sticky-actions-cell{position:sticky;right:0;background:linear-gradient(180deg,rgba(13,19,30,.98),rgba(9,13,21,.99));z-index:3;min-width:210px;box-shadow:-14px 0 18px rgba(5,10,18,.45);}
+.sticky-actions-head{position:sticky;right:0;background:var(--s2);z-index:6;min-width:178px;box-shadow:-14px 0 18px rgba(5,10,18,.45);}
+.sticky-actions-cell{position:sticky;right:0;background:linear-gradient(180deg,rgba(13,19,30,.98),rgba(9,13,21,.99));z-index:3;min-width:178px;box-shadow:-14px 0 18px rgba(5,10,18,.45);}
 tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
+.devices-table{min-width:1040px;}
+.devices-table th{vertical-align:middle;}
+.devices-table td{vertical-align:top;}
+.asset-cell{min-width:248px;padding-left:14px !important;position:sticky;left:0;background:var(--surface);z-index:2;}
+.asset-head{display:flex;align-items:flex-start;gap:14px;min-width:0;}
+.asset-meta{display:flex;flex-direction:column;gap:5px;min-width:0;}
+.asset-title{font-size:13.5px;font-weight:700;letter-spacing:.01em;color:var(--text);}
+.asset-sub{font-size:10.5px;color:var(--text3);font-family:var(--mono);}
+.asset-pills,.stack-pills{display:flex;flex-wrap:wrap;gap:6px;}
+.quick-trigger{
+  appearance:none;
+  border:none;
+  background:transparent;
+  padding:0;
+  margin:0;
+  border-radius:20px;
+  cursor:pointer;
+  outline:none;
+}
+.quick-trigger:hover .dev-ico{
+  transform:translateY(-2px) scale(1.02);
+  box-shadow:0 18px 28px rgba(5,10,18,.42),0 0 0 1px rgba(255,255,255,.04);
+}
+.quick-trigger:focus-visible .dev-ico{
+  box-shadow:0 0 0 1px rgba(5,10,18,.8),0 0 0 4px rgba(53,216,255,.18),0 18px 28px rgba(5,10,18,.42);
+}
+.mini-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.03);font-size:10.5px;line-height:1;color:var(--text2);}
+.mini-pill.soft{color:var(--cyan);border-color:rgba(53,216,255,.18);background:rgba(53,216,255,.08);}
+.mini-pill.access{color:var(--green);border-color:rgba(25,229,162,.22);background:rgba(25,229,162,.1);}
+.mini-pill.muted{color:var(--text3);}
+.info-stack{display:flex;flex-direction:column;gap:6px;min-width:140px;max-width:220px;}
+.info-main{font-size:12.5px;font-weight:600;color:var(--text);line-height:1.45;white-space:normal;word-break:break-word;}
+.info-sub{font-size:11.25px;color:var(--text2);line-height:1.5;white-space:normal;word-break:break-word;}
+.info-meta{font-size:10.5px;color:var(--text3);font-family:var(--mono);line-height:1.5;white-space:normal;word-break:break-word;}
+.info-meta strong{color:var(--text2);font-weight:500;font-family:var(--font);}
+.stack-divider{height:1px;background:var(--border);margin:1px 0;}
+.software-stack{min-width:190px;max-width:270px;}
+.software-stack .info-sub{font-size:10.8px;}
+.software-stack .info-meta{font-size:10px;}
+.status-stack{min-width:170px;max-width:220px;}
+.status-stack .badge-maintenance{margin-top:2px;}
+.cfg-list{display:flex;flex-direction:column;gap:14px;}
+.cfg-block{border:1px solid var(--border);border-radius:16px;background:rgba(255,255,255,.02);padding:14px;}
+.cfg-block-title{font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:1.3px;margin-bottom:10px;}
+.cfg-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(180px,.95fr) 86px;gap:10px;align-items:center;}
+.cfg-grid + .cfg-grid{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+.cfg-label{font-size:12.5px;color:var(--text);}
+.cfg-label small{display:block;font-size:11px;color:var(--text3);margin-top:3px;}
+.cfg-input{min-height:40px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.03);padding:9px 12px;color:var(--text);}
+.cfg-toggle{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:var(--text2);}
+.cfg-toggle input{width:16px;height:16px;accent-color:var(--cyan);}
+@media (max-width:860px){
+  .cfg-grid{grid-template-columns:1fr;}
+  .cfg-toggle{justify-content:flex-start;}
+}
+@media (max-width:1320px){
+  .devices-table-shell .sticky-actions-head,
+  .devices-table-shell .sticky-actions-cell{min-width:132px;}
+  .devices-table-shell .act-btn .txt{display:none;}
+}
+@media (max-width:1180px){
+  .devices-table-shell th:nth-child(5),
+  .devices-table-shell td:nth-child(5){display:none;}
+}
+@media (max-width:980px){
+  .devices-table-shell th:nth-child(4),
+  .devices-table-shell td:nth-child(4){display:none;}
+}
+@media (max-width:820px){
+  .devices-table-shell .sticky-key,
+  .devices-table-shell .sticky-actions-head,
+  .devices-table-shell .sticky-actions-cell{
+    position:static !important;
+    left:auto !important;
+    right:auto !important;
+    background:transparent !important;
+    box-shadow:none;
+    min-width:0 !important;
+  }
+  .devices-table-shell .asset-cell{position:static;background:transparent;}
+  .devices-table-shell .devices-table{min-width:0;}
+  .devices-table-shell th:nth-child(3),
+  .devices-table-shell td:nth-child(3){display:none;}
+  .devices-table-shell .row-actions{justify-content:flex-start;}
+}
+@media (max-width:640px){
+  .devices-table-shell th:nth-child(2),
+  .devices-table-shell td:nth-child(2){display:none;}
+}
 </style>
 </head>
 <body>
+<!--
+  Device List page map
+  1. App shell / topbar / summary cards
+  2. Action bar for refresh / import / export / add device
+  3. Search + filters toolbar
+  4. Device table / card rows / detail actions
+  5. Modal forms, custom fields, import tools, inline script
+-->
 <div class="layout">
 <div id="sidebar-slot"></div>
 <div class="main">
   <div class="topbar">
-    <div style="flex:1"><h1>🖥 อุปกรณ์ IT</h1><p>IT Asset Management — MySQL</p></div>
+    <div style="flex:1"><h1><i class="ri-computer-line"></i> Device List</h1><p>IT Asset Management — MySQL</p></div>
     <div class="db-pill"><div class="db-dot wait" id="dbDot"></div><span id="dbTxt">โหลด...</span></div>
     <button class="btn btn-logout" onclick="logout()">⏻</button>
   </div>
   <div class="content">
     <!-- Stats -->
     <div class="stats-row">
-      <div class="stat-card" style="cursor:pointer" onclick="setF('','')"><div class="stat-icon si-c">🖥</div><div><div class="stat-num sn-c" id="s0">—</div><div class="stat-label">ทั้งหมด</div></div></div>
-      <div class="stat-card" style="cursor:pointer" onclick="refreshLivePower(true)"><div class="stat-icon si-g">🟢</div><div><div class="stat-num sn-g" id="s1">—</div><div class="stat-label">เปิดอยู่ (RT)</div></div></div>
-      <div class="stat-card" style="cursor:pointer" onclick="setF('status','maintenance')"><div class="stat-icon si-y">🔧</div><div><div class="stat-num sn-y" id="s2">—</div><div class="stat-label">กำลังซ่อม</div></div></div>
-      <div class="stat-card" style="cursor:pointer" onclick="refreshLivePower(true)"><div class="stat-icon si-r">🔴</div><div><div class="stat-num sn-r" id="s3">—</div><div class="stat-label">ปิด / ไม่ตอบ (RT)</div></div></div>
+      <div class="stat-card" style="cursor:pointer" onclick="setF('','')"><div class="stat-icon si-c"><i class="ri-computer-line"></i></div><div><div class="stat-num sn-c" id="s0">—</div><div class="stat-label">ทั้งหมด</div></div></div>
+      <div class="stat-card" style="cursor:pointer" onclick="refreshLivePower(true)"><div class="stat-icon si-g"><i class="ri-pulse-line"></i></div><div><div class="stat-num sn-g" id="s1">—</div><div class="stat-label">เปิดอยู่ (RT)</div></div></div>
+      <div class="stat-card" style="cursor:pointer" onclick="setF('status','maintenance')"><div class="stat-icon si-y"><i class="ri-tools-line"></i></div><div><div class="stat-num sn-y" id="s2">—</div><div class="stat-label">กำลังซ่อม</div></div></div>
+      <div class="stat-card" style="cursor:pointer" onclick="refreshLivePower(true)"><div class="stat-icon si-r"><i class="ri-power-line"></i></div><div><div class="stat-num sn-r" id="s3">—</div><div class="stat-label">ปิด / ไม่ตอบ (RT)</div></div></div>
+    </div>
+    <div class="perm-bar" id="devicePermBar" style="margin-bottom:18px">
+      <div style="display:flex;align-items:flex-start;gap:12px">
+        <div id="devicePermIco" style="font-size:18px;line-height:1"><i class="ri-lock-2-line"></i></div>
+        <div>
+          <div id="devicePermTitle" style="font-weight:600">กำลังตรวจสอบสิทธิ์...</div>
+          <div id="devicePermSub" style="font-size:12.5px;color:var(--text2);margin-top:4px">รอสักครู่</div>
+        </div>
+      </div>
     </div>
     <div class="page-actions">
       <div class="page-actions-head">
-        <span class="page-actions-kicker">จัดการอุปกรณ์ IT</span>
-        <div class="page-actions-title">เพิ่มอุปกรณ์ นำเข้าไฟล์ และอัปเดตสถานะเครื่องได้จากแถบนี้</div>
-        <div class="page-actions-note">ใช้สำหรับจัดการรายการอุปกรณ์ในหน้านี้โดยตรง ทั้งเพิ่มข้อมูลใหม่ ตรวจสอบสถานะ และส่งออกข้อมูล</div>
+        <span class="page-actions-kicker">Device List</span>
+        <div class="page-actions-title" id="deviceActionTitle">เพิ่มอุปกรณ์ นำเข้าไฟล์ และโหลดฟอร์มตัวอย่างสำหรับ import ได้จากแถบนี้</div>
+        <div class="page-actions-note" id="deviceActionNote">มีไฟล์ตัวอย่าง 1 แถวให้โหลดไปกรอกก่อน import ได้ทันที ตารางจะแสดงข้อมูลหลักก่อนให้อ่านง่าย ส่วนข้อมูลเต็มกดดูรายละเอียดได้</div>
       </div>
       <div class="page-actions-group">
-        <button class="btn btn-ghost" onclick="loadData()">🔄 รีเฟรช</button>
-        <button class="btn btn-ghost" onclick="refreshLivePower(true)">⚡ เช็กเครื่อง</button>
-        <button class="btn btn-ghost" onclick="document.getElementById('importFile').click()">⬆ Import Excel</button>
+    <button class="btn btn-ghost" onclick="loadData()"><i class="ri-refresh-line"></i> รีเฟรช</button>
+    <button class="btn btn-ghost" onclick="refreshLivePower(true)"><i class="ri-radar-line"></i> เช็กเครื่อง</button>
+    <button class="btn btn-ghost" type="button" onclick="downloadDeviceImportTemplate()"><i class="ri-file-list-3-line"></i> โหลดฟอร์ม Import</button>
+    <button class="btn btn-ghost" id="btnDeviceImport" onclick="document.getElementById('importFile').click()"><i class="ri-file-upload-line"></i> Import Excel</button>
         <input type="file" id="importFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleImportFile(this)">
-        <button class="btn btn-ghost" onclick="exportCSV()">⬇ CSV</button>
-        <button class="btn btn-excel" onclick="exportXL()">📥 Excel</button>
-        <button class="btn btn-primary" onclick="openModal(null)">+ เพิ่มอุปกรณ์</button>
+        <button class="btn btn-ghost" onclick="exportCSV()"><i class="ri-file-download-line"></i> CSV</button>
+        <button class="btn btn-excel" onclick="exportXL()"><i class="ri-file-excel-2-line"></i> Excel</button>
+        <button class="btn btn-primary" id="btnDeviceAdd" onclick="openModal(null)"><i class="ri-add-circle-line"></i> เพิ่มอุปกรณ์</button>
       </div>
     </div>
     <!-- Toolbar -->
     <div class="toolbar">
-      <div class="search-box"><span class="search-ico">🔍</span><input class="search-input" id="qS" placeholder="ค้นหาชื่อเครื่อง, ผู้ใช้, IP, Brand..."></div>
+      <div class="search-box"><span class="search-ico"><i class="ri-search-line"></i></span><input class="search-input" id="qS" placeholder="ค้นหาชื่อเครื่อง, ผู้ใช้, IP, Brand..."></div>
       <select class="filter-sel" id="fT"><option value="">ทุกประเภท</option><option>Desktop PC</option><option>Laptop</option><option>Server</option><option>Tablet</option><option>Printer</option><option>Other</option></select>
       <select class="filter-sel" id="fS"><option value="">ทุกสถานะ</option><option value="maintenance">กำลังซ่อม</option><option value="power_on">เปิดอยู่ (RT)</option><option value="power_off">ปิด / ไม่ตอบ (RT)</option><option value="power_unknown">ไม่ทราบ (RT)</option></select>
       <select class="filter-sel" id="fD"><option value="">ทุกแผนก</option><option>AD - AC</option><option>AD - GA</option><option>AD - HRD</option><option>AD - HRM</option><option>AD-IT</option><option>AUTOMOTIVE - PD</option><option>BC CENTER</option><option>BC CENTER - PC</option><option>BC CENTER - PURCHASE</option><option>BC CENTER - SALE</option><option>BC CENTER - STANDARD SETTING</option><option>BC CENTER - WAREHOUSE</option><option>EC - FM</option><option>EC - ME</option><option>EC - PE</option><option>EC DIVISION</option><option>MARKETING</option><option>MEDICAL - PD</option><option>MEDICAL - PE</option><option>PD1 - PE</option><option>PD1 - PE (ME/AUTO)</option><option>PD1 - PE (ME/INJ)</option><option>PD1 - PE (MN/ASSY)</option><option>PD1 - PE (PE/AUTO)</option><option>PD1 - PE (PE/INJ)</option><option>PRECISION - PD ASSY</option><option>PRECISION - PD ASSY(ASSY)</option><option>PRECISION - PD ASSY(PAINT)</option><option>PRECISION - PD INJ1</option><option>PRECISION - PD INJ2</option><option>PRODUCTION DIVISION 1</option><option>PRODUCTION DIVISION 2</option><option>QA CENTER</option><option>QA CENTER - QA</option><option>QA CENTER - QC</option><option>QA CENTER - QM</option><option>QA CENTER - QS</option><option>SLIT - PD</option><option>SLIT - PE</option></select>
@@ -87,25 +194,17 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
     </div>
     <!-- Table -->
     <div class="table-wrap">
-      <div class="tbl-scroll sync-scroll-x" id="mainTableScroll">
-      <table id="mainTable">
+      <div class="tbl-scroll sync-scroll-x devices-table-shell" id="mainTableScroll">
+      <table id="mainTable" class="devices-table">
         <thead>
           <tr>
-            <th colspan="5" class="col-group">NETWORK</th>
-            <th colspan="5" class="col-group">PHYSICAL</th>
-            <th colspan="5" class="col-group">HARDWARE</th>
-            <th colspan="3" class="col-group">SOFTWARE</th>
-            <th colspan="2" class="col-group">ACCESS</th>
-            <th colspan="2" class="col-group"></th>
-          </tr>
-          <tr>
-            <th class="sticky-key" style="padding-left:14px">รหัส / Asset</th>
-            <th>IP Address</th><th>Computer Name</th><th>User Name</th><th>MAC</th>
-            <th>ประเภท</th><th>PIC</th><th>แผนก</th><th>Location</th><th>ปีที่ซื้อ</th>
-            <th>Brand / Model</th><th>CPU</th><th>RAM</th><th>HDD/SSD</th><th>Windows</th>
-            <th>Office</th><th>Antivirus</th><th>Software</th>
-            <th>Internet</th><th>Email</th>
-            <th>สถานะ Real-time</th><th class="sticky-actions-head">จัดการ</th>
+            <th class="sticky-key" style="padding-left:14px">เครื่อง / ประเภท</th>
+            <th>ผู้ใช้ / แผนก</th>
+            <th>เครือข่าย</th>
+            <th>ฮาร์ดแวร์</th>
+            <th>ซอฟต์แวร์ / สิทธิ์</th>
+            <th>สถานะ Real-time</th>
+            <th class="sticky-actions-head">จัดการ</th>
           </tr>
         </thead>
         <tbody id="tb"></tbody>
@@ -121,20 +220,24 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
 <div class="overlay" id="ov">
 <div class="modal" style="width:700px">
   <div class="modal-hdr">
-    <div class="modal-title" id="mT">➕ เพิ่มอุปกรณ์</div>
-    <button class="modal-x" onclick="closeModal()">✕</button>
+    <div class="modal-title" id="mT"><i class="ri-add-line"></i> เพิ่มอุปกรณ์</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="btn btn-ghost" type="button" id="btnFieldConfig" onclick="openFieldConfig()" style="min-height:36px;padding:8px 12px;font-size:12px"><i class="ri-settings-3-line"></i> จัดการหัวข้อ</button>
+      <button class="modal-x" onclick="closeModal()">✕</button>
+    </div>
   </div>
   <div class="modal-body" style="padding-top:0">
     <!-- TABS -->
     <div class="ftabs">
-      <button class="ftab active" onclick="switchTab(0,this)">🌐 Network</button>
-      <button class="ftab" onclick="switchTab(1,this)">📦 Physical</button>
-      <button class="ftab" onclick="switchTab(2,this)">🔩 Hardware</button>
-      <button class="ftab" onclick="switchTab(3,this)">🖥 Monitor</button>
-      <button class="ftab" onclick="switchTab(4,this)">💿 Windows</button>
-      <button class="ftab" onclick="switchTab(5,this)">📋 Office/AV</button>
-      <button class="ftab" onclick="switchTab(6,this)">📦 Software</button>
-      <button class="ftab" onclick="switchTab(7,this)">🔐 Access</button>
+      <button class="ftab active" onclick="switchTab(0,this)"><i class="ri-global-line"></i> Network</button>
+      <button class="ftab" onclick="switchTab(1,this)"><i class="ri-box-3-line"></i> Physical</button>
+      <button class="ftab" onclick="switchTab(2,this)"><i class="ri-cpu-line"></i> Hardware</button>
+      <button class="ftab" onclick="switchTab(3,this)"><i class="ri-monitor-line"></i> Monitor</button>
+      <button class="ftab" onclick="switchTab(4,this)"><i class="ri-windows-line"></i> Windows</button>
+      <button class="ftab" onclick="switchTab(5,this)"><i class="ri-shield-check-line"></i> Office/AV</button>
+      <button class="ftab" onclick="switchTab(6,this)"><i class="ri-apps-line"></i> Software</button>
+      <button class="ftab" onclick="switchTab(7,this)"><i class="ri-lock-2-line"></i> Access</button>
+      <button class="ftab" id="customTabButton" onclick="switchTab(8,this)" style="display:none"><i class="ri-layout-grid-line"></i> หัวข้อเพิ่มเอง</button>
     </div>
 
     <!-- TAB 0: NETWORK -->
@@ -149,7 +252,7 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
         <div class="form-grp"><label class="form-lbl">Use DHCP</label>
           <select class="form-sel" id="f_use_dhcp"><option value="0">Static IP</option><option value="1">DHCP</option></select>
         </div>
-        <div class="form-grp"><label class="form-lbl">Email Address</label><input class="form-inp" id="f_email" type="email" placeholder="user@company.com"></div>
+        <div class="form-grp"><label class="form-lbl">Email Address</label><input class="form-inp" id="f_email" type="text" inputmode="email" placeholder="user@company.com" autocomplete="off"></div>
         <div class="form-grp"><label class="form-lbl">Logon</label><input class="form-inp" id="f_logon" placeholder="logon account"></div>
       </div>
     </div>
@@ -315,14 +418,63 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
     <!-- TAB 7: ACCESS -->
     <div class="fsec" id="tab7">
       <div class="fsec-title">Access Permission</div>
-      <div class="chk-row" style="padding:14px 0"><input type="checkbox" id="f_access_internet"><label for="f_access_internet" style="font-size:14px">🌐 Internet Access</label></div>
-      <div class="chk-row" style="padding:14px 0;border-bottom:none"><input type="checkbox" id="f_access_email"><label for="f_access_email" style="font-size:14px">✉️ Email Access</label></div>
+      <div class="chk-row" style="padding:14px 0"><input type="checkbox" id="f_access_internet"><label for="f_access_internet" style="font-size:14px"><i class="ri-global-line"></i> Internet Access</label></div>
+      <div class="chk-row" style="padding:14px 0;border-bottom:none"><input type="checkbox" id="f_access_email"><label for="f_access_email" style="font-size:14px"><i class="ri-mail-line"></i> Email Access</label></div>
+    </div>
+
+    <div class="fsec" id="tab8">
+      <div class="fsec-title">หัวข้อเพิ่มเอง</div>
+      <div class="form-grid" id="customFieldsWrap">
+        <div class="form-grp form-full">
+          <div style="padding:14px 16px;border:1px dashed var(--border);border-radius:14px;color:var(--text3);font-size:12.5px">
+            ยังไม่มีหัวข้อเพิ่มเอง
+          </div>
+        </div>
+      </div>
     </div>
 
   </div><!-- end modal-body -->
   <div class="modal-foot">
     <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
-    <button class="btn btn-primary" id="sv" onclick="saveDevice()">💾 บันทึกลง MySQL</button>
+    <button class="btn btn-primary" id="sv" onclick="saveDevice()"><i class="ri-save-3-line"></i> บันทึกลง MySQL</button>
+  </div>
+</div>
+</div>
+
+<!-- ═══ FIELD CONFIG MODAL ═══ -->
+<div class="overlay" id="ovFieldCfg">
+<div class="modal" style="width:860px;max-height:90vh">
+  <div class="modal-hdr">
+    <div class="modal-title"><i class="ri-settings-3-line"></i> จัดการหัวข้อฟอร์มอุปกรณ์ IT</div>
+    <button class="modal-x" onclick="closeFieldConfig()">✕</button>
+  </div>
+  <div class="modal-body" style="overflow-y:auto;max-height:calc(90vh - 140px)">
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid rgba(0,212,255,.16);background:rgba(0,212,255,.06);border-radius:14px;margin-bottom:16px">
+      <div style="font-size:18px;line-height:1">🧩</div>
+      <div style="font-size:12.5px;color:var(--text2);line-height:1.65">
+        ที่หน้านี้ admin สามารถแก้ชื่อหัวข้อเดิม ซ่อน / แสดงช่อง และเพิ่ม / ลบหัวข้อใหม่ที่ต้องการกรอกได้
+      </div>
+    </div>
+    <div class="cfg-list" id="fieldCfgList"></div>
+    <div class="cfg-block" style="margin-top:16px">
+      <div class="cfg-block-title">เพิ่มหัวข้อใหม่</div>
+      <div class="cfg-grid" style="grid-template-columns:minmax(0,1.3fr) 160px 130px">
+        <input class="cfg-input" id="newCustomFieldLabel" placeholder="ชื่อหัวข้อใหม่ เช่น Asset Owner 2">
+        <select class="cfg-input" id="newCustomFieldType">
+          <option value="text">Text</option>
+          <option value="textarea">Textarea</option>
+          <option value="number">Number</option>
+          <option value="checkbox">Checkbox</option>
+        </select>
+        <button class="btn btn-primary" type="button" onclick="createCustomField()" style="min-width:0"><i class="ri-add-line"></i> เพิ่มหัวข้อ</button>
+      </div>
+      <div id="customFieldManager" style="margin-top:14px"></div>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-ghost" type="button" onclick="resetFieldConfig()">รีเซ็ตค่าเดิม</button>
+    <button class="btn btn-ghost" type="button" onclick="closeFieldConfig()">ปิด</button>
+    <button class="btn btn-primary" type="button" onclick="saveFieldConfig()"><i class="ri-save-3-line"></i> บันทึกหัวข้อ</button>
   </div>
 </div>
 </div>
@@ -331,7 +483,7 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
 <div class="overlay" id="ovImport">
 <div class="modal" style="width:900px;max-height:90vh">
   <div class="modal-hdr">
-    <div class="modal-title">📥 นำเข้า Excel — ตรวจสอบข้อมูล</div>
+    <div class="modal-title"><i class="ri-download-2-line"></i> นำเข้า Excel — ตรวจสอบข้อมูล</div>
     <button class="modal-x" onclick="closeImport()">✕</button>
   </div>
   <div class="modal-body" style="overflow-y:auto;max-height:calc(90vh - 140px)">
@@ -339,7 +491,7 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
   </div>
   <div class="modal-foot">
     <button class="btn btn-ghost" onclick="closeImport()">ยกเลิก</button>
-    <button class="btn btn-primary" id="btnSaveImport" onclick="saveImportedData()">💾 บันทึก <span id="importCount"></span> ลง MySQL</button>
+    <button class="btn btn-primary" id="btnSaveImport" onclick="saveImportedData()"><i class="ri-save-3-line"></i> บันทึก <span id="importCount"></span> ลง MySQL</button>
   </div>
 </div>
 </div>
@@ -359,11 +511,487 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
 <script>
 buildSidebar('device-list');
 var data=[], editId=null;
-var TIPO={'Desktop PC':{i:'🖥',c:'ico-pc'},'Laptop':{i:'💻',c:'ico-lp'},'Server':{i:'🗄️',c:'ico-sv'},'Tablet':{i:'📱',c:'ico-lp'},'Printer':{i:'🖨️',c:'ico-sv'},'Other':{i:'📦',c:'ico-pc'}};
+var TIPO={
+  'Desktop PC':{i:'<span class="dev-ico-core"><i class="ri-computer-line"></i></span>',c:'ico-pc'},
+  'Laptop':{i:'<span class="dev-ico-core"><i class="ri-macbook-line"></i></span>',c:'ico-lp'},
+  'Server':{i:'<span class="dev-ico-core"><i class="ri-server-line"></i></span>',c:'ico-sv'},
+  'Tablet':{i:'<span class="dev-ico-core"><i class="ri-tablet-line"></i></span>',c:'ico-tab'},
+  'Printer':{i:'<span class="dev-ico-core"><i class="ri-printer-line"></i></span>',c:'ico-prn'},
+  'Other':{i:'<span class="dev-ico-core"><i class="ri-cpu-line"></i></span>',c:'ico-oth'}
+};
 var STH={maintenance:'กำลังซ่อม'};
 function normalizeStoredStatus(value){return value==='maintenance'?'maintenance':'';}
 function isMaintenanceDevice(device){return !!(device&&normalizeStoredStatus(device.status)==='maintenance');}
 function maintenanceBadgeHtml(device){return isMaintenanceDevice(device)?'<div style="margin-top:6px"><span class="badge badge-maintenance">กำลังซ่อม</span></div>':'';}
+function canManageDevices(){return isAdmin();}
+function adminOnlyDeviceAction(){showToast('🔒 เฉพาะ Admin เท่านั้น','error');return false;}
+function setupDeviceRoleUi(){
+  var admin=canManageDevices();
+  var bar=document.getElementById('devicePermBar');
+  var ico=document.getElementById('devicePermIco');
+  var title=document.getElementById('devicePermTitle');
+  var sub=document.getElementById('devicePermSub');
+  var btnAdd=document.getElementById('btnDeviceAdd');
+  var btnImport=document.getElementById('btnDeviceImport');
+  var btnFieldConfig=document.getElementById('btnFieldConfig');
+  var fileInput=document.getElementById('importFile');
+  var saveImportBtn=document.getElementById('btnSaveImport');
+  var actionTitle=document.getElementById('deviceActionTitle');
+  var actionNote=document.getElementById('deviceActionNote');
+
+  if(admin){
+    if(bar)bar.className='perm-bar admin';
+    if(ico)ico.innerHTML='<i class="ri-vip-crown-line"></i>';
+    if(title)title.textContent='คุณ Login เป็น Admin — จัดการอุปกรณ์ได้เต็ม';
+    if(sub)sub.textContent='สามารถเพิ่ม แก้ไข ลบ และนำเข้าอุปกรณ์ IT ได้';
+    if(btnAdd)btnAdd.style.display='inline-flex';
+    if(btnImport)btnImport.style.display='inline-flex';
+    if(btnFieldConfig)btnFieldConfig.style.display='inline-flex';
+    if(fileInput)fileInput.disabled=false;
+    if(saveImportBtn)saveImportBtn.style.display='inline-flex';
+    if(actionTitle)actionTitle.textContent='เพิ่มอุปกรณ์ นำเข้าไฟล์ และโหลดฟอร์มตัวอย่างสำหรับ import ได้จากแถบนี้';
+    if(actionNote)actionNote.textContent='มีไฟล์ตัวอย่าง 1 แถวให้โหลดไปกรอกก่อน import ได้ทันที ตารางจะแสดงข้อมูลหลักก่อนให้อ่านง่าย ส่วนข้อมูลเต็มกดดูรายละเอียดได้';
+    return;
+  }
+
+  if(bar)bar.className='perm-bar user';
+  if(ico)ico.innerHTML='<i class="ri-user-3-line"></i>';
+  if(title)title.textContent='คุณ Login เป็น User — ดูข้อมูลได้อย่างเดียว';
+  if(sub)sub.textContent='เพิ่ม แก้ไข ลบ และนำเข้าอุปกรณ์ได้เฉพาะ Admin เท่านั้น';
+  if(btnAdd)btnAdd.style.display='none';
+  if(btnImport)btnImport.style.display='none';
+  if(btnFieldConfig)btnFieldConfig.style.display='none';
+  if(fileInput)fileInput.disabled=true;
+  if(saveImportBtn)saveImportBtn.style.display='none';
+  if(actionTitle)actionTitle.textContent='ตรวจสอบอุปกรณ์ โหลดฟอร์มตัวอย่าง และเช็กสถานะเครื่องจากหน้านี้';
+  if(actionNote)actionNote.textContent='คุณยังค้นหา ดูรายละเอียด ส่งออก โหลดฟอร์ม import ตัวอย่าง และเช็กสถานะเครื่องแบบ real-time ได้ แต่การแก้ไขข้อมูลต้องใช้สิทธิ์ Admin';
+}
+
+var DEVICE_FORM_CFG_KEY='dh_device_form_cfg_v1';
+var DEVICE_FORM_TABS=[
+  {id:'tab0',label:'🌐 Network'},
+  {id:'tab1',label:'<i class="ri-box-3-line"></i> Physical'},
+  {id:'tab2',label:'🔩 Hardware'},
+  {id:'tab3',label:'<i class="ri-monitor-line"></i> Monitor'},
+  {id:'tab4',label:'💿 Windows'},
+  {id:'tab5',label:'<i class="ri-shield-check-line"></i> Office/AV'},
+  {id:'tab6',label:'<i class="ri-apps-line"></i> Software'},
+  {id:'tab7',label:'<i class="ri-lock-2-line"></i> Access'},
+  {id:'tab8',label:'🧩 หัวข้อเพิ่มเอง'}
+];
+function tabLabelText(label){
+  return String(label || '').replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim();
+}
+var DEVICE_FORM_FIELDS=[
+  {key:'ip',tab:'tab0',label:'IP Address'},
+  {key:'computer_name',tab:'tab0',label:'Computer Name *'},
+  {key:'username',tab:'tab0',label:'User Name'},
+  {key:'workgroup',tab:'tab0',label:'Workgroup / Domain'},
+  {key:'mac',tab:'tab0',label:'MAC Address'},
+  {key:'use_dhcp',tab:'tab0',label:'Use DHCP'},
+  {key:'email',tab:'tab0',label:'Email Address'},
+  {key:'logon',tab:'tab0',label:'Logon'},
+  {key:'type',tab:'tab1',label:'ประเภท (Type) *'},
+  {key:'status_maintenance',tab:'tab1',label:'กำลังซ่อม'},
+  {key:'pic',tab:'tab1',label:'PIC (ผู้รับผิดชอบ)'},
+  {key:'dept',tab:'tab1',label:'แผนก (Department)'},
+  {key:'location',tab:'tab1',label:'Location (สถานที่)'},
+  {key:'year_purchased',tab:'tab1',label:'Year of Purchased'},
+  {key:'fixed_asset_no',tab:'tab1',label:'Fixed Asset Number'},
+  {key:'remark',tab:'tab1',label:'Remark'},
+  {key:'brand',tab:'tab2',label:'Brand'},
+  {key:'model',tab:'tab2',label:'Model'},
+  {key:'cpu',tab:'tab2',label:'CPU'},
+  {key:'cpu_speed',tab:'tab2',label:'CPU Speed (GHz)'},
+  {key:'ram_mb',tab:'tab2',label:'RAM (MB)'},
+  {key:'serial_no',tab:'tab2',label:'Serial Number'},
+  {key:'service_tag',tab:'tab2',label:'Service Tag'},
+  {key:'hdd_gb',tab:'tab2',label:'HDD (GB)'},
+  {key:'hdd_name',tab:'tab2',label:'HDD Hardware Name'},
+  {key:'ssd_gb',tab:'tab2',label:'SSD (GB)'},
+  {key:'ssd_name',tab:'tab2',label:'SSD Hardware Name'},
+  {key:'hw_id_cpu',tab:'tab2',label:'HW ID — CPU'},
+  {key:'hw_id_monitor',tab:'tab2',label:'HW ID — Monitor'},
+  {key:'hw_id_lan',tab:'tab2',label:'HW ID — LAN'},
+  {key:'hw_id_wireless',tab:'tab2',label:'HW ID — Wireless'},
+  {key:'monitor_brand',tab:'tab3',label:'Monitor Brand'},
+  {key:'monitor_model',tab:'tab3',label:'Monitor Model'},
+  {key:'monitor_spec',tab:'tab3',label:'Specification'},
+  {key:'monitor_serial',tab:'tab3',label:'Serial Number'},
+  {key:'win_version',tab:'tab4',label:'Windows Version'},
+  {key:'win_bit',tab:'tab4',label:'Bit'},
+  {key:'win_license',tab:'tab4',label:'License Type'},
+  {key:'win_key',tab:'tab4',label:'License Key'},
+  {key:'office_version',tab:'tab5',label:'Office Version'},
+  {key:'office_license',tab:'tab5',label:'License Type'},
+  {key:'office_key',tab:'tab5',label:'License Key'},
+  {key:'av_name',tab:'tab5',label:'Antivirus Name'},
+  {key:'av_version',tab:'tab5',label:'Antivirus Version'},
+  {key:'sw_hrm',tab:'tab6',label:'HRM'},
+  {key:'sw_sap',tab:'tab6',label:'SAP'},
+  {key:'sw_stock',tab:'tab6',label:'Stock'},
+  {key:'sw_garoon',tab:'tab6',label:'Garoon'},
+  {key:'sw_team',tab:'tab6',label:'Team'},
+  {key:'sw_other',tab:'tab6',label:'Other Software'},
+  {key:'access_internet',tab:'tab7',label:'🌐 Internet Access'},
+  {key:'access_email',tab:'tab7',label:'<i class="ri-mail-line"></i> Email Access'}
+];
+
+function getDefaultFieldConfig(){
+  return { tabs:{}, labels:{}, hidden:{} };
+}
+
+function loadFieldConfig(){
+  try{
+    var raw=localStorage.getItem(DEVICE_FORM_CFG_KEY);
+    if(!raw) return getDefaultFieldConfig();
+    var parsed=JSON.parse(raw);
+    if(!parsed || typeof parsed !== 'object') return getDefaultFieldConfig();
+    parsed.tabs = parsed.tabs || {};
+    parsed.labels = parsed.labels || {};
+    parsed.hidden = parsed.hidden || {};
+    DEVICE_FORM_TABS.forEach(function(tab){
+      var cleanLabel = tabLabelText(tab.label);
+      var val = (parsed.tabs[tab.id] || '').trim();
+      if(!val) return;
+      var stripped = tabLabelText(val);
+      if(stripped === cleanLabel || val.indexOf('<i') !== -1){
+        parsed.tabs[tab.id] = '';
+      }
+    });
+    return {
+      tabs: parsed.tabs,
+      labels: parsed.labels,
+      hidden: parsed.hidden
+    };
+  }catch(e){
+    return getDefaultFieldConfig();
+  }
+}
+
+function saveFieldConfigState(state){
+  localStorage.setItem(DEVICE_FORM_CFG_KEY, JSON.stringify(state||getDefaultFieldConfig()));
+}
+
+function getTabButtonById(tabId){
+  var tabs=document.querySelectorAll('.ftab');
+  for(var i=0;i<DEVICE_FORM_TABS.length;i++){
+    if(DEVICE_FORM_TABS[i].id===tabId) return tabs[i] || null;
+  }
+  return null;
+}
+
+function getFieldInputEl(key){
+  return document.getElementById('f_'+key);
+}
+
+function getFieldWrapperEl(key){
+  var input=getFieldInputEl(key);
+  if(!input) return null;
+  return input.closest('.form-grp') || input.closest('.chk-row') || null;
+}
+
+function getFieldLabelEl(key){
+  var input=getFieldInputEl(key);
+  if(!input) return null;
+  var grp=input.closest('.form-grp');
+  if(grp){
+    var lbl=grp.querySelector('.form-lbl');
+    if(lbl) return lbl;
+  }
+  var row=input.closest('.chk-row');
+  if(row){
+    return row.querySelector('label[for="'+input.id+'"]') || row.querySelector('label');
+  }
+  return null;
+}
+
+function updateTabVisibility(){
+  DEVICE_FORM_TABS.forEach(function(tab){
+    var tabEl=document.getElementById(tab.id);
+    var btn=getTabButtonById(tab.id);
+    if(!tabEl || !btn) return;
+    if(tab.id==='tab8'){
+      btn.style.display=deviceCustomFields.length?'inline-flex':'none';
+      return;
+    }
+    var visible=tabEl.querySelector('.form-grp:not([style*="display: none"]), .chk-row:not([style*="display: none"])');
+    btn.style.display=visible?'inline-flex':'none';
+    if(!visible && btn.classList.contains('active')){
+      var fallback=document.querySelector('.ftab[style="display: none;"]');
+      btn.classList.remove('active');
+    }
+  });
+  if(!document.querySelector('.ftab.active') || document.querySelector('.ftab.active').style.display==='none'){
+    var firstVisible=document.querySelector('.ftab:not([style*="display: none"])');
+    if(firstVisible){
+      var idx=Array.prototype.indexOf.call(document.querySelectorAll('.ftab'), firstVisible);
+      switchTab(idx, firstVisible);
+    }
+  }
+}
+
+function applyFieldConfig(){
+  var cfg=loadFieldConfig();
+  DEVICE_FORM_TABS.forEach(function(tab){
+    var btn=getTabButtonById(tab.id);
+    if(!btn) return;
+    var cleanLabel = tabLabelText(tab.label);
+    var custom = cfg.tabs[tab.id] ? cfg.tabs[tab.id].trim() : '';
+    if(custom && custom === cleanLabel){
+      custom = '';
+      cfg.tabs[tab.id] = '';
+    }
+    if(custom){
+      btn.textContent = custom;
+    }else{
+      btn.innerHTML = tab.label;
+    }
+  });
+  DEVICE_FORM_FIELDS.forEach(function(field){
+    var lbl=getFieldLabelEl(field.key);
+    if(lbl) lbl.textContent = cfg.labels[field.key] || field.label;
+    var wrap=getFieldWrapperEl(field.key);
+    if(wrap) wrap.style.display = cfg.hidden[field.key] ? 'none' : '';
+  });
+  renderCustomFields();
+  updateTabVisibility();
+  saveFieldConfigState(cfg);
+}
+
+function buildFieldConfigUi(){
+  var cfg=loadFieldConfig();
+  var holder=document.getElementById('fieldCfgList');
+  if(!holder) return;
+
+  var tabHtml='<div class="cfg-block"><div class="cfg-block-title">ชื่อแท็บ</div>';
+  DEVICE_FORM_TABS.forEach(function(tab){
+    var cleanLabel = tabLabelText(tab.label);
+    tabHtml+='<div class="cfg-grid">'
+      +'<div class="cfg-label">'+esc(cleanLabel,'')+'<small>'+esc(tab.id,'')+'</small></div>'
+      +'<input class="cfg-input" data-cfg-tab="'+esc(tab.id,'')+'" value="'+esc(cfg.tabs[tab.id] || cleanLabel,'')+'">'
+      +'<div class="cfg-toggle"><span>แสดง</span></div>'
+      +'</div>';
+  });
+  tabHtml+='</div>';
+
+  var fieldBlocks={};
+  DEVICE_FORM_TABS.forEach(function(tab){ fieldBlocks[tab.id]=''; });
+  DEVICE_FORM_FIELDS.forEach(function(field){
+    fieldBlocks[field.tab]+='<div class="cfg-grid">'
+      +'<div class="cfg-label">'+esc(field.label,'')+'<small>'+esc(field.key,'')+'</small></div>'
+      +'<input class="cfg-input" data-cfg-field="'+esc(field.key,'')+'" value="'+esc(cfg.labels[field.key] || field.label,'')+'">'
+      +'<label class="cfg-toggle"><input type="checkbox" data-cfg-visible="'+esc(field.key,'')+'" '+(cfg.hidden[field.key]?'':'checked')+'> <span>แสดง</span></label>'
+      +'</div>';
+  });
+
+  var html=tabHtml;
+  DEVICE_FORM_TABS.forEach(function(tab){
+    if(tab.id==='tab8') return;
+    html+='<div class="cfg-block"><div class="cfg-block-title">'+esc(tabLabelText(tab.label),'')+'</div>'+fieldBlocks[tab.id]+'</div>';
+  });
+  holder.innerHTML=html;
+  buildCustomFieldManager();
+}
+
+async function openFieldConfig(){
+  if(!canManageDevices()) return adminOnlyDeviceAction();
+  await loadCustomFieldDefinitions();
+  buildFieldConfigUi();
+  document.getElementById('ovFieldCfg').classList.add('open');
+}
+
+function closeFieldConfig(){
+  document.getElementById('ovFieldCfg').classList.remove('open');
+}
+
+function saveFieldConfig(){
+  if(!canManageDevices()) return adminOnlyDeviceAction();
+  var cfg=getDefaultFieldConfig();
+  document.querySelectorAll('[data-cfg-tab]').forEach(function(input){
+    var tabId = input.getAttribute('data-cfg-tab');
+    var val = normalizeInputValue(input.value) || '';
+    var tab = DEVICE_FORM_TABS.find(function(t){ return t.id === tabId; });
+    var cleanLabel = tab ? tabLabelText(tab.label) : '';
+    cfg.tabs[tabId] = (val && val !== cleanLabel) ? val : '';
+  });
+  document.querySelectorAll('[data-cfg-field]').forEach(function(input){
+    cfg.labels[input.getAttribute('data-cfg-field')] = normalizeInputValue(input.value) || '';
+  });
+  document.querySelectorAll('[data-cfg-visible]').forEach(function(input){
+    cfg.hidden[input.getAttribute('data-cfg-visible')] = !input.checked;
+  });
+  saveFieldConfigState(cfg);
+  applyFieldConfig();
+  closeFieldConfig();
+  showToast('✅ บันทึกหัวข้อฟอร์มแล้ว','success');
+}
+
+function resetFieldConfig(){
+  if(!canManageDevices()) return adminOnlyDeviceAction();
+  saveFieldConfigState(getDefaultFieldConfig());
+  buildFieldConfigUi();
+  applyFieldConfig();
+  showToast('↺ รีเซ็ตหัวข้อกลับค่าเดิมแล้ว','info');
+}
+
+var deviceCustomFields=[];
+var deviceCustomValues={};
+
+function getCustomFieldButton(){
+  return document.getElementById('customTabButton');
+}
+
+async function loadCustomFieldDefinitions(){
+  try{
+    deviceCustomFields = await apiGet(API.devices, { action:'custom_fields' });
+    if(!Array.isArray(deviceCustomFields)) deviceCustomFields = [];
+  }catch(e){
+    deviceCustomFields = [];
+    console.warn('DeviceHub: load custom fields failed.', e);
+  }
+}
+
+async function loadCustomFieldValues(deviceId){
+  deviceCustomValues = {};
+  if(!deviceId) return;
+  try{
+    var payload = await apiGet(API.devices, { action:'custom_values', id:deviceId });
+    if(payload && payload.values && typeof payload.values === 'object'){
+      deviceCustomValues = payload.values;
+    }
+  }catch(e){
+    console.warn('DeviceHub: load custom values failed.', e);
+  }
+}
+
+function renderCustomFields(){
+  var btn=getCustomFieldButton();
+  var tab=document.getElementById('tab8');
+  if(!btn || !tab) return;
+
+  if(!deviceCustomFields.length){
+    btn.style.display='none';
+    tab.innerHTML='<div class="fsec-title">หัวข้อเพิ่มเอง</div><div class="form-grp form-full"><div style="padding:14px 16px;border:1px dashed var(--border);border-radius:14px;color:var(--text3);font-size:12.5px">ยังไม่มีหัวข้อเพิ่มเอง</div></div>';
+    if(btn.classList.contains('active')){
+      var firstVisible=document.querySelector('.ftab:not([style*="display: none"])');
+      if(firstVisible){
+        var idx=Array.prototype.indexOf.call(document.querySelectorAll('.ftab'), firstVisible);
+        switchTab(idx, firstVisible);
+      }
+    }
+    return;
+  }
+
+  btn.style.display='inline-flex';
+  tab.innerHTML='<div class="fsec-title">หัวข้อเพิ่มเอง</div><div class="form-grid" id="customFieldsWrapInner"></div>';
+  var inner=document.getElementById('customFieldsWrapInner');
+  inner.innerHTML=deviceCustomFields.map(function(field){
+    var value = Object.prototype.hasOwnProperty.call(deviceCustomValues, field.field_key) ? deviceCustomValues[field.field_key] : '';
+    if(field.field_type === 'textarea'){
+      return '<div class="form-grp form-full" data-custom-field-wrap="'+esc(field.field_key,'')+'"><label class="form-lbl">'+esc(field.label,'')+'</label><textarea class="form-ta" data-custom-field="'+esc(field.field_key,'')+'" data-custom-type="'+esc(field.field_type,'')+'" placeholder="'+esc(field.label,'')+'" style="height:82px">'+esc(value || '', '')+'</textarea></div>';
+    }
+    if(field.field_type === 'number'){
+      return '<div class="form-grp" data-custom-field-wrap="'+esc(field.field_key,'')+'"><label class="form-lbl">'+esc(field.label,'')+'</label><input class="form-inp" type="number" data-custom-field="'+esc(field.field_key,'')+'" data-custom-type="'+esc(field.field_type,'')+'" value="'+esc(value || '', '')+'" placeholder="'+esc(field.label,'')+'"></div>';
+    }
+    if(field.field_type === 'checkbox'){
+      return '<div class="form-grp" data-custom-field-wrap="'+esc(field.field_key,'')+'"><label class="form-lbl">'+esc(field.label,'')+'</label><div class="chk-row" style="border-bottom:none;padding:10px 0 0"><input type="checkbox" id="cf_'+esc(field.field_key,'')+'" data-custom-field="'+esc(field.field_key,'')+'" data-custom-type="'+esc(field.field_type,'')+'" '+((value==='1'||value===1||value===true)?'checked':'')+'><label for="cf_'+esc(field.field_key,'')+'">ติ๊กเมื่อมีข้อมูลในหัวข้อนี้</label></div></div>';
+    }
+    return '<div class="form-grp" data-custom-field-wrap="'+esc(field.field_key,'')+'"><label class="form-lbl">'+esc(field.label,'')+'</label><input class="form-inp" type="text" data-custom-field="'+esc(field.field_key,'')+'" data-custom-type="'+esc(field.field_type,'')+'" value="'+esc(value || '', '')+'" placeholder="'+esc(field.label,'')+'"></div>';
+  }).join('');
+}
+
+function collectCustomFieldValues(){
+  var values={};
+  document.querySelectorAll('[data-custom-field]').forEach(function(el){
+    var key=el.getAttribute('data-custom-field');
+    var type=el.getAttribute('data-custom-type');
+    if(!key) return;
+    if(type==='checkbox'){
+      values[key]=el.checked ? 1 : 0;
+      return;
+    }
+    values[key]=readInputValue(el);
+  });
+  return values;
+}
+
+function buildCustomFieldManager(){
+  var holder=document.getElementById('customFieldManager');
+  if(!holder) return;
+  if(!deviceCustomFields.length){
+    holder.innerHTML='<div style="padding:12px 14px;border:1px dashed var(--border);border-radius:14px;color:var(--text3);font-size:12.5px">ยังไม่มีหัวข้อเพิ่มเอง</div>';
+    return;
+  }
+  holder.innerHTML=deviceCustomFields.map(function(field){
+    return '<div class="cfg-grid" style="grid-template-columns:minmax(0,1.15fr) 130px 92px 92px;margin-top:10px">'
+      +'<input class="cfg-input" data-custom-label-id="'+field.id+'" value="'+esc(field.label,'')+'">'
+      +'<select class="cfg-input" data-custom-type-id="'+field.id+'">'
+        +'<option value="text" '+(field.field_type==='text'?'selected':'')+'>Text</option>'
+        +'<option value="textarea" '+(field.field_type==='textarea'?'selected':'')+'>Textarea</option>'
+        +'<option value="number" '+(field.field_type==='number'?'selected':'')+'>Number</option>'
+        +'<option value="checkbox" '+(field.field_type==='checkbox'?'selected':'')+'>Checkbox</option>'
+      +'</select>'
+      +'<button class="btn btn-ghost" type="button" onclick="updateCustomField('+field.id+')">บันทึก</button>'
+      +'<button class="btn btn-danger" type="button" onclick="deleteCustomField('+field.id+')">ลบ</button>'
+      +'</div>';
+  }).join('');
+}
+
+async function createCustomField(){
+  if(!canManageDevices()) return adminOnlyDeviceAction();
+  var labelEl=document.getElementById('newCustomFieldLabel');
+  var typeEl=document.getElementById('newCustomFieldType');
+  var label=normalizeInputValue(labelEl ? labelEl.value : '');
+  var type=typeEl ? typeEl.value : 'text';
+  if(!label){ showToast('กรุณากรอกชื่อหัวข้อใหม่','error'); return; }
+  try{
+    await apiPost(API.devices + '?action=custom_field', { label:label, field_type:type, sort_order:deviceCustomFields.length + 1 });
+    if(labelEl) labelEl.value='';
+    if(typeEl) typeEl.value='text';
+    await loadCustomFieldDefinitions();
+    buildCustomFieldManager();
+    renderCustomFields();
+    applyFieldConfig();
+    showToast('✅ เพิ่มหัวข้อใหม่แล้ว','success');
+  }catch(e){
+    showToast('❌ '+e.message,'error');
+  }
+}
+
+async function updateCustomField(id){
+  if(!canManageDevices()) return adminOnlyDeviceAction();
+  var labelEl=document.querySelector('[data-custom-label-id="'+id+'"]');
+  var typeEl=document.querySelector('[data-custom-type-id="'+id+'"]');
+  var label=normalizeInputValue(labelEl ? labelEl.value : '');
+  var type=typeEl ? typeEl.value : 'text';
+  if(!label){ showToast('กรุณากรอกชื่อหัวข้อ','error'); return; }
+  try{
+    await apiPut(API.devices + '?action=custom_field', id, { label:label, field_type:type });
+    await loadCustomFieldDefinitions();
+    buildCustomFieldManager();
+    renderCustomFields();
+    applyFieldConfig();
+    showToast('✅ บันทึกหัวข้อแล้ว','success');
+  }catch(e){
+    showToast('❌ '+e.message,'error');
+  }
+}
+
+async function deleteCustomField(id){
+  if(!canManageDevices()) return adminOnlyDeviceAction();
+  if(!confirm('ยืนยันลบหัวข้อนี้ ?')) return;
+  try{
+    await apiDelete(API.devices + '?action=custom_field', id);
+    await loadCustomFieldDefinitions();
+    buildCustomFieldManager();
+    renderCustomFields();
+    applyFieldConfig();
+    showToast('🗑️ ลบหัวข้อแล้ว','success');
+  }catch(e){
+    showToast('❌ '+e.message,'error');
+  }
+}
 
 function applyPowerFilter(state){
   if(!state || !Array.isArray(window.data)) return;
@@ -400,6 +1028,22 @@ var _up=new URLSearchParams(location.search);
 if(_up.get('status'))document.getElementById('fS').value=_up.get('status');
 function esc(v, fallback){ return safeText(v, arguments.length > 1 ? fallback : '—'); }
 function inlineData(v){ return encodeInlineData(v); }
+function getDeviceCode(d){
+  return d && (d.computer_name || d.id || '');
+}
+function getLegacyDeviceCode(d){
+  if(!d) return '';
+  if(!d.id) return '';
+  if(d.computer_name && String(d.id).toLowerCase() === String(d.computer_name).toLowerCase()) return '';
+  return d.id;
+}
+function getDeviceMetaLine(d){
+  var parts=[];
+  var legacyCode=getLegacyDeviceCode(d);
+  if(legacyCode) parts.push(legacyCode);
+  if(d && d.fixed_asset_no) parts.push('FA '+d.fixed_asset_no);
+  return parts.join(' · ');
+}
 
 // ── LOAD ──────────────────────────────────────────────────────
 async function loadData(){
@@ -429,13 +1073,14 @@ async function loadData(){
     setDB('ok','MySQL · '+data.length+' เครื่อง');
   }catch(e){
     setDB('err','error');
-    document.getElementById('tb').innerHTML='<tr><td colspan="22" style="text-align:center;padding:36px;color:var(--red)">❌ '+esc(e.message)+'</td></tr>';
+    document.getElementById('tb').innerHTML='<tr><td colspan="7" style="text-align:center;padding:36px;color:var(--red)">❌ '+esc(e.message)+'</td></tr>';
     showToast('❌ '+e.message,'error');
   }
 }
 
 // ── RENDER TABLE ──────────────────────────────────────────────
 function render(){
+  var showActions=canManageDevices();
   var mt=0;
   for(var i=0;i<data.length;i++){
     if(isMaintenanceDevice(data[i]))mt++;
@@ -448,7 +1093,7 @@ function render(){
   document.getElementById('pi').textContent='แสดง '+data.length+' รายการ';
 
   if(!data.length){
-    document.getElementById('tb').innerHTML='<tr><td colspan="22" style="text-align:center;padding:36px;color:var(--text3)">📭 ไม่พบข้อมูล</td></tr>';
+    document.getElementById('tb').innerHTML='<tr><td colspan="7" style="text-align:center;padding:36px;color:var(--text3)">📭 ไม่พบข้อมูล</td></tr>';
     if (typeof refreshSyncedScrollAreas === 'function') {
       refreshSyncedScrollAreas(document.getElementById('mainTableScroll'));
     }
@@ -456,46 +1101,96 @@ function render(){
   }
 
   document.getElementById('tb').innerHTML=data.map(function(d,i){
-    var t=TIPO[d.type]||{i:'💻',c:'ico-pc'};
+    var t=TIPO[d.type]||{i:'<span class="dev-ico-core"><i class="ri-computer-line"></i></span>',c:'ico-pc'};
     var dj=inlineData(d);
     var did=encodeURIComponent(String(d.id||'')).replace(/'/g,'%27');
+      var quickItems=[
+        {label:'ดูข้อมูล',icon:'<i class="ri-search-line"></i>',tone:'view',action:"showDetail(decodeInlineData('"+dj+"'))"}
+      ];
+    if(showActions){
+      quickItems.push({label:'แก้ไข',icon:'<i class="ri-pencil-line"></i>',tone:'edit',action:"openModal(decodeInlineData('"+dj+"'))"});
+      quickItems.push({label:'ลบ',icon:'<i class="ri-delete-bin-6-line"></i>',tone:'del',action:"delDev(decodeURIComponent('"+did+"'))"});
+    }
+    var deviceCode=getDeviceCode(d);
+    var deviceMetaLine=getDeviceMetaLine(d);
+    var quickPayload=inlineData({
+      title:deviceCode||'อุปกรณ์',
+      meta:[deviceMetaLine||'',d.ip||''].filter(Boolean).join(' • '),
+      items:quickItems
+    });
     var sw=[];
-    if(+d.sw_hrm)sw.push('HRM');if(+d.sw_sap)sw.push('SAP');if(+d.sw_stock)sw.push('Stock');
-    if(+d.sw_garoon)sw.push('Garoon');if(+d.sw_team)sw.push('Team');
-    var ramG=d.ram_mb?Math.round(d.ram_mb/1024)+'GB':'—';
-    var stor=(d.hdd_gb?'HDD '+d.hdd_gb+'GB':'')+(d.hdd_gb&&d.ssd_gb?' / ':'')+(d.ssd_gb?'SSD '+d.ssd_gb+'GB':'');
+    if(+d.sw_hrm)sw.push('HRM');
+    if(+d.sw_sap)sw.push('SAP');
+    if(+d.sw_stock)sw.push('Stock');
+    if(+d.sw_garoon)sw.push('Garoon');
+    if(+d.sw_team)sw.push('Team');
+    if(d.sw_other)sw.push(d.sw_other);
+    var ramG=d.ram_mb?Math.round(d.ram_mb/1024)+' GB':'—';
+    var stor=(d.hdd_gb?'HDD '+d.hdd_gb+' GB':'')+(d.hdd_gb&&d.ssd_gb?' / ':'')+(d.ssd_gb?'SSD '+d.ssd_gb+' GB':'');
+    var assetMeta=deviceMetaLine;
+    var assetPills=[
+      d.type?'<span class="mini-pill">'+esc(d.type)+'</span>':'',
+      d.location?'<span class="mini-pill muted">'+esc(d.location)+'</span>':'',
+      d.year_purchased?'<span class="mini-pill muted">'+esc(d.year_purchased)+'</span>':''
+    ].join('');
+    var ownerMain=d.username||d.email||'—';
+    var ownerSub=d.pic?esc(d.pic):'—';
+    var ownerMeta=d.dept?esc(d.dept):'—';
+    var networkMain=d.ip?esc(d.ip):'—';
+    var networkSub=d.workgroup?esc(d.workgroup):'—';
+    var networkMeta=d.mac?esc(d.mac):'—';
+    var hardwareMain=[d.brand,d.model].filter(Boolean).map(function(v){return esc(v);}).join(' · ')||'—';
+    var hardwareSub=[d.cpu?esc(d.cpu):'',d.ram_mb?esc(ramG,''):''].filter(Boolean).join(' · ')||'—';
+    var hardwareMeta=(stor?esc(stor):'—')+(d.serial_no?' · SN '+esc(d.serial_no,''):'');
+    var softwareMain=d.win_version?esc(d.win_version):'—';
+    var softwareSub=[d.office_version?esc(d.office_version):'',d.av_name?esc(d.av_name):''].filter(Boolean).join(' · ')||'—';
+    var accessPills=[
+      +d.access_internet?'<span class="mini-pill access">Internet</span>':'',
+      +d.access_email?'<span class="mini-pill access">Email</span>':''
+    ].join('');
+    var softwarePills=sw.length?sw.map(function(s){return '<span class="mini-pill soft">'+esc(s)+'</span>';}).join(''):'<span class="mini-pill muted">ไม่มี software เพิ่มเติม</span>';
     return '<tr style="animation:rowIn .2s ease '+(i*.015)+'s both">'
-      +'<td style="padding-left:14px;position:sticky;left:0;background:var(--surface);z-index:2;min-width:160px">'
-        +'<div style="display:flex;align-items:center;gap:8px">'
-        +'<div class="dev-ico '+t.c+'">'+t.i+'</div>'
-        +'<div><div style="font-weight:500;font-size:13px">'+esc(d.computer_name||d.id)+'</div>'
-        +'<div style="font-size:10px;color:var(--text3);font-family:var(--mono)">'+esc(d.id)+(d.fixed_asset_no?' · '+esc(d.fixed_asset_no,''):'')+'</div>'
-        +'</div></div></td>'
-      +'<td style="font-family:var(--mono);font-size:12px;color:var(--cyan)">'+esc(d.ip)+'</td>'
-      +'<td style="font-size:12.5px">'+esc(d.computer_name)+'</td>'
-      +'<td style="font-size:12.5px;color:var(--text2)">'+esc(d.username)+'</td>'
-      +'<td style="font-family:var(--mono);font-size:11px;color:var(--text3)">'+esc(d.mac)+'</td>'
-      +'<td><span style="font-size:11.5px;border:1px solid var(--border);padding:2px 7px;border-radius:4px;color:var(--text2)">'+esc(d.type)+'</span></td>'
-      +'<td style="font-size:12.5px">'+esc(d.pic)+'</td>'
-      +'<td style="font-size:12.5px;color:var(--text2)">'+esc(d.dept)+'</td>'
-      +'<td style="font-size:12px;color:var(--text2);max-width:120px;overflow:hidden;text-overflow:ellipsis">'+esc(d.location)+'</td>'
-      +'<td style="font-family:var(--mono);font-size:12px;color:var(--text2)">'+esc(d.year_purchased)+'</td>'
-      +'<td style="font-size:12.5px"><div style="font-weight:500">'+esc(d.brand)+'</div><div style="font-size:11px;color:var(--text3)">'+esc(d.model,'')+'</div></td>'
-      +'<td style="font-size:12px;color:var(--text2);max-width:130px;overflow:hidden;text-overflow:ellipsis">'+esc(d.cpu)+'<br><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">'+(d.cpu_speed?esc(d.cpu_speed+'GHz',''):'')+(d.ram_mb?' · '+esc(ramG,''):'')+'</span></td>'
-      +'<td style="font-family:var(--mono);font-size:12px">'+ramG+'</td>'
-      +'<td style="font-size:12px;color:var(--text2)">'+esc(stor||'—')+'</td>'
-      +'<td style="font-size:12px"><div>'+esc(d.win_version)+'</div><div style="font-size:10.5px;color:var(--text3)">'+(d.win_bit?esc(d.win_bit+'bit',''):'')+(d.win_license?' · '+esc(d.win_license,''):'')+'</div></td>'
-      +'<td style="font-size:12px">'+esc(d.office_version)+'<div style="font-size:10.5px;color:var(--text3)">'+esc(d.office_license,'')+'</div></td>'
-      +'<td style="font-size:12px;color:var(--text2)">'+esc(d.av_name)+'<div style="font-size:10.5px;color:var(--text3)">'+esc(d.av_version,'')+'</div></td>'
-      +'<td style="font-size:11px">'+(sw.length?sw.map(function(s){return'<span style="background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.15);padding:1px 5px;border-radius:3px;color:var(--cyan);margin:1px;display:inline-block">'+s+'</span>';}).join(''):'<span style="color:var(--text3)">—</span>')+'</td>'
-      +'<td style="text-align:center">'+(+d.access_internet?'<span class="tag-yes">✓</span>':'<span class="tag-no">✗</span>')+'</td>'
-      +'<td style="text-align:center">'+(+d.access_email?'<span class="tag-yes">✓</span>':'<span class="tag-no">✗</span>')+'</td>'
-      +'<td><div style="font-size:11px;color:var(--text3)">รอเช็ก...</div>'+maintenanceBadgeHtml(d)+'</td>'
-      +'<td class="sticky-actions-cell"><div class="row-actions">'
-        +'<button class="act-btn view" onclick="showDetail(decodeInlineData(\''+dj+'\'))" title="ดูรายละเอียด"><span>🔍</span><span class="txt">ดู</span></button>'
-        +'<button class="act-btn edit" onclick="openModal(decodeInlineData(\''+dj+'\'))" title="แก้ไข"><span>✏️</span><span class="txt">แก้ไข</span></button>'
-        +'<button class="act-btn del" onclick="delDev(decodeURIComponent(\''+did+'\'))" title="ลบ"><span>🗑️</span><span class="txt">ลบ</span></button>'
+      +'<td class="asset-cell">'
+        +'<div class="asset-head">'
+          +'<button type="button" class="quick-trigger context-only" oncontextmenu="return openQuickActionMenu(event,\''+quickPayload+'\')" title="คลิกขวาเพื่อเปิดเมนู">'
+            +'<div class="dev-ico '+t.c+'">'+t.i+'</div>'
+          +'</button>'
+          +'<div class="asset-meta"><div class="asset-title">'+esc(deviceCode||'—')+'</div>'
+          +'<div class="asset-sub">'+esc(assetMeta||'—','')+'</div>'
+          +'<div class="asset-pills">'+assetPills+'</div>'
+          +'</div>'
+        +'</div>'
+      +'</td>'
+      +'<td><div class="info-stack">'
+        +'<div class="info-main">'+esc(ownerMain)+'</div>'
+        +'<div class="info-sub">'+ownerSub+'</div>'
+        +'<div class="info-meta"><strong>แผนก</strong> '+ownerMeta+(d.email?' · <strong>Mail</strong> '+esc(d.email,''):'')+'</div>'
       +'</div></td>'
+      +'<td><div class="info-stack">'
+        +'<div class="info-main">'+networkMain+'</div>'
+        +'<div class="info-sub">'+networkSub+'</div>'
+        +'<div class="info-meta">'+networkMeta+(d.logon?' · LOGON '+esc(d.logon,''):'')+'</div>'
+      +'</div></td>'
+      +'<td><div class="info-stack">'
+        +'<div class="info-main">'+hardwareMain+'</div>'
+        +'<div class="info-sub">'+hardwareSub+'</div>'
+        +'<div class="info-meta">'+hardwareMeta+'</div>'
+      +'</div></td>'
+      +'<td><div class="info-stack software-stack">'
+        +'<div class="info-main">'+softwareMain+'</div>'
+        +'<div class="info-sub">'+softwareSub+'</div>'
+        +'<div class="stack-pills">'+softwarePills+accessPills+'</div>'
+      +'</div></td>'
+      +'<td class="js-power-state"><div class="info-stack status-stack"><div class="info-sub">รอเช็ก...</div></div>'+maintenanceBadgeHtml(d)+'</td>'
+      +(showActions
+        ? '<td class="sticky-actions-cell"><div class="row-actions">'
+          +'<button class="act-btn view" onclick="showDetail(decodeInlineData(\''+dj+'\'))" title="ดูรายละเอียด"><span class="act-ico"><i class="ri-search-line"></i></span><span class="txt">ดู</span></button>'
+          +'<button class="act-btn edit" onclick="openModal(decodeInlineData(\''+dj+'\'))" title="แก้ไข"><span class="act-ico"><i class="ri-pencil-line"></i></span><span class="txt">แก้ไข</span></button>'
+          +'<button class="act-btn del" onclick="delDev(decodeURIComponent(\''+did+'\'))" title="ลบ"><span class="act-ico"><i class="ri-delete-bin-6-line"></i></span><span class="txt">ลบ</span></button>'
+        +'</div></td>'
+        : '<td class="sticky-actions-cell"><div class="row-actions">'
+          +'<button class="act-btn view" onclick="showDetail(decodeInlineData(\''+dj+'\'))" title="ดูรายละเอียด"><span class="act-ico"><i class="ri-search-line"></i></span><span class="txt">ดู</span></button>'
+        +'</div></td>')
       +'</tr>';
   }).join('');
   var st = document.getElementById('fS').value;
@@ -517,10 +1212,12 @@ function setF(k,v){if(k==='status')document.getElementById('fS').value=v;loadDat
 function clearF(){document.getElementById('qS').value='';document.getElementById('fT').value='';document.getElementById('fS').value='';document.getElementById('fD').value='';loadData();}
 
 // ── DETAIL VIEW ───────────────────────────────────────────────
-function showDetail(d){
+async function showDetail(d){
   if(!d){showToast('❌ เปิดรายละเอียดไม่สำเร็จ','error');return;}
-  var t=TIPO[d.type]||{i:'💻',c:'ico-pc'};
-  document.getElementById('dT').innerHTML='<div style="display:flex;align-items:center;gap:10px"><div class="dev-ico '+t.c+'" style="font-size:20px">'+t.i+'</div><div><div>'+esc(d.computer_name||d.id)+'</div><div style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+esc(d.id)+(d.fixed_asset_no?' · FA: '+esc(d.fixed_asset_no,''):'')+'</div></div></div>';
+  var t=TIPO[d.type]||{i:'<span class="dev-ico-core"><i class="ri-computer-line"></i></span>',c:'ico-pc'};
+  var detailCode=getDeviceCode(d);
+  var detailMeta=getDeviceMetaLine(d);
+  document.getElementById('dT').innerHTML='<div style="display:flex;align-items:center;gap:10px"><div class="dev-ico '+t.c+'" style="font-size:20px">'+t.i+'</div><div><div>'+esc(detailCode||'—')+'</div><div style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+esc(detailMeta||'—','')+'</div></div></div>';
   var sw=[];
   if(+d.sw_hrm)sw.push('HRM');if(+d.sw_sap)sw.push('SAP');if(+d.sw_stock)sw.push('Stock');
   if(+d.sw_garoon)sw.push('Garoon');if(+d.sw_team)sw.push('Team');
@@ -533,7 +1230,7 @@ function showDetail(d){
       +row('MAC Address',d.mac,true)+row('DHCP',+d.use_dhcp?'DHCP':'Static')
       +row('Email',d.email)+row('Logon',d.logon)
     +'</div></div>'
-    +'<div class="dv-section"><div class="dv-sec-title">📦 Physical Information</div><div class="dv-grid">'
+    +'<div class="dv-section"><div class="dv-sec-title"><i class="ri-box-3-line"></i> Physical Information</div><div class="dv-grid">'
       +row('Type',d.type)+row('Maintenance',isMaintenanceDevice(d)?'<span class="badge badge-maintenance">กำลังซ่อม</span>':'—',false,true)
       +row('PIC',d.pic)+row('Department',d.dept)
       +row('Location',d.location)+row('Year Purchased',d.year_purchased)
@@ -547,7 +1244,7 @@ function showDetail(d){
       +row('Service Tag',d.service_tag)+row('HDD',(d.hdd_gb?d.hdd_gb+' GB — '+d.hdd_name:null))
       +row('SSD',(d.ssd_gb?d.ssd_gb+' GB — '+d.ssd_name:null))+row('','')
     +'</div></div>'
-    +'<div class="dv-section"><div class="dv-sec-title">🖥 Monitor</div><div class="dv-grid">'
+    +'<div class="dv-section"><div class="dv-sec-title"><i class="ri-monitor-line"></i> Monitor</div><div class="dv-grid">'
       +row('Brand',d.monitor_brand)+row('Model',d.monitor_model)
       +row('Specification',d.monitor_spec)+row('Serial No',d.monitor_serial,true)
     +'</div></div>'
@@ -559,21 +1256,49 @@ function showDetail(d){
       +row('Version',d.win_version)+row('Bit',(d.win_bit?d.win_bit+'-bit':null))
       +row('License Type',d.win_license)+row('License Key',(d.win_key?d.win_key.replace(/./g,'•'):null))
     +'</div></div>'
-    +'<div class="dv-section"><div class="dv-sec-title">📋 Office & Antivirus</div><div class="dv-grid">'
+    +'<div class="dv-section"><div class="dv-sec-title"><i class="ri-shield-check-line"></i> Office & Antivirus</div><div class="dv-grid">'
       +row('Office Version',d.office_version)+row('Office License',d.office_license)
       +row('Office Key',(d.office_key?d.office_key.replace(/./g,'•'):null))+row('Antivirus',d.av_name+(d.av_version?' v'+d.av_version:''))
     +'</div></div>'
-    +'<div class="dv-section"><div class="dv-sec-title">📦 Software & Access</div>'
+    +'<div class="dv-section"><div class="dv-sec-title"><i class="ri-apps-line"></i> Software & Access</div>'
       +'<div style="margin-bottom:10px"><span style="color:var(--text2);font-size:12.5px">Software: </span>'+(sw.length?sw.map(function(s){return'<span style="background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.15);padding:2px 8px;border-radius:4px;color:var(--cyan);margin:2px">'+s+'</span>';}).join(''):'—')+(d.sw_other?'<span style="color:var(--text2);font-size:12px"> + '+esc(d.sw_other,'')+'</span>':'')+'</div>'
       +'<div style="display:flex;gap:16px">'
         +'<div><span style="color:var(--text3);font-size:11px">INTERNET</span><br>'+yn(d.access_internet)+'</div>'
         +'<div><span style="color:var(--text3);font-size:11px">EMAIL</span><br>'+yn(d.access_email)+'</div>'
       +'</div></div>';
   var dj=inlineData(d);
+  var did=encodeURIComponent(String(d.id||'')).replace(/'/g,'%27');
   document.getElementById('dF').innerHTML=''
     +'<button class="btn btn-ghost" onclick="closeDetail()">ปิด</button>'
-    +'<button class="btn btn-primary" onclick="closeDetail();openModal(decodeInlineData(\''+dj+'\'))">✏️ แก้ไข</button>';
+    +(canManageDevices()?'<button class="btn btn-primary" onclick="closeDetail();openModal(decodeInlineData(\''+dj+'\'))"><i class="ri-pencil-line"></i> แก้ไข</button>':'');
   document.getElementById('ov2').classList.add('open');
+
+  try{
+    await loadCustomFieldDefinitions();
+    await loadCustomFieldValues(d.id);
+    if(deviceCustomFields.length){
+      var filled=deviceCustomFields.filter(function(field){
+        var value=deviceCustomValues[field.field_key];
+        return value!==null && value!==undefined && value!=='' && value!=='0';
+      });
+      if(filled.length){
+        var customHtml='<div class="dv-section"><div class="dv-sec-title">🧩 หัวข้อเพิ่มเอง</div><div class="dv-grid">';
+        filled.forEach(function(field){
+          var val=deviceCustomValues[field.field_key];
+          if(field.field_type==='checkbox'){
+            val = (val==='1' || val===1 || val===true) ? '<span class="tag-yes">✓ ใช้งาน</span>' : '<span class="tag-no">✗ ไม่ใช้</span>';
+            customHtml+=row(field.label, val, false, true);
+          }else{
+            customHtml+=row(field.label, val);
+          }
+        });
+        customHtml+='</div></div>';
+        document.getElementById('dB').innerHTML += customHtml;
+      }
+    }
+  }catch(e){
+    console.warn('DeviceHub: custom detail render failed.', e);
+  }
 }
 function closeDetail(){document.getElementById('ov2').classList.remove('open');}
 
@@ -597,13 +1322,15 @@ var FIDS=['ip','computer_name','username','workgroup','use_dhcp','mac','email','
   'av_name','av_version','sw_other'];
 var CHKS=['sw_hrm','sw_sap','sw_stock','sw_garoon','sw_team','access_internet','access_email'];
 
-function openModal(d){
+async function openModal(d){
+  if(!canManageDevices()){adminOnlyDeviceAction();return;}
   editId=null;
+  if(typeof resetDashSkipFields==='function')resetDashSkipFields(document.getElementById('ov'));
   // Reset to first tab
   switchTab(0,document.querySelectorAll('.ftab')[0]);
   if(d&&typeof d==='object'){
     editId=d.id;
-    document.getElementById('mT').textContent='✏️ แก้ไข: '+(d.computer_name||d.id);
+    document.getElementById('mT').innerHTML='<i class="ri-pencil-line"></i> แก้ไข: '+esc(d.computer_name||d.id,'');
     FIDS.forEach(function(f){
       var el=document.getElementById('f_'+f);
       if(el){el.value=(d[f]!==null&&d[f]!==undefined)?d[f]:'';}
@@ -614,7 +1341,7 @@ function openModal(d){
     });
     document.getElementById('f_status_maintenance').checked=isMaintenanceDevice(d);
   }else{
-    document.getElementById('mT').textContent='➕ เพิ่มอุปกรณ์ใหม่';
+    document.getElementById('mT').innerHTML='<i class="ri-add-line"></i> เพิ่มอุปกรณ์ใหม่';
     FIDS.forEach(function(f){
       var el=document.getElementById('f_'+f);
       if(el)el.value='';
@@ -627,38 +1354,68 @@ function openModal(d){
     document.getElementById('f_status_maintenance').checked=false;
     document.getElementById('f_use_dhcp').value='0';
   }
+  await loadCustomFieldDefinitions();
+  await loadCustomFieldValues(editId);
+  applyFieldConfig();
   document.getElementById('ov').classList.add('open');
 }
-function closeModal(){document.getElementById('ov').classList.remove('open');editId=null;}
+function closeModal(){if(typeof resetDashSkipFields==='function')resetDashSkipFields(document.getElementById('ov'));document.getElementById('ov').classList.remove('open');editId=null;}
 
 // ── SAVE ──────────────────────────────────────────────────────
 async function saveDevice(){
-  var cname=normalizeInputValue(document.getElementById('f_computer_name').value);
+  if(!canManageDevices()){adminOnlyDeviceAction();return;}
+  var cname=readInputValue(document.getElementById('f_computer_name'));
   if(!cname){showToast('กรุณากรอก Computer Name *','error');switchTab(0,document.querySelectorAll('.ftab')[0]);return;}
-  var btn=document.getElementById('sv');btn.disabled=true;btn.textContent='⏳...';
   var body={};
   FIDS.forEach(function(f){
     var el=document.getElementById('f_'+f);
-    if(el)body[f]=normalizeInputValue(el.value);
+    if(el)body[f]=readInputValue(el);
   });
   CHKS.forEach(function(f){
     var el=document.getElementById('f_'+f);
     if(el)body[f]=el.checked?1:0;
   });
   body.status=document.getElementById('f_status_maintenance').checked?'maintenance':null;
+  body.custom_values=collectCustomFieldValues();
   var _cu=getCurrentUser();
   body['updated_by']=_cu?(_cu.name||_cu.username):'admin';
+  if(!confirmIncompleteSave({
+    title:'ข้อมูลอุปกรณ์บางส่วนยังว่าง',
+    checks:[
+      {label:'IP Address', value:body.ip},
+      {label:'User Name', value:body.username},
+      {label:'Workgroup / Domain', value:body.workgroup},
+      {label:'MAC Address', value:body.mac},
+      {label:'ประเภทอุปกรณ์', value:body.type},
+      {label:'ผู้รับผิดชอบ (PIC)', value:body.pic},
+      {label:'แผนก', value:body.dept},
+      {label:'สถานที่', value:body.location},
+      {label:'ปีที่ซื้อ', value:body.year_purchased},
+      {label:'Fixed Asset Number', value:body.fixed_asset_no},
+      {label:'Brand', value:body.brand},
+      {label:'Model', value:body.model},
+      {label:'CPU', value:body.cpu},
+      {label:'RAM', value:body.ram_mb},
+      {label:'Serial Number', value:body.serial_no},
+      {label:'Windows Version', value:body.win_version},
+      {label:'Office Version', value:body.office_version},
+      {label:'Antivirus', value:body.av_name}
+    ],
+    note:'ถ้าตั้งใจเว้นว่างไว้ กดตกลงเพื่อบันทึกต่อได้'
+  })) return;
+  var btn=document.getElementById('sv');btn.disabled=true;btn.innerHTML='<i class="ri-loader-4-line"></i> กำลังบันทึก...';
   try{
     if(editId)await apiPut(API.devices,editId,body);
     else await apiPost(API.devices,body);
     showToast(editId?'✅ แก้ไขแล้ว':'✅ เพิ่มอุปกรณ์แล้ว','success');
     closeModal();await loadData();
   }catch(e){showToast('❌ '+e.message,'error');}
-  finally{btn.disabled=false;btn.textContent='💾 บันทึกลง MySQL';}
+  finally{btn.disabled=false;btn.innerHTML='<i class="ri-save-3-line"></i> บันทึกลง MySQL';}
 }
 
 // ── DELETE ────────────────────────────────────────────────────
 async function delDev(id){
+  if(!canManageDevices()){adminOnlyDeviceAction();return;}
   if(!confirm('ยืนยันลบ '+id+' ?'))return;
   try{await apiDelete(API.devices,id);showToast('🗑️ ลบแล้ว','error');await loadData();}
   catch(e){showToast('❌ '+e.message,'error');}
@@ -669,7 +1426,7 @@ function exportXL(){
   var rows=data.map(function(d){
     var sw=[];if(+d.sw_hrm)sw.push('HRM');if(+d.sw_sap)sw.push('SAP');if(+d.sw_stock)sw.push('Stock');if(+d.sw_garoon)sw.push('Garoon');if(+d.sw_team)sw.push('Team');
     return{
-      'รหัส':d.id,'Fixed Asset':d.fixed_asset_no||'',
+      'รหัส':getDeviceCode(d),'Fixed Asset':d.fixed_asset_no||'',
       'IP Address':d.ip||'','Computer Name':d.computer_name||'','User Name':d.username||'',
       'MAC':d.mac||'','DHCP':+d.use_dhcp?'DHCP':'Static',
       'ประเภท':d.type||'','PIC':d.pic||'','Department':d.dept||'','Location':d.location||'',
@@ -695,7 +1452,7 @@ function exportCSV(){
   var keys=Object.keys({
     'รหัส':1,'IP':1,'Computer Name':1,'User Name':1,'Type':1,'PIC':1,'Department':1,'Brand':1,'Model':1,'CPU':1,'RAM':1,'Windows':1,'Office':1,'Antivirus':1,'Internet':1,'Email Access':1,'Maintenance':1
   });
-  var rows=data.map(function(d){return[d.id,d.ip,d.computer_name,d.username,d.type,d.pic,d.dept,d.brand,d.model,d.cpu,d.ram_mb,d.win_version,d.office_version,d.av_name,+d.access_internet?'Y':'N',+d.access_email?'Y':'N',isMaintenanceDevice(d)?'Y':''].join(',');});
+  var rows=data.map(function(d){return[getDeviceCode(d),d.ip,d.computer_name,d.username,d.type,d.pic,d.dept,d.brand,d.model,d.cpu,d.ram_mb,d.win_version,d.office_version,d.av_name,+d.access_internet?'Y':'N',+d.access_email?'Y':'N',isMaintenanceDevice(d)?'Y':''].join(',');});
   var csv='\uFEFF'+['รหัส,IP,Computer Name,User Name,Type,PIC,Department,Brand,Model,CPU,RAM,Windows,Office,Antivirus,Internet,Email,Maintenance'].concat(rows).join('\n');
   var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='IT-Asset.csv';a.click();
   showToast('📥 Export CSV แล้ว');
@@ -704,6 +1461,11 @@ function exportCSV(){
 // ── IMPORT ────────────────────────────────────────────────────
 var importedData=[];
 function handleImportFile(input){
+  if(!canManageDevices()){
+    if(input)input.value='';
+    adminOnlyDeviceAction();
+    return;
+  }
   if(!input.files.length){return;}
   var file=input.files[0];
   console.log('📁 File selected:', file.name, 'Size:', file.size, 'bytes');
@@ -735,7 +1497,7 @@ function parseImportData(headers,rows){
   var headerLower=headers.map(function(h){return (h||'').toString().toLowerCase().trim();});
 
   var mapping=[
-    {cols:['รหัส','id'],field:'id'},
+    {cols:['รหัส','id'],field:'computer_name'},
     {cols:['fixed asset','fixed_asset','fixed asset no'],field:'fixed_asset_no'},
     {cols:['ip','ip address'],field:'ip'},
     {cols:['computer name','computer_name','ชื่อเครื่อง'],field:'computer_name'},
@@ -873,13 +1635,28 @@ function closeImport(){
 }
 
 async function saveImportedData(){
+  if(!canManageDevices()){adminOnlyDeviceAction();return;}
   var valid=importedData.filter(function(d){return !d.errors.length;});
   if(!valid.length){showToast('ไม่มีข้อมูลที่ถูกต้อง','error');return;}
+  var missingSummary=[
+    {label:'IP Address',count:valid.filter(function(d){return isNoDataValue(d.ip);}).length},
+    {label:'User Name',count:valid.filter(function(d){return isNoDataValue(d.username);}).length},
+    {label:'แผนก',count:valid.filter(function(d){return isNoDataValue(d.dept);}).length},
+    {label:'สถานที่',count:valid.filter(function(d){return isNoDataValue(d.location);}).length},
+    {label:'Fixed Asset Number',count:valid.filter(function(d){return isNoDataValue(d.fixed_asset_no);}).length},
+    {label:'Brand',count:valid.filter(function(d){return isNoDataValue(d.brand);}).length},
+    {label:'Model',count:valid.filter(function(d){return isNoDataValue(d.model);}).length}
+  ].filter(function(item){return item.count>0;}).map(function(item){return item.label+' '+item.count+' รายการ';});
+  if(!confirmIncompleteSave({
+    title:'ข้อมูลอุปกรณ์จากไฟล์บางส่วนยังว่าง',
+    missing:missingSummary,
+    note:'ถ้าตั้งใจให้บางรายการว่างไว้ สามารถกดตกลงเพื่อ import ต่อได้'
+  })) return;
   
   var btn=document.getElementById('btnSaveImport');
   btn.disabled=true;
-  var btn_text=btn.textContent;
-  btn.textContent='⏳ กำลังบันทึก...';
+  var btn_text=btn.innerHTML;
+  btn.innerHTML='<i class="ri-loader-4-line"></i> กำลังบันทึก...';
   
   var saved=0, failed=0, failList=[];
   for(var i=0;i<valid.length;i++){
@@ -908,7 +1685,7 @@ async function saveImportedData(){
   }
   
   btn.disabled=false;
-  btn.textContent=btn_text;
+  btn.innerHTML=btn_text;
   
   if(failed){
     showToast('⚠️ สำเร็จ:'+saved+' | ล้มเหลว:'+failed,'error');
@@ -923,14 +1700,27 @@ async function saveImportedData(){
 
 function setDB(s,t){document.getElementById('dbDot').className='db-dot '+s;document.getElementById('dbTxt').textContent=t;}
 document.getElementById('ov').addEventListener('click',function(e){if(e.target===e.currentTarget)closeModal();});
+document.getElementById('ovFieldCfg').addEventListener('click',function(e){if(e.target===e.currentTarget)closeFieldConfig();});
 document.getElementById('ov2').addEventListener('click',function(e){if(e.target===e.currentTarget)closeDetail();});
 document.getElementById('ovImport').addEventListener('click',function(e){if(e.target===e.currentTarget)closeImport();});
+setupDeviceRoleUi();
+applyFieldConfig();
 loadData();
 </script>
-<script src="device-import.js?v=20260324b"></script>
-<script src="device-power.js?v=20260326h"></script>
+<script src="assets/js/device-import.js?v=20260427c"></script>
+<script src="assets/js/device-power.js?v=20260427c"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
 
 
 

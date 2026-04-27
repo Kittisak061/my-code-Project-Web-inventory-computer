@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ส่งออกรายงาน — DeviceHub</title>
-<link rel="stylesheet" href="style.css?v=20260326u">
-<script src="config.js?v=20260326u"></script>
-<script src="shared.js?v=20260326u"></script>
-<script src="vendor/xlsx.full.min.js?v=20260324"></script>
+<link rel="stylesheet" href="assets/css/theme.css?v=20260427c">
+<script src="assets/js/config.js?v=20260427c"></script>
+<script src="assets/js/shared.js?v=20260427c"></script>
+<script src="assets/vendor/xlsx.full.min.js?v=20260427c"></script>
 <style>
 @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
@@ -122,17 +122,24 @@
 </style>
 </head>
 <body>
+<!--
+  Export page map
+  1. App shell / topbar
+  2. Export overview cards and quick actions
+  3. Export presets / report builders
+  4. Inline script for workbook generation
+-->
 <div class="layout">
 <div id="sidebar-slot"></div>
 <div class="main">
   <div class="topbar">
     <div style="flex:1">
-      <h1>📥 ส่งออกรายงาน</h1>
+      <h1><i class="ri-download-2-line"></i> ส่งออกรายงาน</h1>
       <p style="font-size:12px;color:var(--text2);margin-top:4px">ส่งออกข้อมูลเป็นไฟล์ Excel พร้อมรูปแบบสวยงาม</p>
     </div>
     <div class="db-pill"><div class="db-dot wait" id="dbDot"></div><span id="dbTxt">กำลังโหลด...</span></div>
     <button class="btn btn-ghost" onclick="refreshData()">🔄 รีเฟรช</button>
-    <button class="btn btn-primary" onclick="exportFull()" style="font-weight:700">📊 รายงานฉบับเต็ม</button>
+    <button class="btn btn-primary" onclick="exportFull()" style="font-weight:700"><i class="ri-bar-chart-2-line"></i> รายงานฉบับเต็ม</button>
     <button class="btn btn-logout" onclick="logout()">⏻</button>
   </div>
 
@@ -141,31 +148,31 @@
     <!-- STATISTICS -->
     <div class="stats-bar">
       <div class="stat-pill">
-        <div class="sp-ico" style="background:linear-gradient(135deg,rgba(53,216,255,.15),rgba(53,216,255,.05))">🖥</div>
+        <div class="sp-ico" style="background:linear-gradient(135deg,rgba(53,216,255,.15),rgba(53,216,255,.05))"><i class="ri-computer-line"></i></div>
         <div class="sp-content">
           <div class="sp-num" id="s0">—</div>
-          <div class="sp-lbl">อุปกรณ์ IT</div>
+          <div class="sp-lbl">Device List</div>
         </div>
       </div>
       <div class="stat-pill">
-        <div class="sp-ico" style="background:linear-gradient(135deg,rgba(167,139,250,.15),rgba(167,139,250,.05))">✉️</div>
+        <div class="sp-ico" style="background:linear-gradient(135deg,rgba(167,139,250,.15),rgba(167,139,250,.05))"><i class="ri-mail-line"></i></div>
         <div class="sp-content">
           <div class="sp-num" id="s1" style="background:linear-gradient(135deg,var(--violet),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">—</div>
           <div class="sp-lbl">บัญชีอีเมล</div>
         </div>
       </div>
       <div class="stat-pill">
-        <div class="sp-ico" style="background:linear-gradient(135deg,rgba(0,232,150,.15),rgba(0,232,150,.05))">👥</div>
+          <div class="sp-ico" style="background:linear-gradient(135deg,rgba(0,232,150,.15),rgba(0,232,150,.05))"><i class="ri-user-3-line"></i></div>
         <div class="sp-content">
           <div class="sp-num" id="s2" style="background:linear-gradient(135deg,var(--green),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">—</div>
           <div class="sp-lbl">ผู้ใช้งาน</div>
         </div>
       </div>
       <div class="stat-pill">
-        <div class="sp-ico" style="background:linear-gradient(135deg,rgba(255,77,109,.15),rgba(255,77,109,.05))">🔧</div>
+        <div class="sp-ico" style="background:linear-gradient(135deg,rgba(255,77,109,.15),rgba(255,77,109,.05))"><i class="ri-tools-line"></i></div>
         <div class="sp-content">
           <div class="sp-num" id="s3" style="background:linear-gradient(135deg,var(--red),var(--yellow));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">—</div>
-            <div class="sp-lbl">อุปกรณ์ที่ต้องซ่อม</div>
+            <div class="sp-lbl">แผนกที่มีข้อมูล</div>
         </div>
       </div>
     </div>
@@ -209,7 +216,7 @@
     <!-- EXPORT CARDS -->
     <div style="margin-bottom:16px;">
       <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px;">
-        <span>📦</span>
+        <span><i class="ri-box-3-line"></i></span>
         <span>ส่งออกตามหมวดหมู่</span>
       </div>
       <div style="font-size:12px;color:var(--text3);margin-bottom:20px;">เลือกประเภทข้อมูลที่ต้องการส่งออกเป็นไฟล์ Excel</div>
@@ -222,10 +229,10 @@
         <div class="ex-banner"></div>
         <div class="ex-body">
           <div class="ex-head">
-            <div class="ex-ico" style="background:linear-gradient(135deg,rgba(53,216,255,.15),rgba(53,216,255,.05))">🖥</div>
+            <div class="ex-ico" style="background:linear-gradient(135deg,rgba(53,216,255,.15),rgba(53,216,255,.05))"><i class="ri-computer-line"></i></div>
             <div>
-              <div class="ex-title">รายการอุปกรณ์ IT</div>
-              <div class="ex-sub">ข้อมูลครบถ้วนของอุปกรณ์คอมพิวเตอร์และอุปกรณ์ IT ทั้งหมด</div>
+              <div class="ex-title">Device List</div>
+              <div class="ex-sub">ข้อมูลครบถ้วนของอุปกรณ์คอมพิวเตอร์และรายการเครื่องทั้งหมด</div>
             </div>
           </div>
           <div class="ex-cols">
@@ -233,11 +240,11 @@
           </div>
           <div class="ex-foot">
             <button class="ex-btn ex-btn-export" onclick="exportSingle('devices')">
-              <span>📥</span>
+              <span><i class="ri-download-2-line"></i></span>
               <span>ส่งออก</span>
             </button>
             <button class="ex-btn ex-btn-preview" onclick="showPreview('devices')">
-              <span>👁</span>
+              <span><i class="ri-eye-line"></i></span>
               <span>ดูตัวอย่าง</span>
             </button>
           </div>
@@ -249,7 +256,7 @@
         <div class="ex-banner" style="background:linear-gradient(90deg,var(--violet),var(--cyan))"></div>
         <div class="ex-body">
           <div class="ex-head">
-            <div class="ex-ico" style="background:linear-gradient(135deg,rgba(167,139,250,.15),rgba(167,139,250,.05))">✉️</div>
+            <div class="ex-ico" style="background:linear-gradient(135deg,rgba(167,139,250,.15),rgba(167,139,250,.05))"><i class="ri-mail-line"></i></div>
             <div>
               <div class="ex-title">บัญชีอีเมลและคอมพิวเตอร์</div>
               <div class="ex-sub">รายการบัญชี Email, การตั้งค่า MFA และข้อมูลคอมพิวเตอร์</div>
@@ -260,11 +267,11 @@
           </div>
           <div class="ex-foot">
             <button class="ex-btn ex-btn-export" onclick="exportSingle('emails')">
-              <span>📥</span>
+              <span><i class="ri-download-2-line"></i></span>
               <span>ส่งออก</span>
             </button>
             <button class="ex-btn ex-btn-preview" onclick="showPreview('emails')">
-              <span>👁</span>
+              <span><i class="ri-eye-line"></i></span>
               <span>ดูตัวอย่าง</span>
             </button>
           </div>
@@ -276,7 +283,7 @@
         <div class="ex-banner" style="background:linear-gradient(90deg,var(--green),var(--cyan))"></div>
         <div class="ex-body">
           <div class="ex-head">
-            <div class="ex-ico" style="background:linear-gradient(135deg,rgba(0,232,150,.15),rgba(0,232,150,.05))">👥</div>
+          <div class="ex-ico" style="background:linear-gradient(135deg,rgba(0,232,150,.15),rgba(0,232,150,.05))"><i class="ri-user-3-line"></i></div>
             <div>
               <div class="ex-title">ผู้ใช้งานระบบ</div>
               <div class="ex-sub">บัญชีผู้ใช้งาน DeviceHub และสิทธิ์การเข้าถึง</div>
@@ -287,38 +294,11 @@
           </div>
           <div class="ex-foot">
             <button class="ex-btn ex-btn-export" onclick="exportSingle('users')">
-              <span>📥</span>
+              <span><i class="ri-download-2-line"></i></span>
               <span>ส่งออก</span>
             </button>
             <button class="ex-btn ex-btn-preview" onclick="showPreview('users')">
-              <span>👁</span>
-              <span>ดูตัวอย่าง</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Repair Tickets -->
-      <div class="ex-card">
-        <div class="ex-banner" style="background:linear-gradient(90deg,var(--red),var(--yellow))"></div>
-        <div class="ex-body">
-          <div class="ex-head">
-            <div class="ex-ico" style="background:linear-gradient(135deg,rgba(255,77,109,.15),rgba(255,77,109,.05))">🔧</div>
-            <div>
-              <div class="ex-title">ใบแจ้งซ่อม</div>
-              <div class="ex-sub">รายการแจ้งซ่อม ติดตามสถานะ และประวัติการแก้ไข</div>
-            </div>
-          </div>
-          <div class="ex-cols">
-<b>คอลัมน์ที่รวม:</b> เลขที่ Ticket, หัวเรื่อง, อุปกรณ์, ผู้แจ้ง, ระดับความสำคัญ (High/Medium/Low), สถานะ (Open/In Progress/Resolved), ช่างผู้รับผิดชอบ, รายละเอียด, วันที่สร้าง, อัปเดตล่าสุด
-          </div>
-          <div class="ex-foot">
-            <button class="ex-btn ex-btn-export" onclick="exportSingle('repair')">
-              <span>📥</span>
-              <span>ส่งออก</span>
-            </button>
-            <button class="ex-btn ex-btn-preview" onclick="showPreview('repair')">
-              <span>👁</span>
+              <span><i class="ri-eye-line"></i></span>
               <span>ดูตัวอย่าง</span>
             </button>
           </div>
@@ -330,18 +310,18 @@
         <div class="ex-banner" style="background:linear-gradient(90deg,var(--yellow),var(--cyan))"></div>
         <div class="ex-body">
           <div class="ex-head">
-            <div class="ex-ico" style="background:linear-gradient(135deg,rgba(255,204,68,.15),rgba(255,204,68,.05))">📊</div>
+            <div class="ex-ico" style="background:linear-gradient(135deg,rgba(255,204,68,.15),rgba(255,204,68,.05))"><i class="ri-bar-chart-2-line"></i></div>
             <div>
               <div class="ex-title">สรุปภาพรวม</div>
               <div class="ex-sub">สถิติและตัวเลขสำคัญของระบบทั้งหมด</div>
             </div>
           </div>
           <div class="ex-cols">
-<b>รายการสรุป:</b> จำนวนอุปกรณ์ทั้งหมด, อุปกรณ์แต่ละประเภท, อุปกรณ์แต่ละแผนก, สถานะอุปกรณ์, บัญชีอีเมล Active/Inactive, ผู้ใช้งาน Admin/User, Tickets แต่ละสถานะ, Tickets แต่ละระดับความสำคัญ
+<b>รายการสรุป:</b> จำนวนอุปกรณ์ทั้งหมด, อุปกรณ์แต่ละประเภท, อุปกรณ์แต่ละแผนก, สถานะอุปกรณ์, บัญชีอีเมล Active/Inactive/Suspended และผู้ใช้งาน Admin/User
           </div>
           <div class="ex-foot">
             <button class="ex-btn ex-btn-export" onclick="exportSummary()">
-              <span>📥</span>
+              <span><i class="ri-download-2-line"></i></span>
               <span>ส่งออก</span>
             </button>
           </div>
@@ -356,20 +336,19 @@
             <div class="ex-ico" style="background:linear-gradient(135deg,rgba(53,216,255,.2),rgba(167,139,250,.1))">📚</div>
             <div>
               <div class="ex-title">รายงานฉบับเต็ม (All-in-One)</div>
-              <div class="ex-sub">ไฟล์เดียว รวมทุกข้อมูล 5 Sheet พร้อมส่งออก</div>
+              <div class="ex-sub">ไฟล์เดียว รวมทุกข้อมูล 4 Sheet พร้อมส่งออก</div>
             </div>
           </div>
           <div class="ex-cols">
-<b>รวม 5 Sheets:</b>
-<br>• Sheet 1: รายการอุปกรณ์ IT (IT Assets)
+<b>รวม 4 Sheets:</b>
+<br>• Sheet 1: Device List (IT Assets)
 <br>• Sheet 2: บัญชีอีเมลและคอมพิวเตอร์ (Email & Computer)
 <br>• Sheet 3: ผู้ใช้งานระบบ (Users)
-<br>• Sheet 4: ใบแจ้งซ่อม (Repair Tickets)
-<br>• Sheet 5: สรุปภาพรวม (Summary & By Department)
+<br>• Sheet 4: สรุปภาพรวม (Summary & By Department)
           </div>
           <div class="ex-foot">
             <button class="ex-btn ex-btn-export" onclick="exportFull()" style="width:100%;">
-              <span>📊</span>
+              <span><i class="ri-bar-chart-2-line"></i></span>
               <span>ส่งออกรายงานฉบับเต็ม</span>
             </button>
           </div>
@@ -397,7 +376,7 @@
 <!-- PROGRESS OVERLAY -->
 <div class="prog-ov" id="progOv">
   <div class="prog-box">
-    <div class="prog-ico spin" id="progIco">⚙️</div>
+    <div class="prog-ico spin" id="progIco"><i class="ri-settings-3-line"></i></div>
     <div class="prog-title" id="progTitle">กำลังประมวลผล...</div>
     <div class="prog-sub" id="progSub">โปรดรอสักครู่</div>
     <div class="prog-steps" id="progSteps"></div>
@@ -410,7 +389,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 buildSidebar('export');
 
-var allData = { devices: [], emails: [], users: [], repair: [] };
+var allData = { devices: [], emails: [], users: [] };
 var _xlTheme = 0; // Default theme index
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -456,21 +435,23 @@ async function loadData() {
     var results = await Promise.allSettled([
       apiGet(API.devices),
       apiGet(API.emails),
-      apiGet(API.users),
-      apiGet(API.repair)
+      apiGet(API.users)
     ]);
 
     if (results[0].status === 'fulfilled') allData.devices = results[0].value || [];
     if (results[1].status === 'fulfilled') allData.emails = results[1].value || [];
     if (results[2].status === 'fulfilled') allData.users = results[2].value || [];
-    if (results[3].status === 'fulfilled') allData.repair = results[3].value || [];
 
     document.getElementById('s0').textContent = allData.devices.length;
     document.getElementById('s1').textContent = allData.emails.length;
     document.getElementById('s2').textContent = allData.users.length;
-      document.getElementById('s3').textContent = allData.devices.filter(function(d){ return d.status === 'maintenance'; }).length;
+      document.getElementById('s3').textContent = Object.keys(allData.devices.reduce(function(acc, d) {
+        var dept = String(d.dept || '').trim();
+        if (dept) acc[dept] = 1;
+        return acc;
+      }, {})).length;
 
-    setDB('ok', 'MySQL · พร้อมใช้งาน · ' + (allData.devices.length + allData.emails.length + allData.users.length + allData.repair.length) + ' รายการ');
+    setDB('ok', 'MySQL · พร้อมใช้งาน · ' + (allData.devices.length + allData.emails.length + allData.users.length) + ' รายการ');
   } catch (e) {
     setDB('err', 'เชื่อมต่อล้มเหลว');
     showToast('❌ โหลดข้อมูลไม่สำเร็จ: ' + e.message, 'error');
@@ -769,24 +750,7 @@ function mapUsers(data) {
   });
 }
 
-function mapRepair(data) {
-  return data.map(function(r) {
-    return {
-      'เลขที่ Ticket': r.ticket || '',
-      'หัวเรื่อง': r.title || '',
-      'อุปกรณ์': r.device || '',
-      'ผู้แจ้ง': r.reporter || '',
-      'ระดับ': r.priority === 'high' ? 'สูง' : r.priority === 'medium' ? 'ปานกลาง' : 'ต่ำ',
-      'สถานะ': r.status === 'open' ? 'เปิดค้าง' : r.status === 'in_progress' ? 'กำลังดำเนินการ' : 'แก้ไขแล้ว',
-      'ช่างผู้รับผิดชอบ': r.tech || '',
-      'รายละเอียด': r.description || '',
-      'สร้างเมื่อ': r.created_at || '',
-      'อัปเดตล่าสุด': r.updated_at || ''
-    };
-  });
-}
-
-function mapSummary(devices, emails, users, tickets) {
+function mapSummary(devices, emails, users) {
   var dMaint = 0, dRemark = 0, dInternet = 0, dEmail = 0;
   devices.forEach(function(d) {
     if (d.status === 'maintenance') dMaint++;
@@ -809,16 +773,6 @@ function mapSummary(devices, emails, users, tickets) {
     else uUser++;
   });
 
-  var tOpen = 0, tProgress = 0, tResolved = 0, tHigh = 0, tMedium = 0, tLow = 0;
-  tickets.forEach(function(t) {
-    if (t.status === 'open') tOpen++;
-    else if (t.status === 'in_progress') tProgress++;
-    else tResolved++;
-    if (t.priority === 'high') tHigh++;
-    else if (t.priority === 'medium') tMedium++;
-    else tLow++;
-  });
-
   return [
     { 'หมวดหมู่': 'อุปกรณ์ IT', 'รายการ': 'ทั้งหมด', 'จำนวน': devices.length },
     { 'หมวดหมู่': 'อุปกรณ์ IT', 'รายการ': 'กำลังซ่อม', 'จำนวน': dMaint },
@@ -832,14 +786,7 @@ function mapSummary(devices, emails, users, tickets) {
     { 'หมวดหมู่': 'ผู้ใช้งาน', 'รายการ': 'ทั้งหมด', 'จำนวน': users.length },
     { 'หมวดหมู่': 'ผู้ใช้งาน', 'รายการ': 'Active', 'จำนวน': uActive },
     { 'หมวดหมู่': 'ผู้ใช้งาน', 'รายการ': 'Admin', 'จำนวน': uAdmin },
-    { 'หมวดหมู่': 'ผู้ใช้งาน', 'รายการ': 'User', 'จำนวน': uUser },
-    { 'หมวดหมู่': 'แจ้งซ่อม', 'รายการ': 'ทั้งหมด', 'จำนวน': tickets.length },
-    { 'หมวดหมู่': 'แจ้งซ่อม', 'รายการ': 'เปิดค้าง', 'จำนวน': tOpen },
-    { 'หมวดหมู่': 'แจ้งซ่อม', 'รายการ': 'กำลังดำเนินการ', 'จำนวน': tProgress },
-    { 'หมวดหมู่': 'แจ้งซ่อม', 'รายการ': 'แก้ไขแล้ว', 'จำนวน': tResolved },
-    { 'หมวดหมู่': 'แจ้งซ่อม', 'รายการ': 'ระดับสูง', 'จำนวน': tHigh },
-    { 'หมวดหมู่': 'แจ้งซ่อม', 'รายการ': 'ระดับกลาง', 'จำนวน': tMedium },
-    { 'หมวดหมู่': 'แจ้งซ่อม', 'รายการ': 'ระดับต่ำ', 'จำนวน': tLow }
+    { 'หมวดหมู่': 'ผู้ใช้งาน', 'รายการ': 'User', 'จำนวน': uUser }
   ];
 }
 
@@ -852,8 +799,7 @@ async function exportSingle(type) {
   var configs = {
     devices: { data: allData.devices, map: mapDevices, title: '🖥 รายการอุปกรณ์ IT — DeviceHub', sub: 'ข้อมูลอุปกรณ์คอมพิวเตอร์และอุปกรณ์ IT', sheet: 'IT Assets', file: 'IT-Assets' },
     emails: { data: allData.emails, map: mapEmails, title: '✉️ บัญชีอีเมลและคอมพิวเตอร์ — DeviceHub', sub: 'รายการบัญชีอีเมลและข้อมูลคอมพิวเตอร์', sheet: 'Email & Computer', file: 'Email-Computer' },
-    users: { data: allData.users, map: mapUsers, title: '👥 ผู้ใช้งานระบบ — DeviceHub', sub: 'รายชื่อผู้ใช้งานระบบ', sheet: 'Users', file: 'Users' },
-    repair: { data: allData.repair, map: mapRepair, title: '🔧 ใบแจ้งซ่อม — DeviceHub', sub: 'รายการ Ticket แจ้งซ่อม', sheet: 'Repair Tickets', file: 'Repair-Tickets' }
+    users: { data: allData.users, map: mapUsers, title: '👥 ผู้ใช้งานระบบ — DeviceHub', sub: 'รายชื่อผู้ใช้งานระบบ', sheet: 'Users', file: 'Users' }
   };
 
   var cfg = configs[type];
@@ -883,7 +829,7 @@ async function exportSummary() {
   showProg('กำลังสร้าง Summary...', ['สรุปตัวเลข', 'แยกตามแผนก', 'บันทึกไฟล์']);
   
   try {
-    var sumRows = mapSummary(allData.devices, allData.emails, allData.users, allData.repair);
+    var sumRows = mapSummary(allData.devices, allData.emails, allData.users);
     var ws1 = buildSheet(sumRows, '📊 สรุปภาพรวม IT — DeviceHub', 'สรุปภาพรวม DeviceHub IT Management');
     stepDone(0);
 
@@ -915,12 +861,11 @@ async function exportSummary() {
 
 async function exportFull() {
   await ensureData();
-  showProg('กำลังสร้างรายงานฉบับเต็ม (5 Sheets)...', [
+  showProg('กำลังสร้างรายงานฉบับเต็ม (4 Sheets)...', [
     'Sheet 1: IT Assets',
     'Sheet 2: Email & Computer',
     'Sheet 3: Users',
-    'Sheet 4: Repair Tickets',
-    'Sheet 5: Summary',
+    'Sheet 4: Summary',
     'บันทึกไฟล์'
   ]);
 
@@ -937,10 +882,7 @@ async function exportFull() {
     XLSX.utils.book_append_sheet(wb, buildSheet(mapUsers(allData.users), '👥 ผู้ใช้งานระบบ', 'รายชื่อผู้ใช้งาน | ' + today), 'Users');
     stepDone(2);
 
-    XLSX.utils.book_append_sheet(wb, buildSheet(mapRepair(allData.repair), '🔧 ใบแจ้งซ่อม', 'Ticket แจ้งซ่อม | ' + today), 'Repair Tickets');
-    stepDone(3);
-
-    var sumRows = mapSummary(allData.devices, allData.emails, allData.users, allData.repair);
+    var sumRows = mapSummary(allData.devices, allData.emails, allData.users);
     var deptMap = {};
     allData.devices.forEach(function(d) {
       var dept = d.dept || 'ไม่ระบุ';
@@ -949,12 +891,12 @@ async function exportFull() {
     
     var wsSummary = buildSheet(sumRows, '📊 สรุปภาพรวม', 'สรุปภาพรวม | ' + today);
     XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
-    stepDone(4);
+    stepDone(3);
 
     XLSX.writeFile(wb, 'DeviceHub-Full-Report-' + getDateStr() + '.xlsx');
-    stepDone(5);
+    stepDone(4);
     
-    showToast('📊 ส่งออกรายงานฉบับเต็มสำเร็จ! (5 Sheets)', 'success');
+    showToast('📊 ส่งออกรายงานฉบับเต็มสำเร็จ! (4 Sheets)', 'success');
   } catch (e) {
     showToast('❌ เกิดข้อผิดพลาด: ' + e.message, 'error');
   }
@@ -975,8 +917,7 @@ async function showPreview(type) {
   var configs = {
     devices: { data: allData.devices.slice(0, 10), map: mapDevices, title: '🖥 รายการอุปกรณ์ IT — 10 แถวแรก' },
     emails: { data: allData.emails.slice(0, 10), map: mapEmails, title: '✉️ บัญชีอีเมล — 10 แถวแรก' },
-    users: { data: allData.users.slice(0, 10), map: mapUsers, title: '👥 ผู้ใช้งาน — 10 แถวแรก' },
-    repair: { data: allData.repair.slice(0, 10), map: mapRepair, title: '🔧 ใบแจ้งซ่อม — 10 แถวแรก' }
+    users: { data: allData.users.slice(0, 10), map: mapUsers, title: '👥 ผู้ใช้งาน — 10 แถวแรก' }
   };
 
   var cfg = configs[type];
@@ -1025,6 +966,18 @@ loadData();
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

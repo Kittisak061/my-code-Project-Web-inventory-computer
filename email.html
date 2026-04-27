@@ -6,9 +6,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Email & Computer — DeviceHub</title>
-<link rel="stylesheet" href="style.css?v=20260326aa">
-<script src="vendor/xlsx.full.min.js?v=20260324"></script>
-<script src="config.js?v=20260326u"></script><script src="shared.js?v=20260326u"></script>
+<link rel="stylesheet" href="assets/css/theme.css?v=20260427c">
+<script src="assets/vendor/xlsx.full.min.js?v=20260427c"></script>
+<script src="assets/js/config.js?v=20260427c"></script><script src="assets/js/shared.js?v=20260427c"></script>
 <style>
 .tbl-scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:2px;}.tbl-scroll table{min-width:900px;}
 th,td{white-space:nowrap;}
@@ -291,6 +291,31 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
 .email-board .table-wrap{margin-top:2px;border-radius:22px;}
 .email-board .pager{padding-top:12px;}
 .email-board .pager-info{font-size:11px;}
+.email-board .tbl-scroll{overflow-x:hidden;overflow-y:visible;padding-bottom:0;}
+.email-board .tbl-scroll table{width:100%;min-width:0;table-layout:fixed;}
+.email-board th,.email-board td{white-space:normal;word-break:break-word;vertical-align:top;}
+.email-board .sticky-key,
+.email-board .sticky-actions-head,
+.email-board .sticky-actions-cell{
+  position:static;
+  left:auto;
+  right:auto;
+  min-width:0;
+  box-shadow:none;
+  border-left:none;
+  background:transparent;
+}
+.email-board tbody tr:hover .sticky-actions-cell{background:transparent;}
+.email-board .row-actions{justify-content:flex-end;flex-wrap:wrap;}
+.email-board th:nth-child(1),.email-board td:nth-child(1){width:18%;}
+.email-board th:nth-child(2),.email-board td:nth-child(2){width:13%;}
+.email-board th:nth-child(3),.email-board td:nth-child(3){width:14%;}
+.email-board th:nth-child(4),.email-board td:nth-child(4){width:11%;}
+.email-board th:nth-child(5),.email-board td:nth-child(5){width:9%;}
+.email-board th:nth-child(6),.email-board td:nth-child(6){width:12%;}
+.email-board th:nth-child(7),.email-board td:nth-child(7){width:11%;}
+.email-board th:nth-child(8),.email-board td:nth-child(8){width:12%;}
+.email-board th:nth-child(9),.email-board td:nth-child(9){width:142px;}
 /* tabs */
 .ftabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:8px;flex-wrap:wrap;}
 .ftab{padding:6px 14px;border-radius:7px 7px 0 0;border:1px solid transparent;font-size:12.5px;cursor:pointer;color:var(--text2);background:transparent;font-family:var(--font);}
@@ -320,14 +345,14 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
 @media (max-width:1180px){
   .email-overview{grid-template-columns:1fr;}
   .email-shell,.email-board{padding:20px;}
-  .tbl-scroll table{min-width:900px;}
+  .email-board .tbl-scroll table{min-width:0;}
 }
 @media (max-width:860px){
   .email-overview-meta{grid-template-columns:1fr 1fr;}
   .email-board-head{align-items:flex-start;flex-direction:column;}
   .email-board-meta{width:100%;justify-content:space-between;}
   .email-board-hint{text-align:left;}
-  .tbl-scroll table{min-width:860px;}
+  .email-board .tbl-scroll table{min-width:0;}
 }
 @media (max-width:700px){
   .content.email-page{gap:16px;}
@@ -336,17 +361,34 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
   .email-board-pill{min-height:36px;}
   .sticky-key{min-width:180px;}
   .sticky-actions-head,.sticky-actions-cell{min-width:166px;}
-  .tbl-scroll table{min-width:760px;}
+  .email-board .tbl-scroll table{min-width:0;}
   .email-overview-meta{grid-template-columns:1fr;}
+  .email-board .row-actions{justify-content:flex-start;}
+  .email-board th:nth-child(1),.email-board td:nth-child(1),
+  .email-board th:nth-child(2),.email-board td:nth-child(2),
+  .email-board th:nth-child(3),.email-board td:nth-child(3),
+  .email-board th:nth-child(4),.email-board td:nth-child(4),
+  .email-board th:nth-child(5),.email-board td:nth-child(5),
+  .email-board th:nth-child(6),.email-board td:nth-child(6),
+  .email-board th:nth-child(7),.email-board td:nth-child(7),
+  .email-board th:nth-child(8),.email-board td:nth-child(8),
+  .email-board th:nth-child(9),.email-board td:nth-child(9){width:auto;}
 }
 </style>
 </head>
 <body class="email-page">
+<!--
+  Email & Computer page map
+  1. App shell / topbar / summary cards
+  2. Search + filters toolbar
+  3. Account table and row actions
+  4. Add / edit modal and inline script
+-->
 <div class="layout">
 <div id="sidebar-slot"></div>
 <div class="main">
   <div class="topbar">
-    <div style="flex:1"><h1>✉️ Email &amp; Computer</h1><p>Account Management — MySQL</p></div>
+    <div style="flex:1"><h1><i class="ri-mail-line"></i> Email &amp; Computer</h1><p>Account Management — MySQL</p></div>
     <div class="db-pill"><div class="db-dot wait" id="dbDot"></div><span id="dbTxt">โหลด...</span></div>
     <button class="btn btn-logout" onclick="logout()">⏻</button>
   </div>
@@ -380,18 +422,18 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
         <div class="page-actions-group">
           <button class="btn btn-ghost" onclick="loadData()">🔄 รีเฟรช</button>
           <button class="btn btn-ghost" onclick="exportCSV()">⬇ CSV</button>
-          <button class="btn btn-excel" onclick="exportXL()">📥 Excel</button>
+          <button class="btn btn-excel" onclick="exportXL()"><i class="ri-file-excel-2-line"></i> Excel</button>
           <button class="btn btn-primary" onclick="openModal(null)">+ เพิ่มบัญชี</button>
         </div>
       </div>
       <div class="stats-row">
-        <div class="stat-card"><div class="stat-icon si-v">✉️</div><div><div class="stat-num" style="color:var(--violet)" id="s0">—</div><div class="stat-label">ทั้งหมด</div></div></div>
-        <div class="stat-card"><div class="stat-icon si-g">✅</div><div><div class="stat-num sn-g" id="s1">—</div><div class="stat-label">Active</div></div></div>
-        <div class="stat-card"><div class="stat-icon si-y">🔐</div><div><div class="stat-num sn-y" id="s2">—</div><div class="stat-label">MFA Enabled</div></div></div>
-        <div class="stat-card"><div class="stat-icon si-r">⏳</div><div><div class="stat-num sn-r" id="s3">—</div><div class="stat-label">MFA Pending</div></div></div>
+        <div class="stat-card"><div class="stat-icon si-v"><i class="ri-mail-line"></i></div><div><div class="stat-num" style="color:var(--violet)" id="s0">—</div><div class="stat-label">ทั้งหมด</div></div></div>
+        <div class="stat-card"><div class="stat-icon si-g"><i class="ri-check-line"></i></div><div><div class="stat-num sn-g" id="s1">—</div><div class="stat-label">Active</div></div></div>
+        <div class="stat-card"><div class="stat-icon si-y"><i class="ri-lock-2-line"></i></div><div><div class="stat-num sn-y" id="s2">—</div><div class="stat-label">MFA Enabled</div></div></div>
+        <div class="stat-card"><div class="stat-icon si-r"><i class="ri-time-line"></i></div><div><div class="stat-num sn-r" id="s3">—</div><div class="stat-label">MFA Pending</div></div></div>
       </div>
       <div class="toolbar">
-        <div class="search-box"><span class="search-ico">🔍</span><input class="search-input" id="qS" placeholder="ค้นหา Email, ชื่อ, Computer, แผนก..."></div>
+        <div class="search-box"><span class="search-ico"><i class="ri-search-line"></i></span><input class="search-input" id="qS" placeholder="ค้นหา Email, ชื่อ, Computer, แผนก..."></div>
         <select class="filter-sel" id="fS"><option value="">ทุกสถานะ</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="suspended">Suspended</option></select>
         <select class="filter-sel" id="fMfa"><option value="">ทุก MFA</option><option value="enabled">MFA Enabled</option><option value="pending">MFA Pending</option><option value="disabled">MFA Disabled</option></select>
         <select class="filter-sel" id="fD" style="max-width:200px"><option value="">ทุกแผนก</option></select>
@@ -411,11 +453,11 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
           <div class="email-board-hint">มุมมองหลักโฟกัสข้อมูลใช้งานจริง ส่วนข้อมูลย่อยจะอยู่ในปุ่มดูรายละเอียด</div>
         </div>
       </div>
-      <div class="table-wrap tbl-scroll sync-scroll-x" id="emailTableWrap">
+      <div class="table-wrap tbl-scroll" id="emailTableWrap">
         <table>
           <thead>
             <tr>
-              <th class="sticky-key" style="padding-left:14px">Email</th>
+              <th style="padding-left:14px">Email</th>
               <th>Computer</th>
               <th>ผู้ใช้</th>
               <th>แผนก</th>
@@ -423,7 +465,7 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
               <th>MFA</th>
               <th>Login Device</th>
               <th>อัปเดตล่าสุด</th>
-              <th class="sticky-actions-head">จัดการ</th>
+              <th>จัดการ</th>
             </tr>
           </thead>
           <tbody id="tb"></tbody>
@@ -439,15 +481,15 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
 <div class="overlay" id="ov">
 <div class="modal" style="width:680px">
   <div class="modal-hdr">
-    <div class="modal-title" id="mT">➕ เพิ่มบัญชี Email</div>
+    <div class="modal-title" id="mT"><i class="ri-add-line"></i> เพิ่มบัญชี Email</div>
     <button class="modal-x" onclick="closeModal()">✕</button>
   </div>
   <div class="modal-body" style="padding-top:0">
     <!-- TABS -->
     <div class="ftabs">
-      <button class="ftab active" onclick="switchTab(0,this)">✉️ Email &amp; Computer</button>
-      <button class="ftab" onclick="switchTab(1,this)">👤 User Info</button>
-      <button class="ftab" onclick="switchTab(2,this)">🔐 MFA Setting</button>
+      <button class="ftab active" onclick="switchTab(0,this)"><i class="ri-mail-line"></i> Email &amp; Computer</button>
+      <button class="ftab" onclick="switchTab(1,this)"><i class="ri-user-3-line"></i> User Info</button>
+      <button class="ftab" onclick="switchTab(2,this)"><i class="ri-lock-2-line"></i> MFA Setting</button>
       <button class="ftab" onclick="switchTab(3,this)">📱 Login Device</button>
       <button class="ftab" onclick="switchTab(4,this)">📝 Other</button>
     </div>
@@ -482,7 +524,7 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
         <div class="form-grp"><label class="form-lbl">Password</label>
           <div style="position:relative">
             <input class="form-inp" id="f_password" type="password" placeholder="••••••••" style="width:100%;padding-right:36px">
-            <button type="button" onclick="togglePw()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:13px;color:var(--text3)">👁</button>
+            <button type="button" onclick="togglePw()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:13px;color:var(--text3)"><i class="ri-eye-line"></i></button>
           </div>
         </div>
         <div class="form-grp"><label class="form-lbl">Quota (GB)</label><input class="form-inp" id="f_quota" type="number" value="50" min="1"></div>
@@ -499,9 +541,9 @@ tbody tr:hover .sticky-actions-cell{background:rgba(18,30,44,.98);}
     <div class="fsec" id="ftab2">
       <div class="fsec-title">Setting MFA</div>
       <div class="chk-grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:16px">
-        <div class="chk-row"><input type="checkbox" id="f_mfa_email_user"><label for="f_mfa_email_user">✉️ Add MFA (Email User)</label></div>
+        <div class="chk-row"><input type="checkbox" id="f_mfa_email_user"><label for="f_mfa_email_user"><i class="ri-mail-line"></i> Add MFA (Email User)</label></div>
         <div class="chk-row"><input type="checkbox" id="f_mfa_ipad_app"><label for="f_mfa_ipad_app">📱 Add MFA (iPad App)</label></div>
-        <div class="chk-row"><input type="checkbox" id="f_mfa_enable_admin"><label for="f_mfa_enable_admin">👑 Enable MFA (Admin)</label></div>
+        <div class="chk-row"><input type="checkbox" id="f_mfa_enable_admin"><label for="f_mfa_enable_admin"><i class="ri-vip-crown-line"></i> Enable MFA (Admin)</label></div>
       </div>
       <div class="form-grid">
         <div class="form-grp"><label class="form-lbl">Status MFA</label>
@@ -573,7 +615,7 @@ buildSidebar('email');
 
 var data=[],editId=null;
 var STH={active:'Active',inactive:'Inactive',suspended:'Suspended'};
-var MFAS={enabled:'🔐 Enabled',pending:'⏳ Pending',disabled:'—'};
+var MFAS={enabled:'<i class="ri-lock-2-line"></i> Enabled',pending:'<i class="ri-time-line"></i> Pending',disabled:'—'};
 function esc(v, fallback){ return safeText(v, arguments.length > 1 ? fallback : '—'); }
 function inlineData(v){ return encodeInlineData(v); }
 
@@ -634,28 +676,24 @@ function render(){
     if(truthy(d.mfa_enable_admin))mfaItems.push(chip('Admin','warn'));
     var statusKey=d.status_user_email==='active'?'active':d.status_user_email==='suspended'?'suspended':'inactive';
     return '<tr style="animation:rowIn .2s ease '+(i*.015)+'s both">'
-      +'<td class="email-stack-cell" style="padding-left:14px;position:sticky;left:0;background:var(--surface);z-index:2;min-width:180px">'
+      +'<td class="email-stack-cell" style="padding-left:14px">'
         +'<div class="email-main"><div style="font-family:var(--mono);font-size:12.5px;color:var(--cyan)">✉ '+esc(d.email)+'</div>'
         +'<div class="email-sub">'+(d.email_old?'เดิม: '+esc(d.email_old,''):'ไม่มี email เดิม')+'</div></div>'
       +'</td>'
-      +'<td class="email-stack-cell" style="min-width:140px"><div class="email-main"><div style="font-family:var(--mono);font-size:12px;color:var(--text2)">'+esc(d.computer_name)+'</div><div class="email-sub">'+(d.computer_name_old?'เดิม: '+esc(d.computer_name_old,''):'ไม่มีชื่อเดิม')+'</div></div></td>'
-      +'<td class="email-stack-cell" style="min-width:180px"><div class="email-main"><div style="font-size:12.5px;font-weight:500">'+esc(d.name)+'</div><div class="email-sub">'+esc(d.user_computer,'ไม่ระบุผู้ใช้เครื่อง')+'</div></div></td>'
-      +'<td class="email-stack-cell" style="min-width:128px"><div class="email-main"><div style="font-size:12px;color:var(--text2)">'+esc(d.dept,'ไม่ระบุแผนก')+'</div><div class="email-sub">'+esc(d.type,'ไม่ระบุประเภท')+'</div></div></td>'
-      +'<td class="email-stack-cell" style="min-width:118px"><span class="badge badge-'+statusKey+'">'+(STH[statusKey]||'—')+'</span></td>'
-      +'<td class="email-stack-cell" style="min-width:150px"><div class="email-main"><div class="'+mfaCls+'" style="font-size:12px">'+mfaTxt+'</div><div class="email-inline">'+(mfaItems.length?mfaItems.join(''):chip('ยังไม่ตั้งค่า','dim'))+'</div></div></td>'
-      +'<td class="email-stack-cell" style="min-width:180px"><div class="email-inline">'+(loginItems.length?loginItems.join(''):chip('ไม่พบการใช้','dim'))+'</div></td>'
-      +'<td class="email-stack-cell" style="min-width:120px"><div class="email-main"><div class="email-sub" style="font-size:11px">'+esc(d.update_date)+'</div><div style="font-size:12px;color:var(--text2)">'+esc(d.update_by)+'</div></div></td>'
-      +'<td class="sticky-actions-cell"><div class="row-actions">'
-        +'<button class="act-btn view" onclick="showDetail(decodeInlineData(\''+dj+'\'))" title="ดูรายละเอียด"><span>🔍</span><span class="txt">ดู</span></button>'
-        +'<button class="act-btn edit" onclick="openModal(decodeInlineData(\''+dj+'\'))" title="แก้ไข"><span>✏️</span><span class="txt">แก้ไข</span></button>'
-        +'<button class="act-btn del" onclick="del('+d.id+')" title="ลบ"><span>🗑️</span><span class="txt">ลบ</span></button>'
+      +'<td class="email-stack-cell"><div class="email-main"><div style="font-family:var(--mono);font-size:12px;color:var(--text2)">'+esc(d.computer_name)+'</div><div class="email-sub">'+(d.computer_name_old?'เดิม: '+esc(d.computer_name_old,''):'ไม่มีชื่อเดิม')+'</div></div></td>'
+      +'<td class="email-stack-cell"><div class="email-main"><div style="font-size:12.5px;font-weight:500">'+esc(d.name)+'</div><div class="email-sub">'+esc(d.user_computer,'ไม่ระบุผู้ใช้เครื่อง')+'</div></div></td>'
+      +'<td class="email-stack-cell"><div class="email-main"><div style="font-size:12px;color:var(--text2)">'+esc(d.dept,'ไม่ระบุแผนก')+'</div><div class="email-sub">'+esc(d.type,'ไม่ระบุประเภท')+'</div></div></td>'
+      +'<td class="email-stack-cell"><span class="badge badge-'+statusKey+'">'+(STH[statusKey]||'—')+'</span></td>'
+      +'<td class="email-stack-cell"><div class="email-main"><div class="'+mfaCls+'" style="font-size:12px">'+mfaTxt+'</div><div class="email-inline">'+(mfaItems.length?mfaItems.join(''):chip('ยังไม่ตั้งค่า','dim'))+'</div></div></td>'
+      +'<td class="email-stack-cell"><div class="email-inline">'+(loginItems.length?loginItems.join(''):chip('ไม่พบการใช้','dim'))+'</div></td>'
+      +'<td class="email-stack-cell"><div class="email-main"><div class="email-sub" style="font-size:11px">'+esc(d.update_date)+'</div><div style="font-size:12px;color:var(--text2)">'+esc(d.update_by)+'</div></div></td>'
+      +'<td><div class="row-actions">'
+        +'<button class="act-btn view" onclick="showDetail(decodeInlineData(\''+dj+'\'))" title="ดูรายละเอียด"><span><i class="ri-search-line"></i></span><span class="txt">ดู</span></button>'
+        +'<button class="act-btn edit" onclick="openModal(decodeInlineData(\''+dj+'\'))" title="แก้ไข"><span><i class="ri-pencil-line"></i></span><span class="txt">แก้ไข</span></button>'
+        +'<button class="act-btn del" onclick="del('+d.id+')" title="ลบ"><span><i class="ri-delete-bin-6-line"></i></span><span class="txt">ลบ</span></button>'
       +'</div></td>'
       +'</tr>';
   }).join('');
-
-  if(typeof refreshSyncedScrollAreas==='function'){
-    refreshSyncedScrollAreas(document.getElementById('emailTableWrap'));
-  }
 }
 
 // ── DETAIL VIEW ──
@@ -666,19 +704,19 @@ function showDetail(d){
   var mfaColor=d.mfa_status==='enabled'?'var(--green)':d.mfa_status==='pending'?'var(--yellow)':'var(--text3)';
   document.getElementById('dT').innerHTML='<div style="font-family:var(--mono);color:var(--cyan)">✉ '+esc(d.email)+'</div><div style="font-size:11px;color:var(--text3);margin-top:2px">'+esc(d.name)+' · '+esc(d.dept)+'</div>';
   document.getElementById('dB').innerHTML=''
-    +'<div class="dv-sec-title" style="margin-top:0">✉️ Email &amp; Computer</div>'
+    +'<div class="dv-sec-title" style="margin-top:0"><i class="ri-mail-line"></i> Email &amp; Computer</div>'
     +'<div class="dv-grid">'
       +row('E-Mail',d.email,true)+row('E-Mail (Old)',d.email_old,true)
       +row('Computer Name',d.computer_name,true)+row('Computer Name (Old)',d.computer_name_old,true)
       +row('User Computer',d.user_computer)+row('Status','<span class="badge badge-'+(d.status_user_email==='active'?'active':d.status_user_email==='suspended'?'suspended':'inactive')+'">'+(STH[d.status_user_email]||'—')+'</span>',false,true)
     +'</div>'
-    +'<div class="dv-sec-title">👤 User Info</div>'
+    +'<div class="dv-sec-title"><i class="ri-user-3-line"></i> User Info</div>'
     +'<div class="dv-grid">'
       +row('Name',d.name)+row('Department',d.dept)
       +row('Type',d.type)+row('Quota',d.quota?d.quota+' GB':'—')
       +row('One Drive',d.onedrive_list)+row('','')
     +'</div>'
-    +'<div class="dv-sec-title">🔐 MFA Setting</div>'
+    +'<div class="dv-sec-title"><i class="ri-lock-2-line"></i> MFA Setting</div>'
     +'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">'
       +yn(d.mfa_email_user,'Add MFA Email')+' '
       +yn(d.mfa_ipad_app,'Add MFA iPad')+' '
@@ -703,7 +741,7 @@ function showDetail(d){
   var dj=inlineData(d);
   document.getElementById('dF').innerHTML=''
     +'<button class="btn btn-ghost" onclick="closeDetail()">ปิด</button>'
-    +'<button class="btn btn-primary" onclick="closeDetail();openModal(decodeInlineData(\''+dj+'\'))">✏️ แก้ไข</button>';
+    +'<button class="btn btn-primary" onclick="closeDetail();openModal(decodeInlineData(\''+dj+'\'))"><i class="ri-pencil-line"></i> แก้ไข</button>';
   document.getElementById('ov2').classList.add('open');
 }
 function closeDetail(){document.getElementById('ov2').classList.remove('open');}
@@ -728,7 +766,7 @@ function openModal(d){
   switchTab(0,document.querySelectorAll('.ftab')[0]);
   if(d&&typeof d==='object'){
     editId=d.id;
-    document.getElementById('mT').textContent='✏️ แก้ไข: '+d.name;
+    document.getElementById('mT').innerHTML='<i class="ri-pencil-line"></i> แก้ไข: '+esc(d.name,'');
     TEXT_FIELDS.forEach(function(f){
       var el=document.getElementById('f_'+f);
       if(el)el.value=(d[f]!==null&&d[f]!==undefined)?d[f]:'';
@@ -743,7 +781,7 @@ function openModal(d){
     });
     document.getElementById('f_dept').innerHTML=deptOptions(d.dept||'');
   }else{
-    document.getElementById('mT').textContent='➕ เพิ่มบัญชี Email ใหม่';
+    document.getElementById('mT').innerHTML='<i class="ri-add-line"></i> เพิ่มบัญชี Email ใหม่';
     TEXT_FIELDS.forEach(function(f){var el=document.getElementById('f_'+f);if(el)el.value='';});
     document.getElementById('f_quota').value=50;
     document.getElementById('f_type').value='บุคคล';
@@ -770,7 +808,6 @@ async function save(){
   var email=normalizeInputValue(document.getElementById('f_email').value);
   var name=normalizeInputValue(document.getElementById('f_name').value);
   if(!email||!name){showToast('กรุณากรอก Email และ Name','error');return;}
-  var btn=document.getElementById('sv');btn.disabled=true;btn.textContent='⏳...';
   var body={};
   TEXT_FIELDS.forEach(function(f){var el=document.getElementById('f_'+f);if(el)body[f]=normalizeInputValue(el.value);});
   SEL_FIELDS.forEach(function(f){var el=document.getElementById('f_'+f);if(el)body[f]=normalizeInputValue(el.value);});
@@ -779,6 +816,23 @@ async function save(){
   var _cu=getCurrentUser();
   body['update_by']=body['update_by']||(_cu?(_cu.name||_cu.username):'admin');
   body['update_date']=body['update_date']||new Date().toISOString().slice(0,10);
+  if(!confirmIncompleteSave({
+    title:'ข้อมูลบัญชี Email บางส่วนยังว่าง',
+    checks:[
+      {label:'แผนก', value:body.dept},
+      {label:'Email เก่า', value:body.email_old},
+      {label:'Computer Name', value:body.computer_name},
+      {label:'Computer Name เดิม', value:body.computer_name_old},
+      {label:'User Computer', value:body.user_computer},
+      {label:'Password', value:body.password},
+      {label:'OneDrive', value:body.onedrive_list},
+      {label:'วันที่อัปเดต', value:body.update_date},
+      {label:'ผู้อัปเดต', value:body.update_by},
+      {label:'หมายเหตุ', value:body.note}
+    ],
+    note:'ถ้าช่องไหนไม่มีข้อมูลจริง สามารถกดตกลงเพื่อบันทึกต่อได้'
+  })) return;
+  var btn=document.getElementById('sv');btn.disabled=true;btn.textContent='⏳...';
   try{
     if(editId)await apiPut(API.emails,editId,body);else await apiPost(API.emails,body);
     showToast(editId?'✅ แก้ไขแล้ว':'✅ เพิ่มบัญชีแล้ว','success');
@@ -842,6 +896,17 @@ loadData();
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
 
 
 

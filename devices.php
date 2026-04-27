@@ -1,10 +1,21 @@
 <?php
+// ============================================================
+// Device API
+// 1. Bootstrap / writable fields
+// 2. Custom field helpers
+// 3. Device query helpers
+// 4. Power probe helpers
+// 5. Custom field handlers
+// 6. Main REST handlers
+// ============================================================
+
 require_once __DIR__ . '/config.php';
 $db = getDB();
+ensureDeviceCustomTables($db);
 $m  = $_SERVER['REQUEST_METHOD'];
 $id = isset($_GET['id']) ? $_GET['id'] : null;
 
-// All writable fields matching the new schema
+// ---------- 1) Bootstrap / writable fields ----------
 $FIELDS = array(
   'fixed_asset_no','status',
   'ip','computer_name','username','workgroup','use_dhcp','mac',
@@ -21,10 +32,175 @@ $FIELDS = array(
   'email','logon','remark','updated_by'
 );
 
-function nextDeviceId($db) {
-  $max = $db->query("SELECT MAX(CAST(SUBSTRING(`id`, 5) AS UNSIGNED)) FROM `devices` WHERE `id` LIKE 'DEV-%'")->fetchColumn();
-  $next = ((int)$max) + 1;
-  return 'DEV-' . str_pad($next, 4, '0', STR_PAD_LEFT);
+// ---------- 2) Custom field helpers ----------
+function ensureDeviceCustomTables($db) {
+  static $ready = false;
+  if ($ready) return;
+
+  $db->exec("
+    CREATE TABLE IF NOT EXISTS `device_custom_fields` (
+      `id` INT NOT NULL AUTO_INCREMENT,
+      `field_key` VARCHAR(80) NOT NULL,
+      `label` VARCHAR(160) NOT NULL,
+      `field_type` VARCHAR(20) NOT NULL DEFAULT 'text',
+      `sort_order` INT NOT NULL DEFAULT 0,
+      `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+      `created_by` VARCHAR(100) DEFAULT NULL,
+      `updated_by` VARCHAR(100) DEFAULT NULL,
+      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (`id`),
+      UNIQUE KEY `uniq_device_custom_field_key` (`field_key`),
+      KEY `idx_device_custom_field_order` (`sort_order`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+  ");
+
+  $db->exec("
+    CREATE TABLE IF NOT EXISTS `device_custom_values` (
+      `id` INT NOT NULL AUTO_INCREMENT,
+      `device_id` VARCHAR(100) NOT NULL,
+      `field_key` VARCHAR(80) NOT NULL,
+      `value_text` TEXT DEFAULT NULL,
+      `updated_by` VARCHAR(100) DEFAULT NULL,
+      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (`id`),
+      UNIQUE KEY `uniq_device_custom_value` (`device_id`,`field_key`),
+      KEY `idx_device_custom_value_device` (`device_id`),
+      KEY `idx_device_custom_value_field` (`field_key`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+  ");
+
+  $ready = true;
+}
+
+function normalizeDeviceIdentifier($computerName) {
+  return (string)(normalizeNullableText($computerName) ?: '');
+}
+
+function findDeviceIdByComputerName($db, $computerName, $excludeId = null) {
+  $name = normalizeDeviceIdentifier($computerName);
+  if ($name === '') return null;
+  $sql = 'SELECT `id` FROM `devices` WHERE LOWER(TRIM(`computer_name`)) = LOWER(TRIM(:computer_name))';
+  if ($excludeId !== null && $excludeId !== '') {
+    $sql .= ' AND `id` <> :exclude_id';
+  }
+  $sql .= ' LIMIT 1';
+  $st = $db->prepare($sql);
+  $params = array(':computer_name' => $name);
+  if ($excludeId !== null && $excludeId !== '') {
+    $params[':exclude_id'] = $excludeId;
+  }
+  $st->execute($params);
+  $row = $st->fetch();
+  return $row ? (string)$row['id'] : null;
+}
+
+function assertDeviceIdentifierAvailable($db, $deviceId, $computerName, $excludeId = null) {
+  if ($deviceId === '') err('Please provide computer_name', 400);
+
+  $idSql = 'SELECT COUNT(*) FROM `devices` WHERE `id` = :id';
+  $idParams = array(':id' => $deviceId);
+  if ($excludeId !== null && $excludeId !== '') {
+    $idSql .= ' AND `id` <> :exclude_id';
+    $idParams[':exclude_id'] = $excludeId;
+  }
+  $idSt = $db->prepare($idSql);
+  $idSt->execute($idParams);
+  if ((int)$idSt->fetchColumn() > 0) {
+    err('Computer Name already exists', 409);
+  }
+
+  $duplicateComputerId = findDeviceIdByComputerName($db, $computerName, $excludeId);
+  if ($duplicateComputerId !== null) {
+    err('Computer Name already exists', 409);
+  }
+}
+
+function normalizeCustomFieldType($value) {
+  $type = strtolower(trim((string)$value));
+  $allowed = array('text', 'textarea', 'number', 'checkbox');
+  return in_array($type, $allowed, true) ? $type : 'text';
+}
+
+function slugifyCustomFieldKey($label) {
+  $label = strtolower(trim((string)$label));
+  $label = preg_replace('/[^a-z0-9]+/', '_', $label);
+  $label = trim($label, '_');
+  if ($label === '') $label = 'custom_field';
+  return substr($label, 0, 60);
+}
+
+function nextCustomFieldKey($db, $base) {
+  $key = $base;
+  $suffix = 1;
+  $st = $db->prepare('SELECT COUNT(*) FROM `device_custom_fields` WHERE `field_key`=?');
+  while (true) {
+    $st->execute(array($key));
+    if ((int)$st->fetchColumn() === 0) return $key;
+    $suffix++;
+    $key = substr($base, 0, 54) . '_' . $suffix;
+  }
+}
+
+function fetchCustomFields($db, $activeOnly = false) {
+  ensureDeviceCustomTables($db);
+  $sql = 'SELECT * FROM `device_custom_fields`';
+  if ($activeOnly) $sql .= ' WHERE `is_active`=1';
+  $sql .= ' ORDER BY `sort_order` ASC, `id` ASC';
+  return $db->query($sql)->fetchAll();
+}
+
+function fetchDeviceCustomValues($db, $deviceId) {
+  ensureDeviceCustomTables($db);
+  $st = $db->prepare('SELECT `field_key`, `value_text` FROM `device_custom_values` WHERE `device_id`=?');
+  $st->execute(array($deviceId));
+  $rows = $st->fetchAll();
+  $values = array();
+  foreach ($rows as $row) {
+    $values[$row['field_key']] = $row['value_text'];
+  }
+  return $values;
+}
+
+function saveDeviceCustomValues($db, $deviceId, $values, $updatedBy) {
+  ensureDeviceCustomTables($db);
+  if (!is_array($values)) return;
+
+  $defs = fetchCustomFields($db, false);
+  $allowed = array();
+  foreach ($defs as $def) {
+    $allowed[$def['field_key']] = normalizeCustomFieldType($def['field_type']);
+  }
+
+  $upsert = $db->prepare("
+    INSERT INTO `device_custom_values` (`device_id`,`field_key`,`value_text`,`updated_by`)
+    VALUES (:device_id,:field_key,:value_text,:updated_by)
+    ON DUPLICATE KEY UPDATE `value_text`=VALUES(`value_text`), `updated_by`=VALUES(`updated_by`)
+  ");
+  $delete = $db->prepare('DELETE FROM `device_custom_values` WHERE `device_id`=:device_id AND `field_key`=:field_key');
+
+  foreach ($values as $fieldKey => $rawValue) {
+    if (!isset($allowed[$fieldKey])) continue;
+    $type = $allowed[$fieldKey];
+    if ($type === 'checkbox') {
+      $value = !empty($rawValue) ? '1' : '0';
+    } else {
+      $value = normalizeNullableText($rawValue);
+    }
+
+    if ($value === null || $value === '') {
+      $delete->execute(array(':device_id' => $deviceId, ':field_key' => $fieldKey));
+      continue;
+    }
+
+    $upsert->execute(array(
+      ':device_id' => $deviceId,
+      ':field_key' => $fieldKey,
+      ':value_text' => (string)$value,
+      ':updated_by' => $updatedBy
+    ));
+  }
 }
 
 function buildDeviceFilters($src) {
@@ -51,6 +227,25 @@ function fetchDevices($db, $src) {
   return $st->fetchAll();
 }
 
+function fetchDeviceById($db, $id, $includeCustomValues = true) {
+  $st = $db->prepare('SELECT * FROM `devices` WHERE `id`=?');
+  $st->execute(array($id));
+  $row = $st->fetch();
+  if (!$row) return null;
+  if ($includeCustomValues) {
+    $row['custom_values'] = fetchDeviceCustomValues($db, $id);
+  }
+  return $row;
+}
+
+function fetchCustomFieldById($db, $id) {
+  ensureDeviceCustomTables($db);
+  $st = $db->prepare('SELECT * FROM `device_custom_fields` WHERE `id`=?');
+  $st->execute(array($id));
+  return $st->fetch();
+}
+
+// ---------- 3) Device query helpers ----------
 function isWindowsPlatform() {
   return strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
 }
@@ -174,6 +369,7 @@ function pickBestPowerResult($device, $results) {
   return $results[0];
 }
 
+// ---------- 4) Power probe helpers ----------
 function probeDevicesSequential($jobs, $timeoutMs) {
   $results = array();
 
@@ -395,7 +591,111 @@ function handlePowerProbe($db, $srcDevices) {
   ok($payload, 200);
 }
 
+// ---------- 5) Custom field handlers ----------
+function handleGetCustomFields($db) {
+  requireAuth();
+  ok(fetchCustomFields($db, true), 200);
+}
+
+function handleGetCustomValues($db, $id) {
+  requireAuth();
+  if (!$id) err('Missing id', 400);
+  ok(array(
+    'fields' => fetchCustomFields($db, true),
+    'values' => fetchDeviceCustomValues($db, $id)
+  ), 200);
+}
+
+function handleCreateCustomField($db) {
+  $auth = requireAdmin();
+  $payload = body();
+  $label = normalizeNullableText(isset($payload['label']) ? $payload['label'] : null);
+  if (!$label) err('Missing label', 400);
+
+  $fieldKey = nextCustomFieldKey($db, slugifyCustomFieldKey($label));
+  $fieldType = normalizeCustomFieldType(isset($payload['field_type']) ? $payload['field_type'] : 'text');
+  $sortOrder = (int)(isset($payload['sort_order']) ? $payload['sort_order'] : 999);
+
+  $userName = isset($auth['username']) ? $auth['username'] : 'system';
+  try {
+    $db->beginTransaction();
+    $st = $db->prepare("
+      INSERT INTO `device_custom_fields`
+        (`field_key`,`label`,`field_type`,`sort_order`,`created_by`,`updated_by`)
+      VALUES (?,?,?,?,?,?)
+    ");
+    $st->execute(array($fieldKey, $label, $fieldType, $sortOrder, $userName, $userName));
+    $id = $db->lastInsertId();
+    $row = fetchCustomFieldById($db, $id);
+    writeBackupEntry($db, 'device_custom_field', $id, 'create', null, $row, $userName);
+    $db->commit();
+    ok($row, 201);
+  } catch (Throwable $e) {
+    if ($db->inTransaction()) $db->rollBack();
+    err('Unable to create custom field', 500);
+  }
+}
+
+function handleUpdateCustomField($db, $id) {
+  $auth = requireAdmin();
+  if (!$id) err('Missing id', 400);
+  $before = fetchCustomFieldById($db, $id);
+  if (!$before) err('Not found', 404);
+  $payload = body();
+  $label = normalizeNullableText(isset($payload['label']) ? $payload['label'] : null);
+  $fieldType = normalizeCustomFieldType(isset($payload['field_type']) ? $payload['field_type'] : 'text');
+  $sortOrder = isset($payload['sort_order']) ? (int)$payload['sort_order'] : null;
+
+  $parts = array();
+  $params = array(':id' => $id, ':updated_by' => isset($auth['username']) ? $auth['username'] : 'system');
+  if ($label !== null) { $parts[] = '`label`=:label'; $params[':label'] = $label; }
+  if (!empty($payload['field_type'])) { $parts[] = '`field_type`=:field_type'; $params[':field_type'] = $fieldType; }
+  if ($sortOrder !== null) { $parts[] = '`sort_order`=:sort_order'; $params[':sort_order'] = $sortOrder; }
+  if (empty($parts)) err('No data to update', 400);
+  $parts[] = '`updated_by`=:updated_by';
+
+  try {
+    $db->beginTransaction();
+    $st = $db->prepare('UPDATE `device_custom_fields` SET ' . implode(',', $parts) . ' WHERE `id`=:id');
+    $st->execute($params);
+    $after = fetchCustomFieldById($db, $id);
+    writeBackupEntry($db, 'device_custom_field', $id, 'update', $before, $after, isset($auth['username']) ? $auth['username'] : 'system');
+    $db->commit();
+    ok($after, 200);
+  } catch (Throwable $e) {
+    if ($db->inTransaction()) $db->rollBack();
+    err('Unable to update custom field', 500);
+  }
+}
+
+function handleDeleteCustomField($db, $id) {
+  $auth = requireAdmin();
+  if (!$id) err('Missing id', 400);
+  $before = fetchCustomFieldById($db, $id);
+  if (!$before) err('Not found', 404);
+  $fieldKey = $before['field_key'];
+  if (!$fieldKey) err('Not found', 404);
+  try {
+    $db->beginTransaction();
+    $db->prepare('DELETE FROM `device_custom_values` WHERE `field_key`=?')->execute(array($fieldKey));
+    $db->prepare('DELETE FROM `device_custom_fields` WHERE `id`=?')->execute(array($id));
+    writeBackupEntry($db, 'device_custom_field', $id, 'delete', $before, null, isset($auth['username']) ? $auth['username'] : 'system');
+    $db->commit();
+    ok(array('success' => true, 'id' => $id), 200);
+  } catch (Throwable $e) {
+    if ($db->inTransaction()) $db->rollBack();
+    err('Unable to delete custom field', 500);
+  }
+}
+
+// ---------- 6) Main REST handlers ----------
 if ($m === 'GET') {
+  if (!empty($_GET['action']) && $_GET['action'] === 'custom_fields') {
+    handleGetCustomFields($db);
+  }
+  if (!empty($_GET['action']) && $_GET['action'] === 'custom_values') {
+    handleGetCustomValues($db, $id);
+  }
   requireAuth();
   if (!empty($_GET['action']) && $_GET['action'] === 'power') {
     handlePowerProbe($db, fetchDevices($db, $_GET));
@@ -404,6 +704,9 @@ if ($m === 'GET') {
 }
 
 if ($m === 'POST') {
+  if (!empty($_GET['action']) && $_GET['action'] === 'custom_field') {
+    handleCreateCustomField($db);
+  }
   $b = body();
   if ((!empty($_GET['action']) && $_GET['action'] === 'power') || (!empty($b['action']) && $b['action'] === 'power')) {
     requireAuth();
@@ -411,9 +714,12 @@ if ($m === 'POST') {
     handlePowerProbe($db, $devices);
   }
   $auth = requireAdmin();
+  $customValues = isset($b['custom_values']) && is_array($b['custom_values']) ? $b['custom_values'] : array();
+  if (array_key_exists('custom_values', $b)) unset($b['custom_values']);
   $b = normalizePayloadFields($b, $FIELDS);
   if (empty($b['computer_name']) && empty($b['name'])) err('Please provide computer_name', 400);
-  $nid = nextDeviceId($db);
+  $nid = normalizeDeviceIdentifier(isset($b['computer_name']) ? $b['computer_name'] : null);
+  assertDeviceIdentifierAvailable($db, $nid, isset($b['computer_name']) ? $b['computer_name'] : null);
   // Build insert
   $cols = array('`id`'); $vals = array(':id'); $p = array(':id' => $nid);
   foreach ($FIELDS as $f) {
@@ -428,15 +734,43 @@ if ($m === 'POST') {
     $p[':updated_by'] = isset($auth['username']) ? $auth['username'] : 'system';
   }
   $sql = 'INSERT INTO `devices`(' . implode(',', $cols) . ') VALUES(' . implode(',', $vals) . ')';
-  $db->prepare($sql)->execute($p);
-  $st = $db->prepare('SELECT * FROM `devices` WHERE `id`=?'); $st->execute(array($nid));
-  ok($st->fetch(), 201);
+  $userName = isset($auth['username']) ? $auth['username'] : 'system';
+  try {
+    $db->beginTransaction();
+    $db->prepare($sql)->execute($p);
+    saveDeviceCustomValues($db, $nid, $customValues, $userName);
+    $created = fetchDeviceById($db, $nid, true);
+    writeBackupEntry($db, 'devices', $nid, 'create', null, $created, $userName);
+    $db->commit();
+    ok($created, 201);
+  } catch (Throwable $e) {
+    if ($db->inTransaction()) $db->rollBack();
+    err('Unable to create device', 500);
+  }
 }
 
 if ($m === 'PUT') {
+  if (!empty($_GET['action']) && $_GET['action'] === 'custom_field') {
+    handleUpdateCustomField($db, $id);
+  }
   $auth = requireAdmin();
   if (!$id) err('Missing id', 400);
-  $b = normalizePayloadFields(body(), $FIELDS); $sets = array(); $p = array(':id' => $id);
+  $before = fetchDeviceById($db, $id, true);
+  if (!$before) err('Not found', 404);
+  $rawBody = body();
+  $customValues = isset($rawBody['custom_values']) && is_array($rawBody['custom_values']) ? $rawBody['custom_values'] : array();
+  $hasCustomValues = array_key_exists('custom_values', $rawBody) && is_array($customValues);
+  if (array_key_exists('custom_values', $rawBody)) unset($rawBody['custom_values']);
+  $b = normalizePayloadFields($rawBody, $FIELDS);
+  $nextComputerName = array_key_exists('computer_name', $b) ? $b['computer_name'] : (isset($before['computer_name']) ? $before['computer_name'] : null);
+  $nextId = normalizeDeviceIdentifier($nextComputerName);
+  assertDeviceIdentifierAvailable($db, $nextId, $nextComputerName, $id);
+  $sets = array();
+  $p = array(':current_id' => $id);
+  if ($nextId !== $id) {
+    $sets[] = '`id`=:new_id';
+    $p[':new_id'] = $nextId;
+  }
   foreach ($FIELDS as $f) {
     if (array_key_exists($f, $b)) {
       $sets[] = "`$f`=:$f";
@@ -447,18 +781,51 @@ if ($m === 'PUT') {
     $sets[] = '`updated_by`=:updated_by';
     $p[':updated_by'] = isset($auth['username']) ? $auth['username'] : 'system';
   }
-  if (empty($sets)) err('No data to update', 400);
-  $db->prepare('UPDATE `devices` SET ' . implode(',', $sets) . ' WHERE `id`=:id')->execute($p);
-  $st = $db->prepare('SELECT * FROM `devices` WHERE `id`=?'); $st->execute(array($id));
-  ok($st->fetch(), 200);
+  if (empty($sets) && !$hasCustomValues) err('No data to update', 400);
+  $userName = isset($auth['username']) ? $auth['username'] : 'system';
+  try {
+    $db->beginTransaction();
+    if (!empty($sets)) {
+      $db->prepare('UPDATE `devices` SET ' . implode(',', $sets) . ' WHERE `id`=:current_id')->execute($p);
+    }
+    if ($nextId !== $id) {
+      $db->prepare('UPDATE `device_custom_values` SET `device_id`=? WHERE `device_id`=?')->execute(array($nextId, $id));
+    }
+    if ($hasCustomValues) {
+      saveDeviceCustomValues($db, $nextId, $customValues, $userName);
+    }
+    $after = fetchDeviceById($db, $nextId, true);
+    writeBackupEntry($db, 'devices', $nextId, 'update', $before, $after, $userName);
+    $db->commit();
+    ok($after, 200);
+  } catch (Throwable $e) {
+    if ($db->inTransaction()) $db->rollBack();
+    err('Unable to update device', 500);
+  }
 }
 
 if ($m === 'DELETE') {
-  requireAdmin();
+  if (!empty($_GET['action']) && $_GET['action'] === 'custom_field') {
+    handleDeleteCustomField($db, $id);
+  }
+  $auth = requireAdmin();
   if (!$id) err('Missing id', 400);
-  $st = $db->prepare('DELETE FROM `devices` WHERE `id`=?'); $st->execute(array($id));
-  if (!$st->rowCount()) err('Not found', 404);
-  ok(array('success' => true, 'id' => $id), 200);
+  $before = fetchDeviceById($db, $id, true);
+  if (!$before) err('Not found', 404);
+  try {
+    $db->beginTransaction();
+    $db->prepare('DELETE FROM `device_custom_values` WHERE `device_id`=?')->execute(array($id));
+    $st = $db->prepare('DELETE FROM `devices` WHERE `id`=?'); $st->execute(array($id));
+    if (!$st->rowCount()) {
+      throw new RuntimeException('Device delete failed');
+    }
+    writeBackupEntry($db, 'devices', $id, 'delete', $before, null, isset($auth['username']) ? $auth['username'] : 'system');
+    $db->commit();
+    ok(array('success' => true, 'id' => $id), 200);
+  } catch (Throwable $e) {
+    if ($db->inTransaction()) $db->rollBack();
+    err('Unable to delete device', 500);
+  }
 }
 
 err('Method not allowed', 405);
