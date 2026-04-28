@@ -1,312 +1,377 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>DeviceHub — Login</title>
-<link rel="stylesheet" href="assets/css/theme.css?v=20260427c">
+<title>Login - DeviceHub</title>
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260427c">
 <style>
-:root{
-  --bg:#060910;
-  --bg2:#0b1220;
-  --surface:rgba(12,18,29,.9);
-  --border:rgba(122,136,153,.16);
-  --border2:rgba(0,212,255,.24);
-  --cyan:#35d8ff;
-  --green:#19e5a2;
-  --yellow:#ffd166;
-  --red:#ff6483;
-  --violet:#a78bfa;
-  --text:#edf3fb;
-  --text2:#99a8bb;
-  --text3:#5f7188;
-  --font:'Segoe UI',Tahoma,sans-serif;
-  --mono:Consolas,monospace;
-  --display:'Segoe UI',Tahoma,sans-serif;
-  --shadow-lg:0 28px 80px rgba(0,0,0,.42);
-}
-html,body{height:100%;}
-body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:28px;}
-body{background:linear-gradient(180deg,var(--bg2),var(--bg) 60%);color:var(--text);font-family:var(--font);}
-body::after{inset:auto auto -16vh -12vw;width:40vw;height:40vw;background:radial-gradient(circle,rgba(167,139,250,.12),transparent 68%);}
-.wrap{width:min(460px,100%);max-width:100%;position:relative;z-index:1;animation:fadeIn .35s ease;}
-.wrap::before{content:'';position:absolute;inset:88px -22px -16px;z-index:-1;border-radius:32px;background:linear-gradient(135deg,rgba(53,216,255,.2),rgba(167,139,250,.12));filter:blur(34px);opacity:.65;}
-.logo{text-align:center;margin-bottom:24px;}
-.logo-ico{width:76px;height:76px;border-radius:24px;background:linear-gradient(135deg,#35d8ff,#0a67ad 74%);display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 16px;box-shadow:0 18px 34px rgba(53,216,255,.28);}
-.logo-name{font-family:var(--display);font-size:34px;font-weight:800;color:var(--text);line-height:1;}
-.logo-sub{font-size:11.5px;color:var(--text2);font-family:var(--mono);letter-spacing:2.4px;margin-top:8px;}
-.card{position:relative;background:linear-gradient(180deg,rgba(14,21,33,.96),rgba(9,13,20,.98));border:1px solid rgba(53,216,255,.14);border-radius:26px;overflow:hidden;box-shadow:var(--shadow-lg);}
-.card::before{content:'';position:absolute;right:-50px;top:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(53,216,255,.16),transparent 70%);pointer-events:none;}
-.stripe{height:5px;background:linear-gradient(90deg,var(--cyan),var(--green),var(--violet));}
-.card-body{padding:30px 32px 34px;}
-.field{margin-bottom:16px;}
-.field label{display:block;font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.7px;}
-.iw{position:relative;}
-.ii{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;color:var(--text2);}
-.inp{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:14px;padding:12px 44px 12px 42px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s,background .15s;}
-.inp:focus{border-color:var(--border2);background:rgba(255,255,255,.05);box-shadow:0 0 0 3px rgba(53,216,255,.12);}
-.inp::placeholder{color:var(--text3);}
-.eye{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;color:var(--text3);}
-.btn-go{width:100%;min-height:48px;padding:12px 16px;font-size:14px;font-weight:700;border-radius:14px;margin-top:10px;background:linear-gradient(135deg,var(--cyan),#1ab2e8 82%);color:#06111a;border:none;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 16px 28px rgba(53,216,255,.22);transition:all .2s;}
-.btn-go:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 20px 32px rgba(53,216,255,.3);}
-.btn-go:disabled{opacity:.68;cursor:not-allowed;transform:none;}
-.errmsg{background:rgba(255,100,131,.09);border:1px solid rgba(255,100,131,.25);border-radius:14px;padding:12px 14px;font-size:13px;color:var(--red);margin-bottom:14px;display:none;gap:8px;align-items:center;}
-.info{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:16px;padding:14px 16px;font-size:12.5px;color:var(--text2);margin-top:18px;text-align:center;line-height:1.85;}
-.info b{color:var(--cyan);}
-.sbar{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:16px;padding-top:14px;font-size:11px;color:var(--text3);font-family:var(--mono);border-top:1px solid var(--border);}
-.sdot{width:7px;height:7px;border-radius:50%;background:var(--yellow);flex-shrink:0;}
-@keyframes shake{0%,100%{transform:none}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
-.shake{animation:shake .35s ease;}
-@media (max-width:560px){
-  body{padding:18px;}
-  .card-body{padding:24px 20px 24px;}
-  .logo-name{font-size:28px;}
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%);
+  padding: 24px;
 }
 
-/* Light login layer: keeps this page aligned with the main IT Asset theme. */
-:root{
-  --bg:#f4f7fb;
-  --bg2:#eef4fb;
-  --surface:#ffffff;
-  --border:rgba(20,50,92,.12);
-  --border2:rgba(37,99,235,.34);
-  --cyan:#2563eb;
-  --green:#16a34a;
-  --yellow:#f59e0b;
-  --red:#ef4444;
-  --violet:#7c3aed;
-  --text:#10213f;
-  --text2:#53657f;
-  --text3:#94a3b8;
-  --shadow-lg:0 28px 80px rgba(17,42,80,.16);
+.login-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  max-width: 960px;
+  width: 100%;
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
 }
-body{
-  background:
-    linear-gradient(180deg,#f8fbff 0,#eef4fb 52%,#f4f7fb 100%) !important;
-  color:var(--text) !important;
+
+.login-left {
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
-body::after{display:none !important;}
-.wrap::before{
-  background:linear-gradient(135deg,rgba(37,99,235,.18),rgba(22,163,74,.1)) !important;
-  opacity:.5 !important;
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
 }
-.logo-ico{
-  background:linear-gradient(135deg,#2563eb,#0ea5e9) !important;
-  color:#fff !important;
-  box-shadow:0 18px 34px rgba(37,99,235,.22) !important;
+
+.login-brand .sb-mark {
+  width: 48px;
+  height: 48px;
+  font-size: 24px;
 }
-.logo-name{
-  color:#10213f !important;
-  text-shadow:none !important;
+
+.login-brand .sb-name {
+  font-size: 24px;
 }
-.logo-sub{color:#64748b !important;}
-.card{
-  background:#fff !important;
-  border-color:rgba(20,50,92,.12) !important;
-  box-shadow:var(--shadow-lg) !important;
+
+.login-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
 }
-.card::before{display:none !important;}
-.stripe{background:linear-gradient(90deg,#2563eb,#16a34a,#7c3aed) !important;}
-.field label{color:#64748b !important;}
-.inp{
-  background:#fff !important;
-  border-color:rgba(20,50,92,.14) !important;
-  color:#10213f !important;
+
+.login-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 32px;
 }
-.inp:focus{
-  border-color:#2563eb !important;
-  background:#fff !important;
-  box-shadow:0 0 0 4px rgba(37,99,235,.12) !important;
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
-.inp::placeholder{color:#94a3b8 !important;}
-.ii,.eye{color:#64748b !important;}
-.btn-go{
-  background:linear-gradient(135deg,#2563eb,#155eef) !important;
-  color:#fff !important;
-  box-shadow:0 16px 28px rgba(37,99,235,.2) !important;
+
+.form-group {
+  margin-bottom: 0;
 }
-.info{
-  background:#f8fbff !important;
-  border-color:#dbe8fb !important;
-  color:#64748b !important;
+
+.form-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
 }
-.info b{color:#2563eb !important;}
-.sbar{
-  border-top-color:#e2e8f0 !important;
-  color:#64748b !important;
+
+.form-input {
+  height: 44px;
+  padding: 0 14px;
 }
-.errmsg{
-  background:#fff1f2 !important;
-  border-color:#fecdd3 !important;
-  color:#e11d48 !important;
+
+.form-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkbox-wrapper input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.checkbox-wrapper label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.forgot-link {
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: 500;
+  transition: color var(--transition-fast);
+}
+
+.forgot-link:hover {
+  color: var(--primary-dark);
+}
+
+.btn-login {
+  height: 44px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.login-right {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-right::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.5;
+}
+
+.login-feature {
+  position: relative;
+  z-index: 1;
+}
+
+.login-feature h3 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  letter-spacing: -0.02em;
+}
+
+.login-feature p {
+  font-size: 14px;
+  line-height: 1.7;
+  opacity: 0.9;
+  margin-bottom: 24px;
+}
+
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.feature-item i {
+  width: 24px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.alert-error {
+  background: var(--danger-light);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: var(--danger);
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.alert-error i {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .login-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .login-right {
+    display: none;
+  }
+  
+  .login-left {
+    padding: 32px 24px;
+  }
 }
 </style>
 </head>
 <body>
-<!--
-  Login page map
-  1. Branding / intro block
-  2. Login form and helper note
-  3. Inline auth script and transitions
--->
-<div class="wrap">
-    <div class="logo">
-        <div class="logo-ico"><i class="ri-cpu-line"></i></div>
-        <div class="logo-name">DeviceHub</div>
-        <div class="logo-sub">IT MANAGEMENT SYSTEM</div>
-    </div>
-    <div class="card" id="card">
-        <div class="stripe"></div>
-        <div class="card-body">
-            <div class="errmsg" id="err"><span>❌</span><span id="errTxt">—</span></div>
-            <div class="field">
-                <label>Username</label>
-                <div class="iw">
-                    <span class="ii"><i class="ri-user-3-line"></i></span>
-                    <input class="inp" id="fU" type="text" placeholder="กรอก Username" autocomplete="username" autofocus>
-                </div>
-            </div>
-            <div class="field">
-                <label>Password</label>
-                <div class="iw">
-                    <span class="ii">🔒</span>
-                    <input class="inp" id="fP" type="password" placeholder="กรอก Password" autocomplete="current-password">
-                    <button class="eye" type="button" onclick="toggleEye()"><i class="ri-eye-line"></i></button>
-                </div>
-            </div>
-            <button class="btn-go" id="btn" onclick="doLogin()">
-                <span id="bico"><i class="ri-key-2-line"></i></span><span id="btxt">เข้าสู่ระบบ</span>
-            </button>
-            <div class="info">
-                🔒 ต้องได้รับ <b>Username &amp; Password</b> จาก <b>Admin</b><br>
-                ก่อนเข้าใช้งาน — ติดต่อฝ่าย IT
-            </div>
-            <div class="sbar">
-                <div class="sdot" id="sdot" style="animation:pulse .8s infinite"></div>
-                <span id="stxt">กำลังตรวจสอบ...</span>
-            </div>
+<div class="login-page">
+  <div class="login-container">
+    <div class="login-left">
+      <div class="login-brand">
+        <div class="sb-mark">
+          <i class="ri-server-line"></i>
         </div>
+        <span class="sb-name">DeviceHub</span>
+      </div>
+      
+      <h1 class="login-title">Welcome back</h1>
+      <p class="login-subtitle">Sign in to your account to continue</p>
+      
+      <div id="errorAlert" class="alert-error" style="display: none;">
+        <i class="ri-error-warning-line"></i>
+        <span id="errorMessage">Invalid username or password</span>
+      </div>
+      
+      <form class="login-form" id="loginForm">
+        <div class="form-group">
+          <label class="form-label" for="username">Username</label>
+          <input 
+            type="text" 
+            id="username" 
+            class="form-input" 
+            placeholder="Enter your username"
+            autocomplete="username"
+            required
+          >
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input 
+            type="password" 
+            id="password" 
+            class="form-input" 
+            placeholder="Enter your password"
+            autocomplete="current-password"
+            required
+          >
+        </div>
+        
+        <div class="form-options">
+          <div class="checkbox-wrapper">
+            <input type="checkbox" id="remember">
+            <label for="remember">Remember me</label>
+          </div>
+          <a href="#" class="forgot-link">Forgot password?</a>
+        </div>
+        
+        <button type="submit" class="btn btn-primary btn-login">
+          Sign In
+        </button>
+      </form>
+      
+      <div class="login-divider">Need help?</div>
+      
+      <p style="font-size: 13px; color: var(--text-secondary); text-align: center;">
+        Contact your system administrator for support
+      </p>
     </div>
+    
+    <div class="login-right">
+      <div class="login-feature">
+        <h3>Enterprise IT Management</h3>
+        <p>Streamline your IT operations with our comprehensive device management platform.</p>
+        
+        <div class="feature-list">
+          <div class="feature-item">
+            <i class="ri-check-line"></i>
+            <span>Real-time device monitoring</span>
+          </div>
+          <div class="feature-item">
+            <i class="ri-check-line"></i>
+            <span>Automated inventory tracking</span>
+          </div>
+          <div class="feature-item">
+            <i class="ri-check-line"></i>
+            <span>Advanced reporting & analytics</span>
+          </div>
+          <div class="feature-item">
+            <i class="ri-check-line"></i>
+            <span>Secure access control</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<script src="assets/js/config.js?v=20260427c"></script>
+<script src="assets/js/shared.js?v=20260427c"></script>
 <script>
-// ── ถ้า login แล้ว → ไป dashboard ทันที ──────────────────────
-var _u = sessionStorage.getItem('dh_user');
-var _t = sessionStorage.getItem('dh_token');
-if(_u && _t){
-    try{
-        var _o = JSON.parse(_u);
-        if(_o && _o.username) { window.location.replace('dashboard.html'); }
-    }catch(e){
-        sessionStorage.removeItem('dh_user');
-        sessionStorage.removeItem('dh_token');
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  const errorAlert = document.getElementById('errorAlert');
+  const errorMessage = document.getElementById('errorMessage');
+  
+  try {
+    const response = await fetch(API_BASE + '/auth.php?action=login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success && data.token) {
+      sessionStorage.setItem('dh_token', data.token);
+      sessionStorage.setItem('dh_user', JSON.stringify(data.user));
+      window.location.href = 'dashboard.html';
+    } else {
+      errorMessage.textContent = data.message || 'Invalid username or password';
+      errorAlert.style.display = 'flex';
     }
-}
-
-var API_AUTH = (window.location.origin || 'http://localhost') + '/devicehub/api/auth.php';
-
-// Check DB connection (background)
-setTimeout(function(){
-    fetch(API_AUTH+'?ping=1')
-        .then(function(r){return r.json();})
-        .then(function(){setS('ok','เชื่อมต่อ MySQL สำเร็จ');})
-        .catch(function(e){setS('err','ตรวจสอบ AppServ — '+e.message);});
-},300);
-
-function doLogin(){
-    var u=document.getElementById('fU').value.trim();
-    var p=document.getElementById('fP').value;
-    document.getElementById('err').style.display='none';
-    if(!u||!p){showErr('กรุณากรอก Username และ Password');return;}
-    setBusy(true);
-    setS('wait','กำลังตรวจสอบ...');
-    fetch(API_AUTH,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({username:u,password:p})
-    })
-    .then(function(r){
-        return r.text().then(function(text){
-            var data = {};
-            if(text){
-                try { data = JSON.parse(text); } catch (e) {}
-            }
-            return { ok:r.ok, data:data };
-        });
-    })
-    .then(function(res){
-        var data = res.data || {};
-        if(res.ok && data.success && data.token){
-            sessionStorage.setItem('dh_token',data.token||'');
-            sessionStorage.setItem('dh_user',JSON.stringify({
-                user_id: data.user_id,
-                username:data.username,
-                name:    data.name,
-                role:    data.role,
-                dept:    data.dept||''
-            }));
-            setS('ok','Login สำเร็จ กำลังนำไป Dashboard...');
-            window.location.href='dashboard.html';
-        } else {
-            setBusy(false);
-            setS('err','ไม่สำเร็จ');
-            sessionStorage.removeItem('dh_user');
-            sessionStorage.removeItem('dh_token');
-            showErr(data.error||'Username หรือ Password ไม่ถูกต้อง');
-        }
-    })
-    .catch(function(e){
-        setBusy(false);
-        setS('err','เชื่อมต่อไม่ได้');
-        showErr('ไม่สามารถเชื่อมต่อ API ได้\nตรวจสอบว่า AppServ เปิดอยู่\n' + (e && e.message ? e.message : 'Unknown error'));
-    });
-}
-
-function escapeHtml(value){
-    return String(value==null?'':value).replace(/[&<>"']/g,function(ch){
-        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
-    });
-}
-function showErr(m){
-    document.getElementById('errTxt').innerHTML=escapeHtml(m).replace(/\n/g,'<br>');
-    document.getElementById('err').style.display='flex';
-    var c=document.getElementById('card');
-    c.classList.remove('shake');void c.offsetWidth;c.classList.add('shake');
-}
-function setBusy(on){
-    document.getElementById('btn').disabled=on;
-    document.getElementById('bico').innerHTML=on?'<i class="ri-time-line"></i>':'<i class="ri-key-2-line"></i>';
-    document.getElementById('btxt').textContent=on?'กำลังตรวจสอบ...':'เข้าสู่ระบบ';
-}
-function setS(t,m){
-    var d=document.getElementById('sdot');
-    document.getElementById('stxt').textContent=m;
-    d.style.animation='none';
-    if(t==='ok'){d.style.background='var(--green)';d.style.boxShadow='0 0 6px var(--green)';}
-    else if(t==='err'){d.style.background='var(--red)';d.style.boxShadow='none';}
-    else{d.style.background='var(--yellow)';d.style.animation='pulse .8s infinite';}
-}
-function toggleEye(){
-    var p=document.getElementById('fP');
-    p.type=p.type==='password'?'text':'password';
-}
-document.addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+  } catch (error) {
+    errorMessage.textContent = 'Connection error. Please try again.';
+    errorAlert.style.display = 'flex';
+  }
+});
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
